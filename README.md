@@ -1,5 +1,7 @@
 # HexoHub
 
+中文文档  |  [English](https://github.com/forever218/HexoHub/docs/README.en.md)
+
 <div align="center">
   <img 
     src="https://github.com/user-attachments/assets/cac9facb-b0e1-414e-b0a9-21c488f790ef" 
