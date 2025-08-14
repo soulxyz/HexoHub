@@ -1,103 +1,107 @@
 # HexoHub
 
-一个基于 Electron + Next.js 构建的 Hexo 博客管理桌面应用程序，提供图形化界面来替代传统的命令行操作。
+<div align="center">
+  <img 
+    src="https://github.com/user-attachments/assets/cac9facb-b0e1-414e-b0a9-21c488f790ef" 
+    alt="image" 
+    width="80%" 
+  />
+</div>
 
-## ✨ 主要功能
+一个基于 Electron + Next.js 构建的Hexo博客管理桌面应用程序，提供图形化界面来替代传统的命令行操作  
+> 告别繁琐的传统命令行方式（我已经厌倦了hexo xxxx🫠），以更优雅的方式管理您的hexo博客
 
-### 📝 文章管理
-- **创建新文章**：一键创建新的 Hexo 文章，自动生成标准格式
-- **文章列表**：显示所有文章，支持按修改时间排序
-- **编辑文章**：内置 Markdown 编辑器，支持语法高亮和行号显示
-- **实时预览**：编辑时实时预览 Markdown 渲染效果
-- **删除文章**：安全删除不需要的文章
+# ✨ 主要功能
 
-### ⚙️ Hexo 操作
-- **项目验证**：自动检测目录是否为有效的 Hexo 项目
-- **命令执行**：图形化执行常用 Hexo 命令
+## 📝 文章管理
+
+在本应用程序中，您可以可视化的：**创建新文章**，**查看文章列表** ，**编辑文章**，**实时预览**，**启动本地预览**，**生成并推送静态文件**，**删除文章**
+
+## 🧩 图片拖入
+这或许是本应用程序的一大亮点，当您开启了hexo的资源文件夹后（[这是什么？](https://hexo.io/zh-cn/docs/asset-folders)），您就可以使用`{% asset_img example.jpg %}`标签，将本地的图片在博客中进行引用。  
+但是，频繁的输入`{% asset_img example.jpg %}`显然是不尽如人意的（特别是当图片文件名很复杂的时候），所以在本应用程序中，您只需要将图片放入与文章同名的资源文件夹下（例如`\blog\source\_posts\测试文章`），然后将图片拖入编辑窗口，就能自动填入`{% asset_img example.jpg %}`标签，省去了输入文件名的烦恼    
+
+<div align="center">
+  <img 
+    src="https://github.com/user-attachments/assets/2aced4e0-ef08-4daf-af8b-6a31f43a2d56" 
+    alt="image" 
+    width="80%" 
+  />
+</div>  
+
+<div align="center">
+  <img 
+    src="https://github.com/user-attachments/assets/be796a74-7990-4780-a93e-4c3c72d07335" 
+    alt="image" 
+    width="80%" 
+  />
+</div>
+
+
+## ⚙️ Hexo 操作 
+**命令执行**：图形化执行常用 Hexo 命令，包括：  
   - `hexo clean` - 清理缓存文件
   - `hexo generate` - 生成静态文件
   - `hexo deploy` - 部署到远程服务器
-- **实时反馈**：显示命令执行结果和错误信息
+  - `hexo se` - 启动本地预览
+**实时反馈**：显示命令执行结果和错误信息
 
-### 🔧 配置管理
-- **基本设置**：网站标题、副标题、作者、语言等
-- **高级设置**：URL 配置、永久链接格式等
-- **YAML 编辑**：支持直接编辑原始配置文件
-- **导入/导出**：配置文件的备份和恢复
+## 🔧 配置管理
+**基本设置**：网站标题、副标题、作者、语言  
+**高级设置**：URL 配置、永久链接格式  
+**YAML 编辑**：支持直接编辑原始配置文件  
+**导入/导出**：配置文件的备份和恢复，更加方便您主题的迁移
 
-### 🎨 用户界面
-- **现代化设计**：基于 shadcn/ui 组件库
-- **响应式布局**：适配不同屏幕尺寸
-- **深色/浅色主题**：支持主题切换
-- **直观操作**：符合 Windows 操作规范
+# 🚀 快速开始
 
-## 🚀 快速开始
+- **操作系统**: Windows 10 或更高版本  
+- **Node.js**: 需要预装 Node.js 和 Hexo CLI  
+- **内存**: 建议 4GB 以上  
+- **存储**: 建议 100MB 可用空间  
+⚠️ 出于速度考虑，我在开发过程中使用的是`cnpm`，并且修改了部分`package.json`内容，请您在使用时酌情考虑，如果要使用`cnpm`，请执行：  
+```bash
+npm install -g cnpm --registry=http://registry.npm.taobao.org
+```
+随后即可用`cnpm`代替`npm`
 
-### 系统要求
-- **操作系统**: Windows 10 或更高版本
-- **Node.js**: 需要预装 Node.js 和 Hexo CLI
-- **内存**: 建议 4GB 以上
-- **存储**: 建议 100MB 可用空间
-
-### 安装步骤
-
-1. **安装依赖**
+1. **克隆本仓库**
+   ```bash
+   git clone https://github.com/forever218/HexoHub.git
+   ```
+ 
+2. **安装依赖**
    ```bash
    npm install
    ```
 
-2. **开发模式运行**
+3. **开发模式运行**，到这一步就已经可以使用了
    ```bash
-   npm run electron-dev
+   npm run electron
    ```
 
-3. **打包应用**
+4. **打包应用**（非必须）
    ```bash
    npm run dist
    ```
+⚠️由于个人技术有限，我在打包应用时遇到问题，暂时还未解决，所以也就还未发布release，请使用命令`npm run electron`来启动程序
 
-### 使用方法
+# 🛠️ 技术栈
 
-1. **启动应用**
-   - 开发模式：`npm run electron-dev`
-   - 生产版本：运行打包后的 `dist/Hexo Desktop Setup 0.1.0.exe`
-
-2. **选择 Hexo 项目**
-   - 点击"选择"按钮
-   - 选择您的 Hexo 项目根目录
-   - 系统会自动验证项目有效性
-
-3. **管理文章**
-   - 从左侧列表选择文章进行编辑
-   - 点击 + 按钮创建新文章
-   - 使用编辑/预览标签页切换视图
-
-4. **执行 Hexo 命令**
-   - 使用顶部工具栏的按钮
-   - 查看命令执行结果
-   - 根据反馈进行相应操作
-
-## 🛠️ 技术栈
-
-### 前端技术
+## 前端技术
 - **Next.js 15** - React 全栈框架
 - **React 19** - 用户界面库
-- **TypeScript** - 类型安全的 JavaScript
-- **Tailwind CSS** - 原子化 CSS 框架
-- **shadcn/ui** - 高质量 React 组件库
-
-### 桌面技术
+- **TypeScript** - 类型安全的 JavaScript  
+- **Tailwind CSS** - 原子化 CSS 框架  
+- **shadcn/ui** - 高质量 React 组件库  
 - **Electron** - 跨平台桌面应用框架
 - **electron-builder** - 应用打包工具
 - **NSIS** - Windows 安装程序制作工具
-
-### 功能库
 - **react-markdown** - Markdown 渲染
 - **react-syntax-highlighter** - 代码语法高亮
 - **remark-gfm** - GitHub 风格 Markdown 扩展
 - **date-fns** - 日期处理库
 
-## 📁 项目结构
+# 📁 项目结构
 
 ```
 src/
@@ -126,87 +130,29 @@ public/
 └── logo.svg                   # 应用 Logo
 ```
 
-## 🔧 开发指南
 
-### 添加新功能
+# 🤝 贡献指南
 
-1. **创建组件**
-   ```bash
-   # 在 src/components/ 目录下创建新组件
-   # 遵循现有的命名规范和代码风格
-   ```
-
-2. **状态管理**
-   - 使用 React hooks 进行状态管理
-   - 复杂状态考虑使用 Zustand
-
-3. **样式规范**
-   - 使用 Tailwind CSS 类名
-   - 遵循 shadcn/ui 设计系统
-
-4. **类型安全**
-   - 所有组件和函数都需要 TypeScript 类型
-   - 定义清晰的接口和类型
-
-### 调试技巧
-
-1. **前端调试**
-   - 使用 Chrome DevTools
-   - 在 Electron 中按 F12 打开开发者工具
-
-2. **主进程调试**
-   - 使用 console.log 输出调试信息
-   - 查看 Electron 主进程控制台
-
-3. **常见问题**
-   - 路径问题：使用 Windows 兼容性工具
-   - 权限问题：检查文件访问权限
-   - 命令问题：确保 Hexo CLI 正确安装
-
-## 📦 打包和部署
-
-### Windows 打包
-
-1. **准备图标**
-   - 将图标保存为 `public/icon.ico`
-   - 建议尺寸：256x256 像素
-
-2. **打包命令**
-   ```bash
-   npm run dist
-   ```
-
-3. **输出文件**
-   - `dist/Hexo Desktop Setup 0.1.0.exe` - 安装程序
-
-### 部署注意事项
-
-- 确保 Windows 系统已安装 Node.js 和 Hexo CLI
-- 应用需要文件系统访问权限
-- 某些安全软件可能需要添加例外
-
-## 🤝 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-### 开发流程
-
+欢迎提交 Issue 和 Pull Request！  
 1. Fork 项目
 2. 创建功能分支
 3. 提交更改
 4. 创建 Pull Request
 
-### 代码规范
+---
 
-- 使用 ESLint 和 Prettier
-- 遵循 TypeScript 最佳实践
-- 编写清晰的组件文档
+我在开发过程中遇到了许多问题，如果您可以加入这个项目，成为志同道合的朋友，我会万分感激，给您点杯咖啡！☕
+可以通过以下方式联系我：
+- 邮箱3316703158@qq.com
+- 我的博客https://2am.top
+- github
 
-## 📄 许可证
 
-MIT License
+## 代码规范
+没有规范（实际上本人代码一团糟👻），只要您写的东西是人类语言即可
 
-## 🙏 致谢
+
+# 🙏 致谢
 
 - [Next.js](https://nextjs.org/) - React 框架
 - [Electron](https://www.electronjs.org/) - 桌面应用框架
@@ -214,6 +160,3 @@ MIT License
 - [Tailwind CSS](https://tailwindcss.com/) - CSS 框架
 - [Hexo](https://hexo.io/) - 静态博客生成器
 
----
-
-**如有问题或建议，请提交 Issue**
