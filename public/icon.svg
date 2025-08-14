@@ -1,0 +1,17 @@
+<!-- SVG Icon Placeholder - 请转换为 .ico 格式 -->
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" rx="32" fill="#1E293B"/>
+  <path d="M64 64L192 64L192 192L64 192L64 64Z" fill="#3B82F6"/>
+  <path d="M80 80L176 80L176 96L80 96L80 80Z" fill="white"/>
+  <path d="M80 112L176 112L176 128L80 128L80 112Z" fill="white"/>
+  <path d="M80 144L144 144L144 160L80 160L80 144Z" fill="white"/>
+  <circle cx="208" cy="48" r="8" fill="#10B981"/>
+  <path d="M200 48L208 40L216 48" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+<!-- 请使用以下工具将此 SVG 转换为 icon.ico：
+1. 访问 https://icoconvert.com/
+2. 上传此 SVG 文件
+3. 选择 256x256 尺寸
+4. 下载并保存为 public/icon.ico
+-->
