@@ -1,6 +1,6 @@
 # HexoHub
 
-<div style="text-align: center;">[中文文档](https://github.com/forever218/HexoHub/)  |  English</div>  
+[中文文档](https://github.com/forever218/HexoHub/)  |  English
 
 <div align="center">
   <img 
