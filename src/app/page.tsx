@@ -545,7 +545,7 @@ export default function Home() {
       <header className="border-b bg-card">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold">Hexo Desktop</h1>
+            <h1 className="text-xl font-bold">Hexo Hub</h1>
             {isValidHexoProject && (
               <Badge variant="default" className="bg-green-500">
                 {language === 'zh' ? '已连接' : 'Connected'}
