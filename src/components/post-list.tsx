@@ -3,14 +3,28 @@
 import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { FileText, Calendar, File, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { FileText, Calendar, File, ArrowUpDown, ArrowUp, ArrowDown, CheckSquare, Square, Trash2, Tag, FolderOpen, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Post {
   name: string;
@@ -25,14 +39,39 @@ interface PostListProps {
   selectedPost: Post | null;
   onPostSelect: (post: Post) => void;
   isLoading?: boolean;
+  onDeletePosts?: (posts: Post[]) => void;
+  onAddTagsToPosts?: (posts: Post[], tags: string[]) => void;
+  onAddCategoriesToPosts?: (posts: Post[], categories: string[]) => void;
+  onDeletePost?: (post: Post) => void;
+  onAddTagsToPost?: (post: Post, tags: string[]) => void;
+  onAddCategoriesToPost?: (post: Post, categories: string[]) => void;
+  availableTags?: string[];
+  availableCategories?: string[];
+  onFilterByTag?: (tag: string) => void;
+  onFilterByCategory?: (category: string) => void;
+  onClearFilter?: () => void;
+  currentFilter?: { type: 'tag' | 'category'; value: string } | null;
 }
 
 type SortField = 'name' | 'modifiedTime';
 type SortOrder = 'asc' | 'desc';
 
-export function PostList({ posts, selectedPost, onPostSelect, isLoading = false }: PostListProps) {
+export function PostList({ posts, selectedPost, onPostSelect, isLoading = false, onDeletePosts, onAddTagsToPosts, onAddCategoriesToPosts, onDeletePost, onAddTagsToPost, onAddCategoriesToPost, availableTags = [], availableCategories = [], onFilterByTag, onFilterByCategory, onClearFilter, currentFilter = null }: PostListProps) {
   const [sortField, setSortField] = useState<SortField>('modifiedTime');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [selectionMode, setSelectionMode] = useState<boolean>(false);
+  const [selectedPosts, setSelectedPosts] = useState<Post[]>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+  const [showTagsDialog, setShowTagsDialog] = useState<boolean>(false);
+  const [showCategoriesDialog, setShowCategoriesDialog] = useState<boolean>(false);
+  const [tagsInput, setTagsInput] = useState<string>('');
+  const [categoriesInput, setCategoriesInput] = useState<string>('');
+  const [contextMenuPost, setContextMenuPost] = useState<Post | null>(null);
+  const [showContextMenu, setShowContextMenu] = useState<boolean>(false);
+  const [showSingleDeleteDialog, setShowSingleDeleteDialog] = useState<boolean>(false);
+  const [showSingleTagsDialog, setShowSingleTagsDialog] = useState<boolean>(false);
+  const [showSingleCategoriesDialog, setShowSingleCategoriesDialog] = useState<boolean>(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -93,6 +132,164 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false 
     return `${fieldName} (${orderName})`;
   };
 
+  // 处理文章选择
+  const handlePostSelect = (post: Post) => {
+    if (selectionMode) {
+      // 批量选择模式
+      if (selectedPosts.some(p => p.path === post.path)) {
+        setSelectedPosts(selectedPosts.filter(p => p.path !== post.path));
+      } else {
+        setSelectedPosts([...selectedPosts, post]);
+      }
+    } else {
+      // 普通选择模式
+      onPostSelect(post);
+    }
+  };
+
+  // 切换选择模式
+  const toggleSelectionMode = () => {
+    if (selectionMode) {
+      // 退出选择模式时清空选择
+      setSelectedPosts([]);
+    }
+    setSelectionMode(!selectionMode);
+  };
+
+  // 全选/取消全选
+  const toggleSelectAll = () => {
+    if (selectedPosts.length === sortedPosts.length) {
+      setSelectedPosts([]);
+    } else {
+      setSelectedPosts([...sortedPosts]);
+    }
+  };
+
+  // 处理批量删除
+  const handleBatchDelete = () => {
+    if (selectedPosts.length > 0) {
+      setShowDeleteDialog(true);
+    }
+  };
+
+  // 确认批量删除
+  const confirmBatchDelete = () => {
+    if (onDeletePosts && selectedPosts.length > 0) {
+      onDeletePosts(selectedPosts);
+      setSelectedPosts([]);
+      setSelectionMode(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
+  // 处理批量添加标签
+  const handleBatchAddTags = () => {
+    if (selectedPosts.length > 0) {
+      setShowTagsDialog(true);
+    }
+  };
+
+  // 确认批量添加标签
+  const confirmBatchAddTags = () => {
+    if (onAddTagsToPosts && selectedPosts.length > 0 && tagsInput.trim()) {
+      const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag);
+      if (tags.length > 0) {
+        onAddTagsToPosts(selectedPosts, tags);
+        setTagsInput('');
+        setShowTagsDialog(false);
+      }
+    }
+  };
+
+  // 处理批量添加分类
+  const handleBatchAddCategories = () => {
+    if (selectedPosts.length > 0) {
+      setShowCategoriesDialog(true);
+    }
+  };
+
+  // 确认批量添加分类
+  const confirmBatchAddCategories = () => {
+    if (onAddCategoriesToPosts && selectedPosts.length > 0 && categoriesInput.trim()) {
+      const categories = categoriesInput.split(',').map(cat => cat.trim()).filter(cat => cat);
+      if (categories.length > 0) {
+        onAddCategoriesToPosts(selectedPosts, categories);
+        setCategoriesInput('');
+        setShowCategoriesDialog(false);
+      }
+    }
+  };
+
+  // 处理右键菜单
+  const handleContextMenu = (e: React.MouseEvent, post: Post) => {
+    e.preventDefault();
+    setContextMenuPost(post);
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+    setShowContextMenu(true);
+  };
+
+  // 关闭右键菜单
+  const closeContextMenu = () => {
+    setShowContextMenu(false);
+    setContextMenuPost(null);
+  };
+
+  // 处理单篇文章删除
+  const handleSingleDelete = () => {
+    if (contextMenuPost) {
+      setShowSingleDeleteDialog(true);
+      closeContextMenu();
+    }
+  };
+
+  // 确认单篇文章删除
+  const confirmSingleDelete = () => {
+    if (onDeletePost && contextMenuPost) {
+      onDeletePost(contextMenuPost);
+      setShowSingleDeleteDialog(false);
+    }
+  };
+
+  // 处理单篇文章添加标签
+  const handleSingleAddTags = () => {
+    if (contextMenuPost) {
+      setShowSingleTagsDialog(true);
+      closeContextMenu();
+    }
+  };
+
+  // 确认单篇文章添加标签
+  const confirmSingleAddTags = () => {
+    if (onAddTagsToPost && contextMenuPost && tagsInput.trim()) {
+      const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag);
+      if (tags.length > 0) {
+        onAddTagsToPost(contextMenuPost, tags);
+        setTagsInput('');
+        setShowSingleTagsDialog(false);
+      }
+    }
+  };
+
+  // 处理单篇文章添加分类
+  const handleSingleAddCategories = () => {
+    if (contextMenuPost) {
+      setShowSingleCategoriesDialog(true);
+      closeContextMenu();
+    }
+  };
+
+  // 确认单篇文章添加分类
+  const confirmSingleAddCategories = () => {
+    if (onAddCategoriesToPost && contextMenuPost && categoriesInput.trim()) {
+      const categories = categoriesInput.split(',').map(cat => cat.trim()).filter(cat => cat);
+      if (categories.length > 0) {
+        onAddCategoriesToPost(contextMenuPost, categories);
+        setCategoriesInput('');
+        setShowSingleCategoriesDialog(false);
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -114,77 +311,404 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false 
   const sortedPosts = sortPosts(posts);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between px-3 py-2 bg-muted rounded-lg">
-        <div className="text-xs text-muted-foreground">
-          共 {posts.length} 篇文章
+    <div className="space-y-4">
+      <div className="flex items-center justify-between px-4 py-3 bg-muted rounded-lg">
+        <div className="flex items-center space-x-2">
+          <Button
+            variant={selectionMode ? "default" : "outline"}
+            size="sm"
+            onClick={toggleSelectionMode}
+            className="h-8"
+          >
+            {selectionMode ? <CheckSquare className="w-4 h-4 mr-1" /> : <Square className="w-4 h-4 mr-1" />}
+            {selectionMode ? `已选 ${selectedPosts.length} 篇` : '选择'}
+          </Button>
+
+          {selectionMode && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleSelectAll}
+                className="h-8"
+              >
+                {selectedPosts.length === sortedPosts.length ? '取消全选' : '全选'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBatchDelete}
+                className="h-8 text-red-600 hover:text-red-700"
+                disabled={selectedPosts.length === 0}
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                删除
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBatchAddTags}
+                className="h-8"
+                disabled={selectedPosts.length === 0}
+              >
+                <Tag className="w-4 h-4 mr-1" />
+                添加标签
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBatchAddCategories}
+                className="h-8"
+                disabled={selectedPosts.length === 0}
+              >
+                <FolderOpen className="w-4 h-4 mr-1" />
+                添加分类
+              </Button>
+            </>
+          )}
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 text-xs">
-              {getSortIcon(sortField)}
-              <span className="ml-1">{getSortLabel()}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem
-              onClick={() => handleSortChange('name')}
-              className="flex items-center justify-between"
-            >
-              <span>按文件名</span>
-              {getSortIcon('name')}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleSortChange('modifiedTime')}
-              className="flex items-center justify-between"
-            >
-              <span>按修改时间</span>
-              {getSortIcon('modifiedTime')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center space-x-2">
+          <div className="text-sm text-muted-foreground">
+            共 {posts.length} 篇文章
+          </div>
+          
+          {/* 筛选器 */}
+          {(availableTags.length > 0 || availableCategories.length > 0) && (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 text-sm">
+                    <Filter className="w-4 h-4 mr-1" />
+                    {currentFilter ? (
+                      <span>
+                        按{currentFilter.type === 'tag' ? '标签' : '分类'}: {currentFilter.value}
+                      </span>
+                    ) : (
+                      <span>按标签/分类显示</span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {currentFilter && (
+                    <>
+                      <DropdownMenuItem onClick={onClearFilter}>
+                        <X className="w-4 h-4 mr-2" />
+                        清除筛选
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  
+                  {availableTags.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                        标签
+                      </div>
+                      {availableTags.map((tag) => (
+                        <DropdownMenuItem 
+                          key={`tag-${tag}`} 
+                          onClick={() => onFilterByTag && onFilterByTag(tag)}
+                        >
+                          <Tag className="w-4 h-4 mr-2" />
+                          {tag}
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  )}
+                  
+                  {availableCategories.length > 0 && availableTags.length > 0 && (
+                    <DropdownMenuSeparator />
+                  )}
+                  
+                  {availableCategories.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                        分类
+                      </div>
+                      {availableCategories.map((category) => (
+                        <DropdownMenuItem 
+                          key={`category-${category}`} 
+                          onClick={() => onFilterByCategory && onFilterByCategory(category)}
+                        >
+                          <FolderOpen className="w-4 h-4 mr-2" />
+                          {category}
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 text-sm">
+                {getSortIcon(sortField)}
+                <span className="ml-1">{getSortLabel()}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onClick={() => handleSortChange('name')}
+                className="flex items-center justify-between"
+              >
+                <span>按文件名</span>
+                {getSortIcon('name')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSortChange('modifiedTime')}
+                className="flex items-center justify-between"
+              >
+                <span>按修改时间</span>
+                {getSortIcon('modifiedTime')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      <div className="space-y-1 max-h-80 overflow-y-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sortedPosts.map((post) => (
           <div
             key={post.path}
-            className={`p-3 cursor-pointer border rounded-lg transition-colors hover:bg-muted/50 ${
-              selectedPost?.path === post.path
-                ? 'bg-primary/10 border-primary/20'
-                : 'border-border'
+            className={`p-4 cursor-pointer border rounded-lg transition-colors hover:bg-muted/50 ${
+              (selectedPost?.path === post.path || selectedPosts.some(p => p.path === post.path))
+                ? 'bg-primary/10 border-primary/20 shadow-sm'
+                : 'border-border hover:shadow-sm'
             }`}
-            onClick={() => onPostSelect(post)}
+            onClick={() => handlePostSelect(post)}
+            onContextMenu={(e) => handleContextMenu(e, post)}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-1">
-                  <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                  <h3 className="text-sm font-medium text-foreground truncate">
+                <div className="flex items-center space-x-2 mb-2">
+                  {selectionMode && (
+                    <div className="flex-shrink-0">
+                      {selectedPosts.some(p => p.path === post.path) ? (
+                        <CheckSquare className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Square className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
+                  )}
+                  <FileText className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  <h3 className="text-base font-medium text-foreground truncate">
                     {post.name.replace(/\.(md|markdown)$/, '')}
                   </h3>
                 </div>
 
-                <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center space-x-1">
-                    <Calendar className="w-3 h-3" />
+                    <Calendar className="w-4 h-4" />
                     <span>{formatDate(post.modifiedTime)}</span>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <File className="w-3 h-3" />
+                    <File className="w-4 h-4" />
                     <span>{formatFileSize(post.size)}</span>
                   </div>
                 </div>
               </div>
 
               {selectedPost?.path === post.path && (
-                <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />
+                <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0 mt-2" />
               )}
             </div>
           </div>
         ))}
       </div>
+
+      {/* 批量删除确认对话框 */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+            <DialogDescription>
+              您确定要删除选中的 {selectedPosts.length} 篇文章吗？此操作不可撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={confirmBatchDelete}>
+              确认删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 批量添加标签对话框 */}
+      <Dialog open={showTagsDialog} onOpenChange={setShowTagsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>添加标签</DialogTitle>
+            <DialogDescription>
+              为选中的 {selectedPosts.length} 篇文章添加标签（多个标签用逗号分隔）
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="tags">标签</Label>
+              <Input
+                id="tags"
+                placeholder="例如：技术,教程,前端"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTagsDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={confirmBatchAddTags}>
+              添加
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 批量添加分类对话框 */}
+      <Dialog open={showCategoriesDialog} onOpenChange={setShowCategoriesDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>添加分类</DialogTitle>
+            <DialogDescription>
+              为选中的 {selectedPosts.length} 篇文章添加分类（多个分类用逗号分隔）
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="categories">分类</Label>
+              <Input
+                id="categories"
+                placeholder="例如：技术,教程"
+                value={categoriesInput}
+                onChange={(e) => setCategoriesInput(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCategoriesDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={confirmBatchAddCategories}>
+              添加
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 右键菜单 */}
+      {showContextMenu && (
+        <DropdownMenu open={showContextMenu} onOpenChange={setShowContextMenu}>
+          <DropdownMenuContent
+            className="w-48"
+            style={{
+              position: 'absolute',
+              left: contextMenuPosition.x,
+              top: contextMenuPosition.y,
+            }}
+          >
+            <DropdownMenuItem onClick={handleSingleDelete}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              删除
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSingleAddTags}>
+              <Tag className="w-4 h-4 mr-2" />
+              添加标签
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSingleAddCategories}>
+              <FolderOpen className="w-4 h-4 mr-2" />
+              添加分类
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+
+      {/* 单篇文章删除确认对话框 */}
+      <Dialog open={showSingleDeleteDialog} onOpenChange={setShowSingleDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+            <DialogDescription>
+              您确定要删除文章 "{contextMenuPost?.name}" 吗？此操作不可撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSingleDeleteDialog(false)}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={confirmSingleDelete}>
+              确认删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 单篇文章添加标签对话框 */}
+      <Dialog open={showSingleTagsDialog} onOpenChange={setShowSingleTagsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>添加标签</DialogTitle>
+            <DialogDescription>
+              为文章 "{contextMenuPost?.name}" 添加标签（多个标签用逗号分隔）
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="single-tags">标签</Label>
+              <Input
+                id="single-tags"
+                placeholder="例如：技术,教程,前端"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSingleTagsDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={confirmSingleAddTags}>
+              添加
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 单篇文章添加分类对话框 */}
+      <Dialog open={showSingleCategoriesDialog} onOpenChange={setShowSingleCategoriesDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>添加分类</DialogTitle>
+            <DialogDescription>
+              为文章 "{contextMenuPost?.name}" 添加分类（多个分类用逗号分隔）
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="single-categories">分类</Label>
+              <Input
+                id="single-categories"
+                placeholder="例如：技术,教程"
+                value={categoriesInput}
+                onChange={(e) => setCategoriesInput(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSingleCategoriesDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={confirmSingleAddCategories}>
+              添加
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

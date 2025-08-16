@@ -34,6 +34,7 @@ import { MarkdownPreview } from '@/components/markdown-preview';
 import { PostList } from '@/components/post-list';
 import { HexoConfig } from '@/components/hexo-config';
 import { CreatePostDialog } from '@/components/create-post-dialog';
+import { TagCloud } from '@/components/tag-cloud';
 
 interface Post {
   name: string;
@@ -66,6 +67,11 @@ export default function Home() {
   const [serverProcess, setServerProcess] = useState<any>(null);
   const [language, setLanguage] = useState<Language>('zh');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [currentFilter, setCurrentFilter] = useState<{ type: 'tag' | 'category'; value: string } | null>(null);
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
+  const [allTagsForCloud, setAllTagsForCloud] = useState<string[]>([]);
 
   // 命令输出框的大小状态
   const [outputBoxHeight, setOutputBoxHeight] = useState<number>(128); // 默认高度 32 * 4 = 128px
@@ -112,6 +118,11 @@ export default function Home() {
 
     loadSavedSettings();
   }, [isElectron]);
+
+  // 监听筛选条件变化
+  useEffect(() => {
+    applyFilter();
+  }, [currentFilter, posts]);
 
   // 切换语言
   const toggleLanguage = () => {
@@ -198,6 +209,136 @@ export default function Home() {
     }
   };
 
+  // 提取文章中的标签和分类
+  const extractTagsAndCategories = async (posts: Post[]) => {
+    if (!isElectron) return;
+    
+    const tagsSet = new Set<string>();
+    const categoriesSet = new Set<string>();
+    const allTagsList: string[] = []; // 收集所有标签（包括重复的）用于标签云
+    
+    try {
+      const { ipcRenderer } = window.require('electron');
+      
+      for (const post of posts) {
+        try {
+          // 读取文件内容
+          const content = await ipcRenderer.invoke('read-file', post.path);
+          
+          // 解析front matter
+          const frontMatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+          if (frontMatterMatch) {
+            const frontMatter = frontMatterMatch[1];
+            
+            // 提取标签
+            const tagsMatch = frontMatter.match(/^tags:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
+            if (tagsMatch) {
+              const tags = tagsMatch[1].split('\n')
+                .map(line => line.trim().replace(/^\-\s*/, ''))
+                .filter(tag => tag);
+              tags.forEach(tag => {
+                tagsSet.add(tag);
+                allTagsList.push(tag); // 添加到所有标签列表
+              });
+            }
+            
+            // 提取分类
+            const categoriesMatch = frontMatter.match(/^categories:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
+            if (categoriesMatch) {
+              const categories = categoriesMatch[1].split('\n')
+                .map(line => line.trim().replace(/^\-\s*/, ''))
+                .filter(cat => cat);
+              categories.forEach(category => categoriesSet.add(category));
+            }
+          }
+        } catch (error) {
+          console.error(`读取文章 ${post.name} 失败:`, error);
+        }
+      }
+      
+      setAvailableTags(Array.from(tagsSet));
+      setAvailableCategories(Array.from(categoriesSet));
+      setAllTagsForCloud(allTagsList); // 设置所有标签列表
+    } catch (error) {
+      console.error('提取标签和分类失败:', error);
+    }
+  };
+
+  // 应用筛选
+  const applyFilter = async () => {
+    if (!currentFilter) {
+      setFilteredPosts(posts);
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const filtered: Post[] = [];
+      
+      for (const post of posts) {
+        try {
+          // 读取文件内容
+          const content = await ipcRenderer.invoke('read-file', post.path);
+          
+          // 解析front matter
+          const frontMatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+          if (frontMatterMatch) {
+            const frontMatter = frontMatterMatch[1];
+            
+            if (currentFilter.type === 'tag') {
+              // 检查标签
+              const tagsMatch = frontMatter.match(/^tags:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
+              if (tagsMatch) {
+                const tags = tagsMatch[1].split('\n')
+                  .map(line => line.trim().replace(/^\-\s*/, ''))
+                  .filter(tag => tag);
+                if (tags.includes(currentFilter.value)) {
+                  filtered.push(post);
+                }
+              }
+            } else if (currentFilter.type === 'category') {
+              // 检查分类
+              const categoriesMatch = frontMatter.match(/^categories:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
+              if (categoriesMatch) {
+                const categories = categoriesMatch[1].split('\n')
+                  .map(line => line.trim().replace(/^\-\s*/, ''))
+                  .filter(cat => cat);
+                if (categories.includes(currentFilter.value)) {
+                  filtered.push(post);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`读取文章 ${post.name} 失败:`, error);
+        }
+      }
+      
+      setFilteredPosts(filtered);
+    } catch (error) {
+      console.error('应用筛选失败:', error);
+      setFilteredPosts(posts);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 按标签筛选
+  const filterByTag = (tag: string) => {
+    setCurrentFilter({ type: 'tag', value: tag });
+  };
+
+  // 按分类筛选
+  const filterByCategory = (category: string) => {
+    setCurrentFilter({ type: 'category', value: category });
+  };
+
+  // 清除筛选
+  const clearFilter = () => {
+    setCurrentFilter(null);
+  };
+
   // 加载文章列表
   const loadPosts = async (path: string) => {
     if (!isElectron) return;
@@ -212,6 +353,10 @@ export default function Home() {
       );
 
       setPosts(markdownFiles);
+      setFilteredPosts(markdownFiles);
+      
+      // 提取标签和分类
+      await extractTagsAndCategories(markdownFiles);
     } catch (error) {
       console.error('加载文章失败:', error);
       setValidationMessage('加载文章失败: ' + error.message);
@@ -294,7 +439,7 @@ export default function Home() {
         // 添加标签
         if (postData.tags.length > 0) {
           const tagsString = postData.tags.map(tag => `  - ${tag}`).join('\n');
-          frontMatter += `\ntags:\n${tagsString}`;
+          frontMatter += `\\ntags:\\n${tagsString}`;
         }
 
         // 添加分类
@@ -389,6 +534,356 @@ export default function Home() {
       setCommandResult({
         success: false,
         error: '删除文章失败: ' + error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 批量删除文章
+  const deletePosts = async (postsToDelete: Post[]) => {
+    if (!isElectron || postsToDelete.length === 0) return;
+
+    if (!confirm(`确定要删除选中的 ${postsToDelete.length} 篇文章吗？此操作不可撤销。`)) return;
+
+    setIsLoading(true);
+    try {
+      const { ipcRenderer } = window.require('electron');
+
+      // 逐个删除文章
+      for (const post of postsToDelete) {
+        await ipcRenderer.invoke('delete-file', post.path);
+      }
+
+      setCommandResult({
+        success: true,
+        stdout: `成功删除 ${postsToDelete.length} 篇文章`
+      });
+
+      // 如果当前选中的文章在被删除的文章中，清空选择
+      if (selectedPost && postsToDelete.some(p => p.path === selectedPost.path)) {
+        setSelectedPost(null);
+        setPostContent('');
+      }
+
+      await loadPosts(hexoPath);
+    } catch (error) {
+      console.error('批量删除文章失败:', error);
+      setCommandResult({
+        success: false,
+        error: '批量删除文章失败: ' + error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 批量添加标签到文章
+  const addTagsToPosts = async (postsToUpdate: Post[], tags: string[]) => {
+    if (!isElectron || postsToUpdate.length === 0 || tags.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      const { ipcRenderer } = window.require('electron');
+      let successCount = 0;
+
+      // 逐个更新文章
+      for (const post of postsToUpdate) {
+        try {
+          // 读取现有文件内容
+          let content = await ipcRenderer.invoke('read-file', post.path);
+
+          // 解析front matter
+          const frontMatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+          if (frontMatterMatch) {
+            let frontMatter = frontMatterMatch[1];
+
+            // 检查是否已有tags字段
+            const tagsMatch = frontMatter.match(/^tags:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
+
+            if (tagsMatch) {
+              // 已有tags字段，添加新标签
+              const existingTags = tagsMatch[1].split('\n')
+                .map(line => line.trim().replace(/^-\s*/, ''))
+                .filter(tag => tag);
+
+              // 合并标签，去重
+              const allTags = [...new Set([...existingTags, ...tags])];
+              const tagsString = allTags.map(tag => `  - ${tag}`).join('\n');
+
+              // 替换原有tags字段
+              frontMatter = frontMatter.replace(/^tags:\s*([\s\S]*?)(?=\n\w|\n*$)/m, `tags:\n${tagsString}`);
+            } else {
+              // 没有tags字段，添加新字段
+              const tagsString = tags.map(tag => `  - ${tag}`).join('\n');
+              frontMatter += `\\ntags:\\n${tagsString}`;
+            }
+
+            // 重新构建文件内容
+const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n---`);
+            // 写回文件
+            await ipcRenderer.invoke('write-file', post.path, newContent);
+            successCount++;
+          }
+        } catch (error) {
+          console.error(`更新文章 ${post.name} 失败:`, error);
+        }
+      }
+
+      setCommandResult({
+        success: true,
+        stdout: `成功为 ${successCount}/${postsToUpdate.length} 篇文章添加标签`
+      });
+
+      // 如果当前选中的文章在被更新的文章中，重新加载内容
+      if (selectedPost && postsToUpdate.some(p => p.path === selectedPost.path)) {
+        const content = await ipcRenderer.invoke('read-file', selectedPost.path);
+        setPostContent(content);
+      }
+    } catch (error) {
+      console.error('批量添加标签失败:', error);
+      setCommandResult({
+        success: false,
+        error: '批量添加标签失败: ' + error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 批量添加分类到文章
+  const addCategoriesToPosts = async (postsToUpdate: Post[], categories: string[]) => {
+    if (!isElectron || postsToUpdate.length === 0 || categories.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      const { ipcRenderer } = window.require('electron');
+      let successCount = 0;
+
+      // 逐个更新文章
+      for (const post of postsToUpdate) {
+        try {
+          // 读取现有文件内容
+          let content = await ipcRenderer.invoke('read-file', post.path);
+
+          // 解析front matter
+          const frontMatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+          if (frontMatterMatch) {
+            let frontMatter = frontMatterMatch[1];
+
+            // 检查是否已有categories字段
+            const categoriesMatch = frontMatter.match(/^categories:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
+
+            if (categoriesMatch) {
+              // 已有categories字段，添加新分类
+              const existingCategories = categoriesMatch[1].split('\n')
+                .map(line => line.trim().replace(/^-\s*/, ''))
+                .filter(cat => cat);
+
+              // 合并分类，去重
+              const allCategories = [...new Set([...existingCategories, ...categories])];
+              const categoriesString = allCategories.map(cat => `  - ${cat}`).join('\n');
+
+              // 替换原有categories字段
+              frontMatter = frontMatter.replace(/^categories:\s*([\s\S]*?)(?=\n\w|\n*$)/m, `categories:\n${categoriesString}`);
+            } else {
+              // 没有categories字段，添加新字段
+              const categoriesString = categories.map(cat => `  - ${cat}`).join('\n');
+              frontMatter += `\ncategories:\n${categoriesString}`;
+            }
+
+            // 重新构建文件内容
+const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n---`);
+
+
+            // 写回文件
+            await ipcRenderer.invoke('write-file', post.path, newContent);
+            successCount++;
+          }
+        } catch (error) {
+          console.error(`更新文章 ${post.name} 失败:`, error);
+        }
+      }
+
+      setCommandResult({
+        success: true,
+        stdout: `成功为 ${successCount}/${postsToUpdate.length} 篇文章添加分类`
+      });
+
+      // 如果当前选中的文章在被更新的文章中，重新加载内容
+      if (selectedPost && postsToUpdate.some(p => p.path === selectedPost.path)) {
+        const content = await ipcRenderer.invoke('read-file', selectedPost.path);
+        setPostContent(content);
+      }
+    } catch (error) {
+      console.error('批量添加分类失败:', error);
+      setCommandResult({
+        success: false,
+        error: '批量添加分类失败: ' + error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 删除单篇文章
+  const deleteSinglePost = async (postToDelete: Post) => {
+    if (!isElectron || !postToDelete) return;
+
+    if (!confirm(`确定要删除文章 "${postToDelete.name}" 吗？此操作不可撤销。`)) return;
+
+    setIsLoading(true);
+    try {
+      const { ipcRenderer } = window.require('electron');
+      await ipcRenderer.invoke('delete-file', postToDelete.path);
+
+      setCommandResult({
+        success: true,
+        stdout: '文章删除成功'
+      });
+
+      // 如果删除的是当前选中的文章，清空选择
+      if (selectedPost && selectedPost.path === postToDelete.path) {
+        setSelectedPost(null);
+        setPostContent('');
+      }
+      
+      await loadPosts(hexoPath);
+    } catch (error) {
+      console.error('删除文章失败:', error);
+      setCommandResult({
+        success: false,
+        error: '删除文章失败: ' + error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 为单篇文章添加标签
+  const addTagsToPost = async (postToUpdate: Post, tags: string[]) => {
+    if (!isElectron || !postToUpdate || tags.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      const { ipcRenderer } = window.require('electron');
+      
+      // 读取现有文件内容
+      let content = await ipcRenderer.invoke('read-file', postToUpdate.path);
+
+      // 解析front matter
+      const frontMatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+      if (frontMatterMatch) {
+        let frontMatter = frontMatterMatch[1];
+
+        // 检查是否已有tags字段
+        const tagsMatch = frontMatter.match(/^tags:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
+        
+        if (tagsMatch) {
+          // 已有tags字段，添加新标签
+          const existingTags = tagsMatch[1].split('\n')
+            .map(line => line.trim().replace(/^\-\s*/, ''))
+            .filter(tag => tag);
+          
+          // 合并标签，去重
+          const allTags = [...new Set([...existingTags, ...tags])];
+          const tagsString = allTags.map(tag => `  - ${tag}`).join('\n');
+          
+          // 替换原有tags字段
+          frontMatter = frontMatter.replace(/^tags:\s*([\s\S]*?)(?=\n\w|\n*$)/m, `tags:\n${tagsString}`);
+        } else {
+          // 没有tags字段，添加新字段
+          const tagsString = tags.map(tag => `  - ${tag}`).join('\n');
+          frontMatter += `\ntags:\n${tagsString}`;
+        }
+
+        // 重新构建文件内容
+        const newContent = content.replace(/^---\n([\s\S]*?)\n---/, `---\n${frontMatter}\n---`);
+
+        // 写回文件
+        await ipcRenderer.invoke('write-file', postToUpdate.path, newContent);
+
+        setCommandResult({
+          success: true,
+          stdout: '标签添加成功'
+        });
+
+        // 如果更新的是当前选中的文章，重新加载内容
+        if (selectedPost && selectedPost.path === postToUpdate.path) {
+          const content = await ipcRenderer.invoke('read-file', selectedPost.path);
+          setPostContent(content);
+        }
+      }
+    } catch (error) {
+      console.error('添加标签失败:', error);
+      setCommandResult({
+        success: false,
+        error: '添加标签失败: ' + error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 为单篇文章添加分类
+  const addCategoriesToPost = async (postToUpdate: Post, categories: string[]) => {
+    if (!isElectron || !postToUpdate || categories.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      const { ipcRenderer } = window.require('electron');
+      
+      // 读取现有文件内容
+      let content = await ipcRenderer.invoke('read-file', postToUpdate.path);
+
+      // 解析front matter
+      const frontMatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+      if (frontMatterMatch) {
+        let frontMatter = frontMatterMatch[1];
+
+        // 检查是否已有categories字段
+        const categoriesMatch = frontMatter.match(/^categories:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
+        
+        if (categoriesMatch) {
+          // 已有categories字段，添加新分类
+          const existingCategories = categoriesMatch[1].split('\n')
+            .map(line => line.trim().replace(/^\-\s*/, ''))
+            .filter(cat => cat);
+          
+          // 合并分类，去重
+          const allCategories = [...new Set([...existingCategories, ...categories])];
+          const categoriesString = allCategories.map(cat => `  - ${cat}`).join('\n');
+          
+          // 替换原有categories字段
+          frontMatter = frontMatter.replace(/^categories:\s*([\s\S]*?)(?=\n\w|\n*$)/m, `categories:\n${categoriesString}`);
+        } else {
+          // 没有categories字段，添加新字段
+          const categoriesString = categories.map(cat => `  - ${cat}`).join('\n');
+          frontMatter += `\ncategories:\n${categoriesString}`;
+        }
+
+        // 重新构建文件内容
+        const newContent = content.replace(/^---\n([\s\S]*?)\n---/, `---\n${frontMatter}\n---`);
+
+        // 写回文件
+        await ipcRenderer.invoke('write-file', postToUpdate.path, newContent);
+
+        setCommandResult({
+          success: true,
+          stdout: '分类添加成功'
+        });
+
+        // 如果更新的是当前选中的文章，重新加载内容
+        if (selectedPost && selectedPost.path === postToUpdate.path) {
+          const content = await ipcRenderer.invoke('read-file', selectedPost.path);
+          setPostContent(content);
+        }
+      }
+    } catch (error) {
+      console.error('添加分类失败:', error);
+      setCommandResult({
+        success: false,
+        error: '添加分类失败: ' + error.message
       });
     } finally {
       setIsLoading(false);
@@ -699,36 +1194,68 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          {/* 文章列表 */}
-          <Card className="m-4 flex-1 flex flex-col">
+          {/* 文章列表按钮 */}
+          <Card className="m-4">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center">
-                  <FileText className="w-4 h-4 mr-2" />
-                  {t.articleList}
-                </CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    createNewPost();
-                  }}
-                  disabled={!isValidHexoProject || isLoading}
-                  title={t.createNewArticle}
-                >
-                  <Plus className="w-3 h-3" />
-                </Button>
-              </div>
+              <CardTitle className="text-sm flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                {t.articleList}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 p-0">
-              <PostList
-                posts={posts}
-                selectedPost={selectedPost}
-                onPostSelect={selectPost}
-                isLoading={isLoading}
-              />
+            <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => {
+                  setSelectedPost(null);
+                  setMainView('posts');
+                }}
+                disabled={!isValidHexoProject || isLoading}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                {t.viewArticleList}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  createNewPost();
+                }}
+                disabled={!isValidHexoProject || isLoading}
+                title={t.createNewArticle}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {t.createNewArticle}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* 文章统计 */}
+          <Card className="m-4">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <FileText className="w-4 h-4 mr-2" />
+                {t.articleStatistics}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => {
+                  setSelectedPost(null);
+                  setMainView('statistics');
+                }}
+                disabled={!isValidHexoProject || isLoading}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                {t.viewTagCloud}
+              </Button>
             </CardContent>
           </Card>
 
@@ -746,7 +1273,11 @@ export default function Home() {
 
         {/* 主内容区域 */}
         <main className="flex-1 flex flex-col">
-          {mainView === 'posts' ? (
+          {mainView === 'statistics' ? (
+            <div className="flex-1 p-6 overflow-auto">
+              <TagCloud tags={allTagsForCloud} language={language} />
+            </div>
+          ) : mainView === 'posts' ? (
             selectedPost ? (
               <div className="flex-1 flex flex-col">
                 {/* 文章操作栏 */}
@@ -759,6 +1290,17 @@ export default function Home() {
                   </div>
 
                   <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedPost(null);
+                      }}
+                      disabled={isLoading}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      返回列表
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -816,18 +1358,61 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <FileText className="w-16 h-16 mx-auto text-gray-400" />
-                  <h3 className="text-lg font-medium text-gray-900">
-                    {isValidHexoProject ? t.selectArticleToEdit : t.selectProjectFirst}
-                  </h3>
-                  <p className="text-gray-500">
-                    {isValidHexoProject
-                      ? t.selectFromListOrCreate
-                      : t.clickSelectButton
-                    }
-                  </p>
+              <div className="flex-1 flex flex-col">
+                {/* 文章列表头部 */}
+                <div className="border-b p-4 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">{t.articleList}</h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      createNewPost();
+                    }}
+                    disabled={!isValidHexoProject || isLoading}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t.createNewArticle}
+                  </Button>
+                </div>
+
+                {/* 文章列表内容 */}
+                <div className="flex-1 p-6 overflow-auto">
+                  {isValidHexoProject ? (
+                    <PostList
+                      posts={filteredPosts}
+                      selectedPost={selectedPost}
+                      onPostSelect={(post) => {
+                        selectPost(post);
+                      }}
+                      isLoading={isLoading}
+                      onDeletePosts={deletePosts}
+                      onAddTagsToPosts={addTagsToPosts}
+                      onAddCategoriesToPosts={addCategoriesToPosts}
+                      onDeletePost={deleteSinglePost}
+                      onAddTagsToPost={addTagsToPost}
+                      onAddCategoriesToPost={addCategoriesToPost}
+                      availableTags={availableTags}
+                      availableCategories={availableCategories}
+                      onFilterByTag={filterByTag}
+                      onFilterByCategory={filterByCategory}
+                      onClearFilter={clearFilter}
+                      currentFilter={currentFilter}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center space-y-4">
+                        <FileText className="w-16 h-16 mx-auto text-gray-400" />
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {t.selectProjectFirst}
+                        </h3>
+                        <p className="text-gray-500">
+                          {t.clickSelectButton}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )

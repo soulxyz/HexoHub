@@ -21,9 +21,15 @@ export interface I18nTexts {
   // 文章管理
   articles: string;
   articleList: string;
+  viewArticleList: string;
   createNewArticle: string;
   articleEditor: string;
   preview: string;
+
+  // 文章统计
+  articleStatistics: string;
+  tagCloud: string;
+  viewTagCloud: string;
 
   // 编辑器
   markdownEditor: string;
@@ -107,9 +113,15 @@ export const i18nTexts: Record<Language, I18nTexts> = {
     // 文章管理
     articles: '文章',
     articleList: '文章列表',
+    viewArticleList: '文章列表',
     createNewArticle: '创建新文章',
     articleEditor: '文章编辑器',
     preview: '预览',
+
+    // 文章统计
+    articleStatistics: '文章统计',
+    tagCloud: '标签云图',
+    viewTagCloud: '标签云图',
 
     // 编辑器
     markdownEditor: 'Markdown 编辑器',
@@ -227,9 +239,15 @@ console.log('Hello, Hexo!');
     // 文章管理
     articles: 'Articles',
     articleList: 'Articles',
+    viewArticleList: 'Article List',
     createNewArticle: 'Create New Article',
     articleEditor: 'Article Editor',
     preview: 'Preview',
+
+    // 文章统计
+    articleStatistics: 'Article Statistics',
+    tagCloud: 'Tag Cloud',
+    viewTagCloud: 'Tag Cloud',
 
     // 编辑器
     markdownEditor: 'Markdown Editor',
