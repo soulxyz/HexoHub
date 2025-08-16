@@ -16,8 +16,9 @@
     "db:reset": "prisma migrate reset",
     "electron": "npm run build && electron .",
     "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron-build": "next build && electron-builder",
-    "dist": "npm run build && electron-builder --publish=never"
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -65,7 +66,7 @@
     "framer-motion": "^12.23.2",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.525.0",
-    "next": "15.3.5",
+    "next": "^15.3.5",
     "next-auth": "^4.24.11",
     "next-intl": "^4.3.4",
     "next-themes": "^0.4.6",
@@ -102,8 +103,13 @@
     "concurrently": "^9.2.0",
     "cross-env": "^10.0.0",
     "electron": "^37.2.6",
-    "electron-builder": "^26.0.12",
     "eslint": "^9",
+    "@electron-forge/cli": "^7.5.0",
+    "@electron-forge/maker-deb": "^7.5.0",
+    "@electron-forge/maker-rpm": "^7.5.0",
+    "@electron-forge/maker-squirrel": "^7.5.0",
+    "@electron-forge/maker-zip": "^7.5.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.5.0",
     "eslint-config-next": "15.3.5",
     "nodemon": "^3.1.10",
     "tailwindcss": "^4",
@@ -111,74 +117,65 @@
     "typescript": "^5",
     "wait-on": "^8.0.4"
   },
-  "build": {
-    "appId": "com.hexo.desktop",
-    "productName": "Hexo Desktop",
-    "directories": {
-      "output": "dist"
-    },
-    "electronDownload": {
-      "mirror": "https://npmmirror.com/mirrors/electron/"
-    },
-    "npmRebuild": false,
-    "buildDependenciesFromSource": false,
-
-    "compression": "maximum",
-    "files": [
-      "public/**/*",
-      ".next/**/*",
-      "node_modules/**/*",
-      "!node_modules/**/*.md",
-      "!node_modules/**/*.txt",
-      "!node_modules/**/README*",
-      "!node_modules/**/CHANGELOG*",
-      "!node_modules/**/LICENSE*",
-      "!node_modules/**/*.d.ts",
-      "!node_modules/**/.bin",
-      "!node_modules/**/test/**/*",
-      "!node_modules/**/tests/**/*",
-      "!node_modules/**/__tests__/**/*",
-      "!node_modules/**/spec/**/*",
-      "!node_modules/**/*.spec.*",
-      "!node_modules/**/*.test.*"
-    ],
-    "extraResources": [
-      {
-        "from": "public",
-        "to": "public",
-        "filter": ["**/*"]
-      }
-    ],
-    "win": {
-      "target": [
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "name": "Hexo Desktop",
+        "executableName": "hexo-desktop",
+        "icon": "public/icon",
+        "appBundleId": "com.hexo.desktop",
+        "appCategoryType": "public.app-category.productivity",
+        "asar": true,
+        "win32metadata": {
+          "CompanyName": "Hexo",
+          "FileDescription": "Hexo Desktop",
+          "OriginalFilename": "HexoDesktop.exe",
+          "ProductName": "Hexo Desktop",
+          "InternalName": "HexoDesktop"
+        }
+      },
+      "makers": [
         {
-          "target": "nsis",
-          "arch": ["x64"]
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "hexo_desktop",
+            "setupExe": "HexoDesktopSetup.exe",
+            "setupIcon": "public/icon.ico",
+            "iconUrl": "https://raw.githubusercontent.com/yourusername/HexoHub/main/public/icon.ico"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {
+            "options": {
+              "icon": "public/icon.png"
+            }
+          }
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {
+            "options": {
+              "icon": "public/icon.png"
+            }
+          }
         }
       ],
-      "icon": "public/icon.svg",
-      "verifyUpdateCodeSignature": false,
-      "signAndEditExecutable": false,
-      "artifactName": "${productName}-Setup-${version}.${ext}"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Hexo Desktop",
-      "include": "public/installer.nsh",
-      "installerIcon": "public/icon.svg",
-      "uninstallerIcon": "public/icon.svg",
-      "packElevateHelper": false
-    },
-    "mac": {
-      "target": "dmg",
-      "icon": "public/icon.icns"
-    },
-    "linux": {
-      "target": "AppImage",
-      "icon": "public/icon.png"
+      "plugins": [
+        [
+          "@electron-forge/plugin-auto-unpack-natives",
+          {
+            "electronRebuildConfig": {},
+            "forceExit": true
+          }
+        ]
+      ]
     }
   }
 }
