@@ -44,7 +44,7 @@
   - `hexo clean` - 清理缓存文件
   - `hexo generate` - 生成静态文件
   - `hexo deploy` - 部署到远程服务器
-  - `hexo se` - 启动本地预览
+  - `hexo se` - 启动本地预览   
 **实时反馈**：显示命令执行结果和错误信息
 
 ## 🔧 配置管理
@@ -53,16 +53,30 @@
 **YAML 编辑**：支持直接编辑原始配置文件  
 **导入/导出**：配置文件的备份和恢复，更加方便您主题的迁移
 
-# 🚀 快速开始
+# 🚀 快速开始  
+## 使用
 
-- **操作系统**: Windows 10 或更高版本  
-- **Node.js**: 需要预装 Node.js 和 Hexo CLI  
-- **内存**: 建议 4GB 以上  
-- **存储**: 建议 100MB 可用空间  
+如果您只需“使用”本应用程序：   
+- **操作系统**: Windows 10 或更高版本    
+- **存储**: 建议 400MB 可用空间  
+- **Hexo**：https://hexo.io/
+- **Npm**：`npm>10`    👉https://www.npmjs.com/
+- **Node.js**：`nodejs>20`    👉https://nodejs.org/zh-cn/   
+随后到[Releases](https://github.com/forever218/HexoHub/releases/)下载最新版本。  
+  
+## 开发   
+
+如果您需要“开发”本应用程序，以下是额外的需求：   
+- **Git**：https://git-scm.com/   
+- **nodejs**：`TypeScript>4.5`，`React>19`，`Next.js>15`   
+
+
 ⚠️ 出于速度考虑，我在开发过程中使用的是`cnpm`，并且修改了部分`package.json`内容，请您在使用时酌情考虑，如果要使用`cnpm`，请执行：  
+
 ```bash
 npm install -g cnpm --registry=http://registry.npm.taobao.org
 ```
+
 随后即可用`cnpm`代替`npm`
 
 1. **克隆本仓库**
@@ -82,53 +96,25 @@ npm install -g cnpm --registry=http://registry.npm.taobao.org
 
 4. **打包应用**（非必须）
    ```bash
-   npm run dist
+   npm run make
    ```
-⚠️由于个人技术有限，我在打包应用时遇到问题，暂时还未解决，所以也就还未发布release，请使用命令`npm run electron`来启动程序
+
+> **注意**：本应用程序通过`electron-builder`封装，而不是`electron-forge`，在您修改相关配置文件时，请注意使用`electron-builder`的配置文件格式。[electron-builder](https://www.electron.build/)github.com/forever218/HexoHub/releases/)
+
 
 # 🛠️ 技术栈
 
 - **Next.js 15** - React 全栈框架
-- **React 19** - 用户界面库
+- **React** - 用户界面库
 - **TypeScript** - 类型安全的 JavaScript  
-- **Tailwind CSS** - 原子化 CSS 框架  
-- **shadcn/ui** - 高质量 React 组件库  
+- **Tailwind CSS** - CSS 框架  
 - **Electron** - 跨平台桌面应用框架
 - **electron-builder** - 应用打包工具
 - **NSIS** - Windows 安装程序制作工具
-- **react-markdown** - Markdown 渲染
-- **react-syntax-highlighter** - 代码语法高亮
 - **remark-gfm** - GitHub 风格 Markdown 扩展
-- **date-fns** - 日期处理库
 
-# 📁 项目结构
 
-```
-src/
-├── app/
-│   ├── page.tsx                 # 主页面
-│   ├── layout.tsx              # 应用布局
-│   └── globals.css             # 全局样式
-├── components/
-│   ├── ui/                     # shadcn/ui 组件
-│   ├── markdown-editor.tsx     # Markdown 编辑器
-│   ├── markdown-preview.tsx    # Markdown 预览
-│   ├── post-list.tsx           # 文章列表
-│   └── hexo-config.tsx         # Hexo 配置管理
-├── lib/
-│   ├── windows-compat.ts       # Windows 兼容性工具
-│   ├── utils.ts                # 工具函数
-│   └── db.ts                  # 数据库连接
-└── hooks/
-    ├── use-toast.ts           # Toast 通知钩子
-    └── use-mobile.ts          # 移动端检测钩子
 
-public/
-├── electron.js                # Electron 主进程
-├── icon.svg                   # 应用图标
-├── installer.nsh              # NSIS 安装脚本
-└── logo.svg                   # 应用 Logo
-```
 
 
 # 🤝 贡献指南

@@ -1,8 +1,8 @@
 {
   "name": "nextjs_tailwind_shadcn_ts",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "HexoHub Desktop Application",
-  "author": "HexoHub Team",
+  "author": "Lisiran",
   "private": true,
   "main": "public/electron.js",
   "homepage": "./",
