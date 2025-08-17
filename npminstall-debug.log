@@ -1,11 +1,11 @@
 {
-  root: 'E:\\blogtest\\13\\HexoHub',
+  root: 'E:\\blogtest\\14\\HexoHub',
   registry: 'https://registry.npmmirror.com',
   pkgs: [
     {
-      name: '@next/swc',
-      version: '15.4.6',
-      type: 'version',
+      name: 'electron-prebuilt-compile',
+      version: 'latest',
+      type: 'tag',
       alias: undefined,
       arg: [Result]
     }
@@ -15,7 +15,7 @@
   cacheDir: 'C:\\Users\\33167\\.npminstall_tarball',
   env: {
     npm_config_registry: 'https://registry.npmmirror.com',
-    npm_config_argv: '{"remain":[],"cooked":["--fix-bug-versions","--china","--userconfig=C:\\\\Users\\\\33167\\\\.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npmmirror.com","@next/swc@15.4.6"],"original":["--fix-bug-versions","--china","--userconfig=C:\\\\Users\\\\33167\\\\.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npmmirror.com","@next/swc@15.4.6"]}',
+    npm_config_argv: '{"remain":[],"cooked":["--fix-bug-versions","--china","--userconfig=C:\\\\Users\\\\33167\\\\.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npmmirror.com","electron-prebuilt-compile","--save-dev"],"original":["--fix-bug-versions","--china","--userconfig=C:\\\\Users\\\\33167\\\\.cnpmrc","--disturl=https://cdn.npmmirror.com/binaries/node","--registry=https://registry.npmmirror.com","electron-prebuilt-compile","--save-dev"]}',
     npm_config_user_agent: 'npminstall/7.9.0 npm/? node/v20.17.0 win32 x64',
     npm_config_cache: 'C:\\Users\\33167\\.npminstall_tarball',
     NODE: 'C:\\Program Files\\nodejs\\node.exe',
@@ -53,8 +53,8 @@
     npm_config_sharp_libvips_binary_host: 'https://cdn.npmmirror.com/binaries/sharp-libvips',
     npm_config_robotjs_binary_host: 'https://cdn.npmmirror.com/binaries/robotjs',
     npm_config_gl_binary_host: 'https://cdn.npmmirror.com/binaries/gl',
-    npm_rootpath: 'E:\\blogtest\\13\\HexoHub',
-    INIT_CWD: 'E:\\blogtest\\13\\HexoHub'
+    npm_rootpath: 'E:\\blogtest\\14\\HexoHub',
+    INIT_CWD: 'E:\\blogtest\\14\\HexoHub'
   },
   binaryMirrors: {
     ENVS: {
@@ -196,7 +196,7 @@
   disableFallbackStore: false,
   workspacesMap: Map(0) {},
   enableWorkspace: false,
-  workspaceRoot: 'E:\\blogtest\\13\\HexoHub',
+  workspaceRoot: 'E:\\blogtest\\14\\HexoHub',
   isWorkspaceRoot: true,
   isWorkspacePackage: false,
   offline: false,

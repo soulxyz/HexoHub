@@ -1,13 +1,14 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
-const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const { FuseVersion, FuseV1Options } = require('@electron/fuses');
+const path = require('path');
 
-module.exports = {
+const config = {
   packagerConfig: {
+    asar: true,
     name: 'HexoHub',
-    icon: 'public/icon',
+    icon: path.join(__dirname, 'public', 'icon.ico'),
     appBundleId: 'com.hexo.desktop',
     appCategoryType: 'public.app-category.productivity',
-    asar: true,
     win32metadata: {
       CompanyName: 'HexoHub',
       OriginalFilename: 'HexoHub.exe'
@@ -25,7 +26,7 @@ module.exports = {
         authors: 'HexoHub Team',
         description: 'HexoHub Desktop Application',
         exe: 'HexoHub.exe',
-        setupIcon: 'public/icon.ico'
+        setupIcon: path.join(__dirname, 'public', 'icon.ico')
       }
     },
     {
@@ -36,7 +37,7 @@ module.exports = {
       name: '@electron-forge/maker-deb',
       config: {
         options: {
-          icon: 'public/icon.png'
+          icon: path.join(__dirname, 'public', 'icon.png')
         }
       }
     },
@@ -44,14 +45,12 @@ module.exports = {
       name: '@electron-forge/maker-rpm',
       config: {
         options: {
-          icon: 'public/icon.png'
+          icon: path.join(__dirname, 'public', 'icon.png')
         }
       }
     }
   ],
   plugins: [
-    // Fuses are used to enable/disable various Electron functionality
-    // at package time, before code signing the application
     new FusesPlugin({
       version: FuseVersion.V1,
       [FuseV1Options.RunAsNode]: false,
@@ -61,5 +60,19 @@ module.exports = {
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     })
+  ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'your-github-username',
+          name: 'your-repository-name'
+        },
+        prerelease: true
+      }
+    }
   ]
 };
+
+module.exports = config;
