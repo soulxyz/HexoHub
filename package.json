@@ -120,28 +120,29 @@
   "config": {
     "forge": {
       "packagerConfig": {
-        "name": "Hexo Desktop",
-        "executableName": "hexo-desktop",
+        "name": "Hexo Hub",
+        "executableName": "hexo-hub",
         "icon": "public/icon",
-        "appBundleId": "com.hexo.desktop",
+        "appBundleId": "com.hexo.hub",
         "appCategoryType": "public.app-category.productivity",
         "asar": true,
         "win32metadata": {
           "CompanyName": "Hexo",
-          "FileDescription": "Hexo Desktop",
-          "OriginalFilename": "HexoDesktop.exe",
-          "ProductName": "Hexo Desktop",
-          "InternalName": "HexoDesktop"
+          "FileDescription": "Hexo Hub",
+          "OriginalFilename": "HexoHub.exe",
+          "ProductName": "Hexo Hub",
+          "InternalName": "HexoHub"
         }
       },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "hexo_desktop",
-            "setupExe": "HexoDesktopSetup.exe",
+            "name": "hexo_hub",
+            "setupExe": "HexoHubSetup.exe",
             "setupIcon": "public/icon.ico",
-            "iconUrl": "https://raw.githubusercontent.com/yourusername/HexoHub/main/public/icon.ico"
+            "authors": "Lisiran",
+            "description": "HexoHub Desktop Application"
           }
         },
         {
@@ -167,15 +168,7 @@
           }
         }
       ],
-      "plugins": [
-        [
-          "@electron-forge/plugin-auto-unpack-natives",
-          {
-            "electronRebuildConfig": {},
-            "forceExit": true
-          }
-        ]
-      ]
+      "plugins": []
     }
   }
 }
