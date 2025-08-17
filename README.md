@@ -99,7 +99,7 @@ npm install -g cnpm --registry=http://registry.npm.taobao.org
    npm run make
    ```
 
-> **注意**：本应用程序通过`electron-builder`封装，而不是`electron-forge`，在您修改相关配置文件时，请注意使用`electron-builder`的配置文件格式。[electron-builder](https://www.electron.build/)github.com/forever218/HexoHub/releases/)
+> **注意**：本应用程序通过`electron-builder`封装，而不是`electron-forge`，在您修改相关配置文件时，请注意使用`electron-builder`的配置文件格式。[electron-builder](https://www.electron.build/)
 
 
 # 🛠️ 技术栈
@@ -133,9 +133,35 @@ npm install -g cnpm --registry=http://registry.npm.taobao.org
 - 我的博客https://2am.top
 - github
 
+## 国际化（i18n）
+本项目使用`next-i18next`进行国际化处理，您可以在`i18n.js`中配置您的语言包，旨在帮助您的项目轻松支持多语言，让全世界的用户都能无障碍使用。   
+
+-  多语言支持：轻松切换不同语言   
+-  简单集成：快速上手，兼容主流框架   
+-  可扩展：自定义翻译和语言包  
+
+```bash
+# 安装模块
+npm install your-i18n-module
+```
+
+```typescript
+// 初始化
+import i18n from 'your-i18n-module';
+
+i18n.init({
+  defaultLanguage: 'en',
+  supportedLanguages: ['en', 'zh', 'es', 'fr']
+});
+```
+
 
 ## 代码规范
 没有规范（实际上本人代码一团糟👻），只要您写的东西是人类语言即可
+ 
+#  LICENSE
+
+本项目采用 [MIT](https://choosealicense.com/licenses/mit/) 许可证，请您在使用本项目时遵守相关法律法规。
 
 
 # 🙏 致谢

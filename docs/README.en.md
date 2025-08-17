@@ -1,6 +1,6 @@
 # HexoHub
 
-[中文文档](https://github.com/forever218/HexoHub/)  |  English
+Chinese Docs | [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)
 
 <div align="center">
   <img 
@@ -10,19 +10,17 @@
   />
 </div>
 
-A Hexo blog management desktop application built with Electron + Next.js, providing a graphical user interface to replace traditional command-line operations.  
-> Say goodbye to the tedious traditional command-line approach (I’m already tired of `hexo xxxx` 🫠) and manage your Hexo blog in a more elegant way.
+A Hexo blog management desktop application built with Electron + Next.js, providing a graphical interface to replace traditional command-line operations.  
+> Say goodbye to the cumbersome command line (I’m tired of typing hexo xxxx🫠) and manage your Hexo blog in a more elegant way.
 
-# ✨ Key Features
 
 ## 📝 Post Management
 
-Within this application, you can visually **create new posts**, **view the post list**, **edit posts**, **preview in real time**, **start a local preview**, **generate and deploy static files**, and **delete posts**.
+In this application, you can visually: **create new posts**, **view post list**, **edit posts**, **real-time preview**, **start local preview**, **generate and deploy static files**, **delete posts**.
 
-## 🧩 Image Drag-and-Drop
-This might be one of the highlights of the app. When you have enabled Hexo’s asset folder feature ([What’s this?](https://hexo.io/docs/asset-folders)), you can use the `{% asset_img example.jpg %}` tag to reference local images in your blog.  
-However, typing `{% asset_img example.jpg %}` repeatedly can be quite inconvenient—especially when the file name is complex.  
-In this application, you simply place the image inside the asset folder with the same name as your post (e.g., `\blog\source\_posts\test-post`) and then drag the image into the editor window. The `{% asset_img example.jpg %}` tag will be automatically inserted, saving you from typing the file name yourself.
+## 🧩 Drag-and-Drop Images
+This might be one of the highlights of this app. When you enable Hexo’s asset folder ([what’s this?](https://hexo.io/docs/asset-folders)), you can use the `{% asset_img example.jpg %}` tag to reference local images in your blog.  
+However, frequently typing `{% asset_img example.jpg %}` is clearly inconvenient (especially when filenames are complex). In this app, you only need to place the image into the resource folder with the same name as the post (for example: `\blog\source\_posts\Test Post`) and drag the image into the editor window—it will automatically insert `{% asset_img example.jpg %}` for you, saving the trouble of typing filenames.    
 
 <div align="center">
   <img 
@@ -40,121 +38,160 @@ In this application, you simply place the image inside the asset folder with the
   />
 </div>
 
-## ⚙️ Hexo Commands  
-**Command Execution**: Run common Hexo commands through a graphical interface, including:  
-  - `hexo clean` – Clear cache files  
-  - `hexo generate` – Generate static files  
-  - `hexo deploy` – Deploy to remote server  
-  - `hexo se` – Start local preview  
-**Real-time Feedback**: Displays command execution results and error messages.
 
-## 🔧 Configuration Management  
+## ⚙️ Hexo Operations 
+**Command Execution**: Graphical execution of common Hexo commands, including:  
+  - `hexo clean` - Clear cache files
+  - `hexo generate` - Generate static files
+  - `hexo deploy` - Deploy to remote server
+  - `hexo se` - Start local preview   
+**Real-time Feedback**: Display execution results and error messages.
+
+## 🔧 Configuration Management
 **Basic Settings**: Site title, subtitle, author, language  
-**Advanced Settings**: URL settings, permalink format  
-**YAML Editing**: Directly edit the raw configuration file  
-**Import/Export**: Back up and restore configuration files, making it easier to migrate your theme.
+**Advanced Settings**: URL configuration, permalink format  
+**YAML Editing**: Directly edit raw configuration files  
+**Import/Export**: Backup and restore configuration files, making theme migration easier.
 
-# 🚀 Quick Start
+# 🚀 Quick Start  
+## Usage
 
-- **OS**: Windows 10 or later  
-- **Node.js**: Node.js and Hexo CLI required  
-- **RAM**: Recommended 4GB+  
-- **Storage**: Recommended 100MB free space  
-⚠️ For speed considerations, I used `cnpm` during development and modified part of the `package.json`. Please decide whether to use `cnpm`. If so, run:  
+If you just want to “use” this app:   
+- **OS**: Windows 10 or higher  
+- **Storage**: Recommended 400MB available space  
+- **Hexo**: https://hexo.io/
+- **Npm**: `npm > 10` 👉 https://www.npmjs.com/
+- **Node.js**: `nodejs > 20` 👉 https://nodejs.org/   
+Then go to [Releases](https://github.com/forever218/HexoHub/releases/) to download the latest version.  
+  
+## Development   
+
+If you want to “develop” this app, you’ll also need:   
+- **Git**: https://git-scm.com/   
+- **nodejs**: `TypeScript > 4.5`, `React > 19`, `Next.js > 15`   
+
+
+⚠️ For speed, I used `cnpm` during development and modified some parts of `package.json`. Please take this into consideration. If you want to use `cnpm`, run:  
+
 ```bash
 npm install -g cnpm --registry=http://registry.npm.taobao.org
 ```
-Then you can use `cnpm` instead of `npm`.
 
-1. **Clone this repository**
+Then you can replace `npm` with `cnpm`.
+
+1. **Clone the repository**
    ```bash
    git clone https://github.com/forever218/HexoHub.git
    ```
-
+ 
 2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Run in development mode** – You can already use the app at this step.
+3. **Run in development mode**—you can already use it at this step
    ```bash
    npm run electron
    ```
 
-4. **Build the app** (optional)
+4. **Package the app** (optional)
    ```bash
-   npm run dist
+   npm run make
    ```
-⚠️ Due to my limited technical ability, I encountered problems when packaging the app, so I haven’t released a public build yet. Please use the `npm run electron` command to start the program.
+
+> **Note**: This application is packaged with `electron-builder`, not `electron-forge`. When modifying config files, make sure to follow the `electron-builder` format. [electron-builder](https://www.electron.build/)
+
 
 # 🛠️ Tech Stack
 
-## Frontend
-- **Next.js 15** – React full-stack framework  
-- **React 19** – UI library  
-- **TypeScript** – Type-safe JavaScript  
-- **Tailwind CSS** – Utility-first CSS framework  
-- **shadcn/ui** – High-quality React component library  
-- **Electron** – Cross-platform desktop app framework  
-- **electron-builder** – App packaging tool  
-- **NSIS** – Windows installer creator  
-- **react-markdown** – Markdown rendering  
-- **react-syntax-highlighter** – Code syntax highlighting  
-- **remark-gfm** – GitHub-flavored Markdown extension  
-- **date-fns** – Date utility library
+- **Next.js 15** - React full-stack framework
+- **React** - UI library
+- **TypeScript** - Type-safe JavaScript  
+- **Tailwind CSS** - CSS framework  
+- **Electron** - Cross-platform desktop framework
+- **electron-builder** - App packaging tool
+- **NSIS** - Windows installer builder
+- **remark-gfm** - GitHub flavored Markdown extension
 
-# 📁 Project Structure
 
-```
-src/
-├── app/
-│   ├── page.tsx                 # Main page
-│   ├── layout.tsx                # App layout
-│   └── globals.css               # Global styles
-├── components/
-│   ├── ui/                       # shadcn/ui components
-│   ├── markdown-editor.tsx       # Markdown editor
-│   ├── markdown-preview.tsx      # Markdown preview
-│   ├── post-list.tsx             # Post list
-│   └── hexo-config.tsx           # Hexo configuration management
-├── lib/
-│   ├── windows-compat.ts         # Windows compatibility utilities
-│   ├── utils.ts                  # Utility functions
-│   └── db.ts                     # Database connection
-└── hooks/
-    ├── use-toast.ts               # Toast notification hook
-    └── use-mobile.ts              # Mobile device detection hook
 
-public/
-├── electron.js                   # Electron main process
-├── icon.svg                       # App icon
-├── installer.nsh                  # NSIS installer script
-└── logo.svg                       # App logo
-```
-
-# 🤝 Contributing
+# 🤝 Contribution Guide
 
 Issues and Pull Requests are welcome!  
-1. Fork the repository  
+1. Fork the repo  
 2. Create a feature branch  
-3. Commit your changes  
+3. Commit changes  
 4. Create a Pull Request  
 
 ---
 
-I faced many challenges during development. If you’d like to join this project and become like-minded friends, I’d be extremely grateful—and I’ll buy you a coffee! ☕  
-You can contact me via:  
+I encountered many problems during development. If you could join this project as a like-minded friend, I’d be very grateful—I’ll even buy you a coffee! ☕  
+You can reach me via:  
 - Email: 3316703158@qq.com  
 - Blog: https://2am.top  
 - GitHub  
 
+## Internationalization (i18n)
+This project uses `next-i18next` for i18n. You can configure your language packs in `i18n.js`, helping your project easily support multiple languages so users worldwide can use it without barriers.   
+
+-  Multi-language support: easily switch languages  
+-  Simple integration: quick setup, compatible with popular frameworks  
+-  Extensible: customize translations and language packs  
+
+```bash
+# Install module
+npm install your-i18n-module
+```
+
+```typescript
+// Initialization
+import i18n from 'your-i18n-module';
+
+i18n.init({
+  defaultLanguage: 'en',
+  supportedLanguages: ['en', 'zh', 'es', 'fr']
+});
+```
+
+
 ## Code Style
-No strict rules (honestly, my code is a mess 👻). As long as it’s human-readable, it’s fine.
+No strict rules (my code is actually a mess👻), as long as it’s readable. 
+ 
+#  LICENSE
+
+This project is licensed under the [MIT](https://choosealicense.com/licenses/mit/) License. Please comply with relevant laws and regulations when using this project.
+
 
 # 🙏 Acknowledgements
 
-- [Next.js](https://nextjs.org/) – React framework  
-- [Electron](https://www.electronjs.org/) – Desktop app framework  
-- [shadcn/ui](https://ui.shadcn.com/) – UI component library  
-- [Tailwind CSS](https://tailwindcss.com/) – CSS framework  
-- [Hexo](https://hexo.io/) – Static blog generator  
+- [Next.js](https://nextjs.org/) - React framework  
+- [Electron](https://www.electronjs.org/) - Desktop framework  
+- [shadcn/ui](https://ui.shadcn.com/) - UI component library  
+- [Tailwind CSS](https://tailwindcss.com/) - CSS framework  
+- [Hexo](https://hexo.io/) - Static site generator  
+
+# Changelog
+## v3 (2025-08-16)
+New Features:  
+- Added right-click logic in “Post List” for quick actions  
+- Added “Tag Cloud” on the left sidebar  
+ 
+Bug Fixes:  
+- Fixed “Site Title” setting failure under Hexo config  
+- Fixed occasional sorting disorder when sorting by post name  
+- Fixed error when generating static files if “Author” was empty  
+
+## v2 (2025-08-13)
+New Features:  
+- Refactored “Post List” to the right main window  
+- Added “Show posts by tag/category” feature  
+- Added batch post processing (batch delete/add tags/add categories)  
+- Added internationalization support  
+
+Bug Fixes:  
+- Fixed some light/dark mode anomalies  
+
+## v1 (2025-08-10)
+- Initial build  
+- Basic commands, post sorting by date/name  
+- Basic feature implementation  
