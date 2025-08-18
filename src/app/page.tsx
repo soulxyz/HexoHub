@@ -35,6 +35,8 @@ import { PostList } from '@/components/post-list';
 import { HexoConfig } from '@/components/hexo-config';
 import { CreatePostDialog } from '@/components/create-post-dialog';
 import { TagCloud } from '@/components/tag-cloud';
+import { useToast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
 
 interface Post {
   name: string;
@@ -80,6 +82,9 @@ export default function Home() {
 
   // 获取当前语言的文本
   const t = getTexts(language);
+  
+  // 初始化 toast hook
+  const { toast } = useToast();
 
   // 检查是否在Electron环境中
   const isElectron = typeof window !== 'undefined' && window.require;
@@ -393,6 +398,13 @@ export default function Home() {
 
       setCommandResult(result);
       if (result.success) {
+        // 显示成功通知
+        toast({
+          title: '成功',
+          description: '文章创建成功',
+          variant: 'success',
+        });
+        
         // 如果有额外的标签、分类或摘要，需要更新文件
         if (postData.tags.length > 0 || postData.categories.length > 0 || postData.excerpt) {
           await updatePostFrontMatter(postData);
@@ -402,12 +414,26 @@ export default function Home() {
         setTimeout(async () => {
           await loadPosts(hexoPath);
         }, 500);
+      } else {
+        // 显示失败通知
+        toast({
+          title: '失败',
+          description: '文章创建失败',
+          variant: 'error',
+        });
       }
     } catch (error) {
       console.error('创建文章失败:', error);
       setCommandResult({
         success: false,
         error: '创建文章失败: ' + (error?.message || '未知错误')
+      });
+      
+      // 显示错误通知
+      toast({
+        title: '失败',
+        description: '文章创建失败',
+        variant: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -499,11 +525,25 @@ export default function Home() {
         success: true,
         stdout: '文章保存成功'
       });
+      
+      // 显示成功通知
+      toast({
+        title: '成功',
+        description: '文章保存成功',
+        variant: 'success',
+      });
     } catch (error) {
       console.error('保存文章失败:', error);
       setCommandResult({
         success: false,
         error: '保存文章失败: ' + error.message
+      });
+      
+      // 显示错误通知
+      toast({
+        title: '失败',
+        description: '文章保存失败',
+        variant: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -529,11 +569,25 @@ export default function Home() {
       setSelectedPost(null);
       setPostContent('');
       await loadPosts(hexoPath);
+      
+      // 显示成功通知
+      toast({
+        title: '成功',
+        description: '文章删除成功',
+        variant: 'success',
+      });
     } catch (error) {
       console.error('删除文章失败:', error);
       setCommandResult({
         success: false,
         error: '删除文章失败: ' + error.message
+      });
+      
+      // 显示错误通知
+      toast({
+        title: '失败',
+        description: '文章删除失败',
+        variant: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -567,11 +621,25 @@ export default function Home() {
       }
 
       await loadPosts(hexoPath);
+      
+      // 显示成功通知
+      toast({
+        title: '成功',
+        description: `成功删除 ${postsToDelete.length} 篇文章`,
+        variant: 'success',
+      });
     } catch (error) {
       console.error('批量删除文章失败:', error);
       setCommandResult({
         success: false,
         error: '批量删除文章失败: ' + error.message
+      });
+      
+      // 显示错误通知
+      toast({
+        title: '失败',
+        description: '批量删除文章失败',
+        variant: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -749,11 +817,25 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       }
       
       await loadPosts(hexoPath);
+      
+      // 显示成功通知
+      toast({
+        title: '成功',
+        description: '文章删除成功',
+        variant: 'success',
+      });
     } catch (error) {
       console.error('删除文章失败:', error);
       setCommandResult({
         success: false,
         error: '删除文章失败: ' + error.message
+      });
+      
+      // 显示错误通知
+      toast({
+        title: '失败',
+        description: '删除文章失败',
+        variant: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -900,11 +982,43 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       const result = await ipcRenderer.invoke('execute-hexo-command', command, hexoPath);
 
       setCommandResult(result);
+      
+      // 显示通知
+      if (result.success) {
+        let message = '命令执行成功';
+        if (command === 'clean') message = '清理缓存成功';
+        else if (command === 'generate') message = '生成静态文章成功';
+        else if (command === 'deploy') message = '部署成功';
+        
+        toast({
+          title: '成功',
+          description: message,
+          variant: 'success',
+        });
+      } else {
+        let message = '命令执行失败';
+        if (command === 'clean') message = '清理缓存失败';
+        else if (command === 'generate') message = '生成静态文章失败';
+        else if (command === 'deploy') message = '部署失败';
+        
+        toast({
+          title: '失败',
+          description: message,
+          variant: 'error',
+        });
+      }
     } catch (error) {
       console.error('执行命令失败:', error);
       setCommandResult({
         success: false,
         error: '执行命令失败: ' + error.message
+      });
+      
+      // 显示错误通知
+      toast({
+        title: '失败',
+        description: '执行命令失败',
+        variant: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -928,18 +1042,39 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           stdout: 'Hexo服务器已启动，访问 http://localhost:4000 预览网站'
         });
 
+        // 显示成功通知
+        toast({
+          title: '成功',
+          description: 'Hexo服务器已启动',
+          variant: 'success',
+        });
+
         // 打开浏览器预览
         setTimeout(() => {
           ipcRenderer.invoke('open-url', 'http://localhost:4000');
         }, 2000);
       } else {
         setCommandResult(result);
+        
+        // 显示错误通知
+        toast({
+          title: '失败',
+          description: 'Hexo服务器启动失败',
+          variant: 'error',
+        });
       }
     } catch (error) {
       console.error('启动服务器失败:', error);
       setCommandResult({
         success: false,
         error: '启动服务器失败: ' + error.message
+      });
+      
+      // 显示错误通知
+      toast({
+        title: '失败',
+        description: '启动服务器失败',
+        variant: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -962,14 +1097,35 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           success: true,
           stdout: 'Hexo服务器已停止'
         });
+        
+        // 显示成功通知
+        toast({
+          title: '成功',
+          description: 'Hexo服务器已停止',
+          variant: 'success',
+        });
       } else {
         setCommandResult(result);
+        
+        // 显示失败通知
+        toast({
+          title: '失败',
+          description: 'Hexo服务器停止失败',
+          variant: 'error',
+        });
       }
     } catch (error) {
       console.error('停止服务器失败:', error);
       setCommandResult({
         success: false,
         error: '停止服务器失败: ' + error.message
+      });
+      
+      // 显示错误通知
+      toast({
+        title: '失败',
+        description: '停止服务器失败',
+        variant: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -1440,6 +1596,9 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         onConfirm={handleCreatePostConfirm}
         isLoading={isLoading}
       />
+      
+      {/* 通知弹窗 */}
+      <Toaster />
     </div>
   );
 }
