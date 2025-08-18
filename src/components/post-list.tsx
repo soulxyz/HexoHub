@@ -238,7 +238,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
   const handleSingleDelete = () => {
     if (contextMenuPost) {
       setShowSingleDeleteDialog(true);
-      closeContextMenu();
+      setShowContextMenu(false);
     }
   };
 
@@ -247,6 +247,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
     if (onDeletePost && contextMenuPost) {
       onDeletePost(contextMenuPost);
       setShowSingleDeleteDialog(false);
+      setContextMenuPost(null);
     }
   };
 
@@ -254,7 +255,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
   const handleSingleAddTags = () => {
     if (contextMenuPost) {
       setShowSingleTagsDialog(true);
-      closeContextMenu();
+      setShowContextMenu(false);
     }
   };
 
@@ -266,6 +267,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
         onAddTagsToPost(contextMenuPost, tags);
         setTagsInput('');
         setShowSingleTagsDialog(false);
+        setContextMenuPost(null);
       }
     }
   };
@@ -274,7 +276,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
   const handleSingleAddCategories = () => {
     if (contextMenuPost) {
       setShowSingleCategoriesDialog(true);
-      closeContextMenu();
+      setShowContextMenu(false);
     }
   };
 
@@ -286,6 +288,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
         onAddCategoriesToPost(contextMenuPost, categories);
         setCategoriesInput('');
         setShowSingleCategoriesDialog(false);
+        setContextMenuPost(null);
       }
     }
   };
@@ -634,7 +637,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           <DialogHeader>
             <DialogTitle>确认删除</DialogTitle>
             <DialogDescription>
-              您确定要删除文章 "{contextMenuPost?.name}" 吗？此操作不可撤销。
+              您确定要删除文章 "{contextMenuPost?.name.replace(/\.(md|markdown)$/, '')}" 吗？此操作不可撤销。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -654,7 +657,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           <DialogHeader>
             <DialogTitle>添加标签</DialogTitle>
             <DialogDescription>
-              为文章 "{contextMenuPost?.name}" 添加标签（多个标签用逗号分隔）
+              为文章 "{contextMenuPost?.name.replace(/\.(md|markdown)$/, '')}" 添加标签（多个标签用逗号分隔）
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -685,7 +688,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           <DialogHeader>
             <DialogTitle>添加分类</DialogTitle>
             <DialogDescription>
-              为文章 "{contextMenuPost?.name}" 添加分类（多个分类用逗号分隔）
+              为文章 "{contextMenuPost?.name.replace(/\.(md|markdown)$/, '')}" 添加分类（多个分类用逗号分隔）
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
