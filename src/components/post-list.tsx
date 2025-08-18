@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { FileText, Calendar, File, ArrowUpDown, ArrowUp, ArrowDown, CheckSquare, Square, Trash2, Tag, FolderOpen, Filter, X } from 'lucide-react';
@@ -51,12 +52,15 @@ interface PostListProps {
   onFilterByCategory?: (category: string) => void;
   onClearFilter?: () => void;
   currentFilter?: { type: 'tag' | 'category'; value: string } | null;
+  currentPage?: number;
+  postsPerPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 type SortField = 'name' | 'modifiedTime';
 type SortOrder = 'asc' | 'desc';
 
-export function PostList({ posts, selectedPost, onPostSelect, isLoading = false, onDeletePosts, onAddTagsToPosts, onAddCategoriesToPosts, onDeletePost, onAddTagsToPost, onAddCategoriesToPost, availableTags = [], availableCategories = [], onFilterByTag, onFilterByCategory, onClearFilter, currentFilter = null }: PostListProps) {
+export function PostList({ posts, selectedPost, onPostSelect, isLoading = false, onDeletePosts, onAddTagsToPosts, onAddCategoriesToPosts, onDeletePost, onAddTagsToPost, onAddCategoriesToPost, availableTags = [], availableCategories = [], onFilterByTag, onFilterByCategory, onClearFilter, currentFilter = null, currentPage = 1, postsPerPage = 15, onPageChange }: PostListProps) {
   const [sortField, setSortField] = useState<SortField>('modifiedTime');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectionMode, setSelectionMode] = useState<boolean>(false);
@@ -312,6 +316,87 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
   }
 
   const sortedPosts = sortPosts(posts);
+  
+  // 计算分页相关数据
+  const totalPages = Math.ceil(sortedPosts.length / postsPerPage);
+  const startIndex = (currentPage - 1) * postsPerPage;
+  const endIndex = startIndex + postsPerPage;
+  const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
+  
+  // 处理页码变化
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages && onPageChange) {
+      onPageChange(page);
+    }
+  };
+  
+  // 渲染分页控件
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    
+    return (
+      <div className="flex items-center justify-center space-x-2 mt-6">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          上一页
+        </Button>
+        
+        <div className="flex items-center space-x-1">
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(page => {
+              // 显示第一页、最后一页、当前页及当前页附近的页码
+              return page === 1 || 
+                     page === totalPages || 
+                     Math.abs(page - currentPage) <= 1;
+            })
+            .map((page, index, array) => {
+              // 如果页码之间有间隔，显示省略号
+              if (index > 0 && page - array[index - 1] > 1) {
+                return (
+                  <React.Fragment key={`ellipsis-${page}`}>
+                    <span className="text-sm text-muted-foreground">...</span>
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  </React.Fragment>
+                );
+              }
+              
+              return (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(page)}
+                  className="w-8 h-8 p-0"
+                >
+                  {page}
+                </Button>
+              );
+            })}
+        </div>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          下一页
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -473,7 +558,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sortedPosts.map((post) => (
+        {paginatedPosts.map((post) => (
           <div
             key={post.path}
             className={`p-4 cursor-pointer border rounded-lg transition-colors hover:bg-muted/50 ${
@@ -712,6 +797,9 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* 分页控件 */}
+      {renderPagination()}
     </div>
   );
 }

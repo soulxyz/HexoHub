@@ -35,6 +35,7 @@ import { PostList } from '@/components/post-list';
 import { HexoConfig } from '@/components/hexo-config';
 import { CreatePostDialog } from '@/components/create-post-dialog';
 import { TagCloud } from '@/components/tag-cloud';
+import { PanelSettings } from '@/components/panel-settings';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -74,6 +75,9 @@ export default function Home() {
   const [currentFilter, setCurrentFilter] = useState<{ type: 'tag' | 'category'; value: string } | null>(null);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [allTagsForCloud, setAllTagsForCloud] = useState<string[]>([]);
+  // 面板设置相关状态
+  const [postsPerPage, setPostsPerPage] = useState<number>(15); // 默认每页显示15篇文章
+  const [currentPage, setCurrentPage] = useState<number>(1); // 当前页码
 
   // 命令输出框的大小状态
   const [outputBoxHeight, setOutputBoxHeight] = useState<number>(128); // 默认高度 32 * 4 = 128px
@@ -88,6 +92,13 @@ export default function Home() {
 
   // 检查是否在Electron环境中
   const isElectron = typeof window !== 'undefined' && window.require;
+
+  // 处理每页显示文章数量变化
+  const handlePostsPerPageChange = (value: number) => {
+    setPostsPerPage(value);
+    // 重置到第一页
+    setCurrentPage(1);
+  };
 
   // 组件加载时，尝试从localStorage加载上次选择的路径和语言设置
   useEffect(() => {
@@ -110,6 +121,15 @@ export default function Home() {
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
+        }
+
+        // 加载每页显示文章数量设置
+        const savedPostsPerPage = localStorage.getItem('posts-per-page');
+        if (savedPostsPerPage) {
+          const value = parseInt(savedPostsPerPage, 10);
+          if (!isNaN(value) && value >= 1 && value <= 100) {
+            setPostsPerPage(value);
+          }
         }
 
         // 加载项目路径
@@ -332,16 +352,22 @@ export default function Home() {
   // 按标签筛选
   const filterByTag = (tag: string) => {
     setCurrentFilter({ type: 'tag', value: tag });
+    // 重置页码到第一页
+    setCurrentPage(1);
   };
 
   // 按分类筛选
   const filterByCategory = (category: string) => {
     setCurrentFilter({ type: 'category', value: category });
+    // 重置页码到第一页
+    setCurrentPage(1);
   };
 
   // 清除筛选
   const clearFilter = () => {
     setCurrentFilter(null);
+    // 重置页码到第一页
+    setCurrentPage(1);
   };
 
   // 加载文章列表
@@ -1415,6 +1441,31 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
             </CardContent>
           </Card>
 
+          {/* 面板设置 */}
+          <Card className="m-4">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center">
+                <Settings className="w-4 h-4 mr-2" />
+                面板设置
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => {
+                  setSelectedPost(null);
+                  setMainView('settings');
+                }}
+                disabled={!isValidHexoProject || isLoading}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                面板设置
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* 命令结果 */}
           {commandResult && (
             <Card className="m-4">
@@ -1432,6 +1483,13 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           {mainView === 'statistics' ? (
             <div className="flex-1 p-6 overflow-auto">
               <TagCloud tags={allTagsForCloud} language={language} />
+            </div>
+          ) : mainView === 'settings' ? (
+            <div className="flex-1 p-6 overflow-auto">
+              <PanelSettings 
+                postsPerPage={postsPerPage}
+                onPostsPerPageChange={handlePostsPerPageChange}
+              />
             </div>
           ) : mainView === 'posts' ? (
             selectedPost ? (
@@ -1555,6 +1613,9 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                       onFilterByCategory={filterByCategory}
                       onClearFilter={clearFilter}
                       currentFilter={currentFilter}
+                      currentPage={currentPage}
+                      postsPerPage={postsPerPage}
+                      onPageChange={setCurrentPage}
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full">
