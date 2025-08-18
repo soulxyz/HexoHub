@@ -1,6 +1,6 @@
 # HexoHub
 
-中文文档  |  [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)
+[中文文档](https://github.com/forever218/HexoHub/blob/main/README.md)  |  [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)
 
 <div align="center">
   <img 
@@ -112,6 +112,7 @@ npm install -g cnpm --registry=http://registry.npm.taobao.org
 - **electron-builder** - 应用打包工具
 - **NSIS** - Windows 安装程序制作工具
 - **remark-gfm** - GitHub 风格 Markdown 扩展
+- [Hexo](https://hexo.io/) - 静态博客生成器
 
 
 
@@ -164,13 +165,6 @@ i18n.init({
 本项目采用 [MIT](https://choosealicense.com/licenses/mit/) 许可证，请您在使用本项目时遵守相关法律法规。
 
 
-# 🙏 致谢
-
-- [Next.js](https://nextjs.org/) - React 框架
-- [Electron](https://www.electronjs.org/) - 桌面应用框架
-- [shadcn/ui](https://ui.shadcn.com/) - UI 组件库
-- [Tailwind CSS](https://tailwindcss.com/) - CSS 框架
-- [Hexo](https://hexo.io/) - 静态博客生成器
 
 # 更改日志
 ## v3 (2025-08-16)

@@ -1,6 +1,6 @@
 # HexoHub
 
-Chinese Docs | [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)
+[中文文档](https://github.com/forever218/HexoHub/blob/main/README.md)  |  [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)
 
 <div align="center">
   <img 
