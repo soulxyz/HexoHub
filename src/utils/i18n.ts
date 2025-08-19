@@ -120,8 +120,8 @@ export const i18nTexts: Record<Language, I18nTexts> = {
 
     // 文章统计
     articleStatistics: '文章统计',
-    tagCloud: '标签云图',
-    viewTagCloud: '标签云图',
+    tagCloud: '文章统计',
+    viewTagCloud: '文章统计',
 
     // 编辑器
     markdownEditor: 'Markdown 编辑器',

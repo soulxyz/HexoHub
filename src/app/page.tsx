@@ -35,6 +35,7 @@ import { PostList } from '@/components/post-list';
 import { HexoConfig } from '@/components/hexo-config';
 import { CreatePostDialog } from '@/components/create-post-dialog';
 import { TagCloud } from '@/components/tag-cloud';
+import { PublishStats } from '@/components/publish-stats';
 import { PanelSettings } from '@/components/panel-settings';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
@@ -1653,6 +1654,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           {mainView === 'statistics' ? (
             <div className="flex-1 p-6 overflow-auto">
               <TagCloud tags={allTagsForCloud} language={language} />
+              <PublishStats posts={posts} language={language} />
             </div>
           ) : mainView === 'settings' ? (
             <div className="flex-1 p-6 overflow-auto">

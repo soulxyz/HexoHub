@@ -79,7 +79,7 @@ export const TagCloud: React.FC<TagCloudProps> = ({ tags, language }) => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Tag className="w-5 h-5 mr-2" />
-            {language === 'zh' ? '标签云图' : 'Tag Cloud'}
+            {language === 'zh' ? '文章统计' : 'Article Statistics'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -96,7 +96,7 @@ export const TagCloud: React.FC<TagCloudProps> = ({ tags, language }) => {
       <CardHeader>
         <CardTitle className="flex items-center">
           <Tag className="w-5 h-5 mr-2" />
-          {language === 'zh' ? '标签云图' : 'Tag Cloud'}
+          {language === 'zh' ? '文章统计' : 'Article Statistics'}
         </CardTitle>
       </CardHeader>
       <CardContent>
