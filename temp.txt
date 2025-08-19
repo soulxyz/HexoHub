@@ -1,0 +1,6 @@
+              <PanelSettings
+                postsPerPage={postsPerPage}
+                onPostsPerPageChange={handlePostsPerPageChange}
+                autoSaveInterval={autoSaveInterval}
+                onAutoSaveIntervalChange={handleAutoSaveIntervalChange}
+              />

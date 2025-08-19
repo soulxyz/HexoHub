@@ -12,16 +12,24 @@ import { useToast } from '@/hooks/use-toast';
 interface PanelSettingsProps {
   postsPerPage: number;
   onPostsPerPageChange: (value: number) => void;
+  autoSaveInterval: number;
+  onAutoSaveIntervalChange: (value: number) => void;
 }
 
-export function PanelSettings({ postsPerPage, onPostsPerPageChange }: PanelSettingsProps) {
+export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange }: PanelSettingsProps) {
   const [tempPostsPerPage, setTempPostsPerPage] = useState<number>(postsPerPage);
+  const [tempAutoSaveInterval, setTempAutoSaveInterval] = useState<number>(autoSaveInterval);
   const { toast } = useToast();
 
   // 当传入的postsPerPage变化时，更新临时值
   useEffect(() => {
     setTempPostsPerPage(postsPerPage);
   }, [postsPerPage]);
+
+  // 当传入的autoSaveInterval变化时，更新临时值
+  useEffect(() => {
+    setTempAutoSaveInterval(autoSaveInterval);
+  }, [autoSaveInterval]);
 
   // 保存设置
   const saveSettings = () => {
@@ -34,11 +42,24 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange }: PanelSetti
       return;
     }
 
+    if (tempAutoSaveInterval === "" || tempAutoSaveInterval < 1 || tempAutoSaveInterval > 60) {
+      toast({
+        title: '错误',
+        description: '自动保存间隔必须在1-60分钟之间',
+        variant: 'error',
+      });
+      return;
+    }
+
     onPostsPerPageChange(tempPostsPerPage);
+    onAutoSaveIntervalChange(tempAutoSaveInterval === "" ? 3 : tempAutoSaveInterval);
 
     // 保存到localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('posts-per-page', tempPostsPerPage.toString());
+      if (tempAutoSaveInterval !== "") {
+        localStorage.setItem('auto-save-interval', tempAutoSaveInterval.toString());
+      }
     }
 
     toast({
@@ -74,6 +95,22 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange }: PanelSetti
                 设置文章列表每页显示的文章数量，范围1-100
               </p>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="autoSaveInterval">自动保存间隔（分钟）</Label>
+              <Input
+                id="autoSaveInterval"
+                type="number"
+                min="1"
+                max="60"
+                value={tempAutoSaveInterval}
+                onChange={(e) => setTempAutoSaveInterval(e.target.value === "" ? "" : Number(e.target.value))}
+                className="w-32"
+              />
+              <p className="text-sm text-muted-foreground">
+                设置文章自动保存的时间间隔，范围1-60分钟，默认为3分钟
+              </p>
+            </div>
           </div>
 
           <div className="flex justify-end">
@@ -81,6 +118,50 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange }: PanelSetti
               <Save className="w-4 h-4 mr-2" />
               保存设置
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* 关于模块 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Settings className="w-5 h-5 mr-2" />
+            关于
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>版本信息</Label>
+            <p className="text-sm text-muted-foreground">HexoHub v1.0.0</p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>项目地址</Label>
+            <a 
+              href="https://github.com/forever218/HexoHub" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-800 hover:underline block"
+            >
+              https://github.com/forever218/HexoHub
+            </a>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>作者联系方式</Label>
+            <a 
+              href="https://github.com/forever218" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:text-blue-800 hover:underline block"
+            >
+              https://github.com/forever218
+            </a>
+          </div>
+          
+          <div className="pt-4 text-center text-muted-foreground">
+            感谢您使用此软件😊
           </div>
         </CardContent>
       </Card>

@@ -78,6 +78,8 @@ export default function Home() {
   // 面板设置相关状态
   const [postsPerPage, setPostsPerPage] = useState<number>(15); // 默认每页显示15篇文章
   const [currentPage, setCurrentPage] = useState<number>(1); // 当前页码
+  const [autoSaveInterval, setAutoSaveInterval] = useState<number>(3); // 默认自动保存间隔为3分钟
+  const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null); // 自动保存定时器
 
   // 命令输出框的大小状态
   const [outputBoxHeight, setOutputBoxHeight] = useState<number>(128); // 默认高度 32 * 4 = 128px
@@ -99,6 +101,66 @@ export default function Home() {
     // 重置到第一页
     setCurrentPage(1);
   };
+
+  // 处理自动保存间隔变化
+  const handleAutoSaveIntervalChange = (value: number) => {
+    setAutoSaveInterval(value);
+    // 重新设置自动保存定时器
+    setupAutoSaveTimer();
+  };
+
+  // 设置自动保存定时器
+  const setupAutoSaveTimer = () => {
+    // 清除现有定时器
+    if (autoSaveTimer) {
+      clearInterval(autoSaveTimer);
+      setAutoSaveTimer(null);
+    }
+
+    // 设置新的定时器
+    if (selectedPost && postContent) {
+      const timer = setInterval(() => {
+        savePost();
+      }, autoSaveInterval * 60 * 1000); // 转换为毫秒
+      setAutoSaveTimer(timer);
+    }
+  };
+
+  // 当postContent变化时重置自动保存定时器
+  useEffect(() => {
+    if (selectedPost && postContent) {
+      setupAutoSaveTimer();
+    }
+  }, [postContent]);
+
+  // 组件卸载时清除自动保存定时器
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+      }
+    };
+  }, [autoSaveTimer]);
+
+  // 当selectedPost变化时重置自动保存定时器
+  useEffect(() => {
+    if (selectedPost) {
+      setupAutoSaveTimer();
+    } else {
+      // 如果没有选中的文章，清除自动保存定时器
+      if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+        setAutoSaveTimer(null);
+      }
+    }
+  }, [selectedPost]);
+
+  // 当autoSaveInterval变化时重置自动保存定时器
+  useEffect(() => {
+    if (selectedPost && postContent) {
+      setupAutoSaveTimer();
+    }
+  }, [autoSaveInterval]);
 
   // 组件加载时，尝试从localStorage加载上次选择的路径和语言设置
   useEffect(() => {
@@ -130,6 +192,18 @@ export default function Home() {
           if (!isNaN(value) && value >= 1 && value <= 100) {
             setPostsPerPage(value);
           }
+        }
+
+        // 加载自动保存间隔设置
+        const savedAutoSaveInterval = localStorage.getItem('auto-save-interval');
+        if (savedAutoSaveInterval) {
+          const value = parseInt(savedAutoSaveInterval, 10);
+          if (!isNaN(value) && value >= 1 && value <= 60) {
+            setAutoSaveInterval(value);
+          }
+        } else {
+          // 如果没有保存的设置，使用默认值3分钟
+          setAutoSaveInterval(3);
         }
 
         // 加载项目路径
@@ -535,6 +609,8 @@ export default function Home() {
       });
     } finally {
       setIsLoading(false);
+      // 选择文章后设置自动保存定时器
+      setupAutoSaveTimer();
     }
   };
 
@@ -573,6 +649,8 @@ export default function Home() {
       });
     } finally {
       setIsLoading(false);
+      // 保存文章后重置自动保存定时器
+      setupAutoSaveTimer();
     }
   };
 
@@ -1487,6 +1565,9 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           ) : mainView === 'settings' ? (
             <div className="flex-1 p-6 overflow-auto">
               <PanelSettings 
+              autoSaveInterval={autoSaveInterval}
+              onAutoSaveIntervalChange={handleAutoSaveIntervalChange}
+
                 postsPerPage={postsPerPage}
                 onPostsPerPageChange={handlePostsPerPageChange}
               />
