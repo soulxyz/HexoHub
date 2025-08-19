@@ -1551,7 +1551,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="editor" className="h-full m-0">
+                    <TabsContent value="editor" className="h-full m-0 overflow-hidden">
                       <MarkdownEditor
                         value={postContent}
                         onChange={setPostContent}
@@ -1560,7 +1560,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                       />
                     </TabsContent>
 
-                    <TabsContent value="preview" className="h-full m-0">
+                    <TabsContent value="preview" className="h-full m-0 overflow-hidden">
                       <div className="h-full overflow-auto">
                         <MarkdownPreview
                           content={postContent}

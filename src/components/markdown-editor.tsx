@@ -190,7 +190,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       <div className="border-b p-3 bg-muted">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 text-sm text-foreground">
@@ -264,10 +264,10 @@ useEffect(() => {
         </div>
       </div>
 
-      <div className="flex-1 flex relative">
+      <div className="flex-1 flex relative" style={{ minWidth: 0, maxWidth: '100%' }}>
         <div
           id="line-numbers"
-          className="w-12 bg-muted border-r text-muted-foreground text-sm font-mono text-right pr-2 pt-2 select-none overflow-hidden"
+          className="w-12 bg-muted border-r text-muted-foreground text-sm font-mono text-right pr-2 pt-2 select-none overflow-hidden flex-shrink-0"
         >
           {lineNumbers.map((lineNumber, index) => (
             <div key={index} className="leading-6">
@@ -277,7 +277,7 @@ useEffect(() => {
         </div>
 
         <div
-          className={`flex-1 relative \${isDragOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''}`}
+          className={`flex-1 relative min-w-0 overflow-hidden \${isDragOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''}`}
           onDragEnter={handleDragEnter}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -289,12 +289,16 @@ useEffect(() => {
             onChange={handleTextareaChange}
             onScroll={handleTextareaScroll}
             placeholder={t.editorPlaceholder}
-            className="w-full h-full p-2 font-mono text-sm resize-none border-0 rounded-none focus:ring-0"
+            className="w-full h-full p-2 font-mono text-sm resize-none border-0 rounded-none focus:ring-0 overflow-x-auto"
             disabled={isLoading}
             style={{
               minHeight: '400px',
               lineHeight: '1.5',
-              outline: 'none'
+              outline: 'none',
+              width: '100%',
+              minWidth: 0,
+              overflow: 'auto',
+              wordBreak: 'break-all'
             }}
           />
           {isDragOver && (
