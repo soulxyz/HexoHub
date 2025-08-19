@@ -24,11 +24,12 @@ import {
 interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
+  onSave?: () => void;
   isLoading?: boolean;
   language?: 'zh' | 'en';
 }
 
-export function MarkdownEditor({ value, onChange, isLoading = false, language = 'zh' }: MarkdownEditorProps) {
+export function MarkdownEditor({ value, onChange, onSave, isLoading = false, language = 'zh' }: MarkdownEditorProps) {
   const [lineNumbers, setLineNumbers] = useState<string[]>(['1']);
   const [isDragOver, setIsDragOver] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -122,6 +123,23 @@ useEffect(() => {
   const lines = value.split('\n');
   setLineNumbers(lines.map((_, index) => (index + 1).toString()));
 }, [value]);
+
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // Ctrl+S 或 Cmd+S 保存
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      if (onSave) {
+        onSave();
+      }
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
+}, [onSave]);
 
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

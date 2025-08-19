@@ -1555,6 +1555,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                       <MarkdownEditor
                         value={postContent}
                         onChange={setPostContent}
+                        onSave={savePost}
                         isLoading={isLoading}
                         language={language}
                       />
