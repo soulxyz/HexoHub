@@ -8,15 +8,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Settings, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { UpdateChecker } from '@/components/update-checker';
 
 interface PanelSettingsProps {
   postsPerPage: number;
   onPostsPerPageChange: (value: number) => void;
   autoSaveInterval: number;
   onAutoSaveIntervalChange: (value: number) => void;
+  updateAvailable?: boolean;
+  onUpdateCheck?: () => void;
+  updateCheckInProgress?: boolean;
+  autoCheckUpdates?: boolean;
+  onAutoCheckUpdatesChange?: (value: boolean) => void;
 }
 
-export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange }: PanelSettingsProps) {
+export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange }: PanelSettingsProps) {
+  // 当前应用版本，从package.json中获取
+  const currentVersion = '1.2.2';
   const [tempPostsPerPage, setTempPostsPerPage] = useState<number>(postsPerPage);
   const [tempAutoSaveInterval, setTempAutoSaveInterval] = useState<number>(autoSaveInterval);
   const { toast } = useToast();
@@ -122,6 +130,18 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
         </CardContent>
       </Card>
       
+            {/* 更新检查模块 */}
+      <UpdateChecker 
+        currentVersion={currentVersion}
+        repoOwner="forever218"
+        repoName="HexoHub"
+        updateAvailable={updateAvailable}
+        onCheckUpdates={onUpdateCheck}
+        isLoading={updateCheckInProgress}
+        autoCheckUpdates={autoCheckUpdates}
+        onAutoCheckUpdatesChange={onAutoCheckUpdatesChange}
+      />
+
       {/* 关于模块 */}
       <Card>
         <CardHeader>
@@ -133,7 +153,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>版本信息</Label>
-            <p className="text-sm text-muted-foreground">HexoHub v1.0.0</p>
+            <p className="text-sm text-muted-foreground">HexoHub v1.2.2</p>
           </div>
           
           <div className="space-y-2">
@@ -161,10 +181,12 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
           </div>
           
           <div className="pt-4 text-center text-muted-foreground">
-            感谢您使用此软件😊
+            您的star⭐是对我最大的支持😊
           </div>
         </CardContent>
       </Card>
+
+
     </div>
   );
 }

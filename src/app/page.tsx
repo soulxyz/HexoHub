@@ -80,6 +80,12 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState<number>(1); // 当前页码
   const [autoSaveInterval, setAutoSaveInterval] = useState<number>(3); // 默认自动保存间隔为3分钟
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null); // 自动保存定时器
+  
+  // 更新检查相关状态
+  const [updateInfo, setUpdateInfo] = useState<any>(null);
+  const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
+  const [updateCheckInProgress, setUpdateCheckInProgress] = useState<boolean>(false);
+  const [autoCheckUpdates, setAutoCheckUpdates] = useState<boolean>(true);
 
   // 命令输出框的大小状态
   const [outputBoxHeight, setOutputBoxHeight] = useState<number>(128); // 默认高度 32 * 4 = 128px
@@ -162,9 +168,21 @@ export default function Home() {
     }
   }, [autoSaveInterval]);
 
-  // 组件加载时，尝试从localStorage加载上次选择的路径和语言设置
+  // 组件加载时，尝试从localStorage加载上次选择的路径和语言设置，并检查更新
   useEffect(() => {
     const loadSavedSettings = async () => {
+      // 从localStorage加载自动更新设置
+      if (typeof window !== 'undefined') {
+        const savedAutoCheckUpdates = localStorage.getItem('auto-check-updates');
+        if (savedAutoCheckUpdates !== null) {
+          setAutoCheckUpdates(savedAutoCheckUpdates === 'true');
+        }
+      }
+      
+      // 检查更新
+      if (autoCheckUpdates) {
+        await checkForUpdates(true); // 启动时静默检查
+      }
       if (typeof window !== 'undefined') {
         // 加载语言设置
         const savedLanguage = localStorage.getItem('app-language') as Language;
@@ -213,6 +231,9 @@ export default function Home() {
           await validateHexoProject(savedPath);
         }
       }
+      
+      // 检查更新
+      await checkForUpdates(true); // 启动时静默检查
     };
 
     loadSavedSettings();
@@ -261,6 +282,77 @@ export default function Home() {
     setPosts([]);
     setSelectedPost(null);
     setPostContent('');
+  };
+  
+  // 处理自动更新设置变化
+  const handleAutoCheckUpdatesChange = (value: boolean) => {
+    setAutoCheckUpdates(value);
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auto-check-updates', value.toString());
+    }
+  };
+  
+  // 检查更新
+  const checkForUpdates = async (silent = false) => {
+    if (!isElectron) return;
+    
+    if (!silent) {
+      setUpdateCheckInProgress(true);
+    }
+    
+    try {
+      const { ipcRenderer } = window.require('electron');
+      const result = await ipcRenderer.invoke('check-for-updates');
+      
+      if (result.success) {
+        setUpdateInfo(result);
+        setUpdateAvailable(result.updateAvailable);
+        
+        // 如果有更新且不是静默检查，显示通知
+        if (result.updateAvailable && !silent) {
+          toast({
+            title: '发现新版本',
+            description: `新版本 ${result.latestVersion} 已发布`,
+            variant: 'default',
+          });
+        } else if (!result.updateAvailable && !silent) {
+          toast({
+            title: '已是最新版本',
+            description: `当前版本 ${result.currentVersion} 已是最新`,
+            variant: 'success',
+          });
+        }
+        
+        // 如果是静默检查且有更新，显示通知
+        if (result.updateAvailable && silent) {
+          toast({
+            title: '发现新版本',
+            description: `新版本 ${result.latestVersion} 已发布，点击设置查看详情`,
+            variant: 'default',
+          });
+        }
+      } else if (!silent) {
+        toast({
+          title: '检查更新失败',
+          description: result.error,
+          variant: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('检查更新失败:', error);
+      if (!silent) {
+        toast({
+          title: '检查更新失败',
+          description: error instanceof Error ? error.message : '未知错误',
+          variant: 'error',
+        });
+      }
+    } finally {
+      if (!silent) {
+        setUpdateCheckInProgress(false);
+      }
+    }
   };
 
   // 选择Hexo项目目录
@@ -1564,7 +1656,12 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
             </div>
           ) : mainView === 'settings' ? (
             <div className="flex-1 p-6 overflow-auto">
-              <PanelSettings 
+              <PanelSettings
+                updateAvailable={updateAvailable}
+                onUpdateCheck={() => checkForUpdates(false)}
+                updateCheckInProgress={updateCheckInProgress}
+                autoCheckUpdates={autoCheckUpdates}
+                onAutoCheckUpdatesChange={handleAutoCheckUpdatesChange} 
               autoSaveInterval={autoSaveInterval}
               onAutoSaveIntervalChange={handleAutoSaveIntervalChange}
 

@@ -424,3 +424,93 @@ app.on('before-quit', () => {
     hexoServerProcess = null;
   }
 });
+
+// 检查更新
+ipcMain.handle('check-for-updates', async () => {
+  const https = require('https');
+  const path = require('path');
+  const { version } = require(path.join(__dirname, '..', 'package.json'));
+  
+  return new Promise((resolve) => {
+    const repoOwner = 'forever218';
+    const repoName = 'HexoHub';
+    const options = {
+      hostname: 'api.github.com',
+      path: `/repos/${repoOwner}/${repoName}/releases/latest`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'HexoHub'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200) {
+            const release = JSON.parse(data);
+            const latestVersion = release.tag_name.replace(/^v/i, '');
+            const currentVersionClean = version.replace(/^v/i, '');
+            
+            // 比较版本号
+            const isUpdateAvailable = compareVersions(currentVersionClean, latestVersion);
+            
+            resolve({
+              success: true,
+              updateAvailable: isUpdateAvailable,
+              currentVersion: version,
+              latestVersion: release.tag_name,
+              releaseNotes: release.body,
+              downloadUrl: release.html_url,
+              publishedAt: release.published_at,
+              assets: release.assets
+            });
+          } else {
+            resolve({
+              success: false,
+              error: `获取更新信息失败: HTTP ${res.statusCode}`
+            });
+          }
+        } catch (error) {
+          resolve({
+            success: false,
+            error: '解析更新信息失败: ' + error.message
+          });
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      resolve({
+        success: false,
+        error: '网络请求失败: ' + error.message
+      });
+    });
+    
+    req.end();
+  });
+});
+
+// 比较版本号函数
+function compareVersions(current, latest) {
+  const currentParts = current.split('.').map(Number);
+  const latestParts = latest.split('.').map(Number);
+  
+  for (let i = 0; i < Math.max(currentParts.length, latestParts.length); i++) {
+    const currentPart = currentParts[i] || 0;
+    const latestPart = latestParts[i] || 0;
+    
+    if (latestPart > currentPart) {
+      return true;
+    } else if (latestPart < currentPart) {
+      return false;
+    }
+  }
+  
+  return false;
+}
