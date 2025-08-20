@@ -1232,14 +1232,41 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       if (result.success) {
         let message = '命令执行成功';
         if (command === 'clean') message = '清理缓存成功';
-        else if (command === 'generate') message = '生成静态文章成功';
-        else if (command === 'deploy') message = '部署成功';
+        else if (command === 'generate') {
+          toast({
+            title: '成功',
+            description: (
+              <div className="flex items-center justify-between">
+                <span>生成静态文件成功</span>
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-blue-600 hover:text-blue-800"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (typeof window !== 'undefined' && window.require) {
+                      const { shell } = window.require('electron');
+                      const path = require('path');
+                      const publicPath = path.join(hexoPath, 'public');
+                      shell.openPath(publicPath);
+                    }
+                  }}
+                >
+                  [打开]
+                </Button>
+              </div>
+            ),
+            variant: 'success',
+          });
+        } else if (command === 'deploy') message = '部署成功';
         
-        toast({
-          title: '成功',
-          description: message,
-          variant: 'success',
-        });
+        // 对于generate命令，已经在上面显示了自定义通知，这里不再显示
+        if (command !== 'generate') {
+          toast({
+            title: '成功',
+            description: message,
+            variant: 'success',
+          });
+        }
       } else {
         let message = '命令执行失败';
         if (command === 'clean') message = '清理缓存失败';

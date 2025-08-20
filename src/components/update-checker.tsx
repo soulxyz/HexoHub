@@ -274,7 +274,13 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => window.open(latestRelease.html_url, '_blank')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (typeof window !== 'undefined' && window.require) {
+                    const { shell } = window.require('electron');
+                    shell.openExternal(latestRelease.html_url);
+                  }
+                }}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 在GitHub上查看

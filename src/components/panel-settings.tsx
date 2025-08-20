@@ -202,7 +202,14 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
           <div className="space-y-2">
             <Label>项目地址</Label>
             <a 
-              href="https://github.com/forever218/HexoHub" 
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                if (typeof window !== 'undefined' && window.require) {
+                  const { shell } = window.require('electron');
+                  shell.openExternal('https://github.com/forever218/HexoHub');
+                }
+              }} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-sm text-blue-600 hover:text-blue-800 hover:underline block"
@@ -212,9 +219,16 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
           </div>
           
           <div className="space-y-2">
-            <Label>作者联系方式</Label>
+            <Label>联系我</Label>
             <a 
-              href="https://github.com/forever218" 
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                if (typeof window !== 'undefined' && window.require) {
+                  const { shell } = window.require('electron');
+                  shell.openExternal('https://github.com/forever218');
+                }
+              }} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-sm text-blue-600 hover:text-blue-800 hover:underline block"
