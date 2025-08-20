@@ -26,7 +26,20 @@ import {
   Square,
   Languages,
   Sun,
-  Moon
+  Moon,
+  Bold,
+  Italic,
+  Code,
+  Quote,
+  List,
+  ListOrdered,
+  Link,
+  Image,
+  Table,
+  Heading1,
+  Heading2,
+  Heading3,
+  Minus
 } from 'lucide-react';
 import { Language, getTexts } from '@/utils/i18n';
 import { MarkdownEditor } from '@/components/markdown-editor';
@@ -1674,64 +1687,349 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           ) : mainView === 'posts' ? (
             selectedPost ? (
               <div className="flex-1 flex flex-col">
-                {/* 文章操作栏 */}
-                <div className="border-b p-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <h2 className="text-lg font-semibold">{selectedPost.name}</h2>
-                    <Badge variant="outline">
-                      {selectedPost.size} bytes
-                    </Badge>
+                {/* 固定在顶部的编辑器控制栏 */}
+                <div className="border-b bg-card p-3 flex flex-col space-y-2 sticky top-0 z-10">
+                  {/* 文章标题栏 */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <h2 className="text-lg font-semibold">{selectedPost.name}</h2>
+                      <Badge variant="outline">
+                        {selectedPost.size} bytes
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedPost(null);
+                        }}
+                        disabled={isLoading}
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        返回列表
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={savePost}
+                        disabled={isLoading}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        保存
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={deletePost}
+                        disabled={isLoading}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        删除
+                      </Button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedPost(null);
-                      }}
-                      disabled={isLoading}
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      返回列表
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={savePost}
-                      disabled={isLoading}
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      保存
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={deletePost}
-                      disabled={isLoading}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      删除
-                    </Button>
+                  {/* 编辑-预览转换栏和Markdown快捷语法栏 */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <Tabs value={activeTab} onValueChange={setActiveTab}>
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="editor" className="flex items-center">
+                            <Edit className="w-4 h-4 mr-2" />
+                            {t.edit}
+                          </TabsTrigger>
+                          <TabsTrigger value="preview" className="flex items-center">
+                            <Eye className="w-4 h-4 mr-2" />
+                            {t.preview}
+                          </TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+
+                      <div className="flex items-center space-x-2 text-sm text-foreground">
+                        <span className="text-xs bg-background border px-2 py-1 rounded">
+                          {postContent.split('').length} 行
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Markdown快捷语法栏 */}
+                    <div className="flex items-center space-x-1">
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const insertText = '# ';
+                          const newValue = postContent.substring(0, start) + insertText + postContent.substring(textarea.selectionEnd);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="标题 1" className="h-8 w-8 p-0">
+                        <Heading1 className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const insertText = '## ';
+                          const newValue = postContent.substring(0, start) + insertText + postContent.substring(textarea.selectionEnd);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="标题 2" className="h-8 w-8 p-0">
+                        <Heading2 className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const insertText = '### ';
+                          const newValue = postContent.substring(0, start) + insertText + postContent.substring(textarea.selectionEnd);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="标题 3" className="h-8 w-8 p-0">
+                        <Heading3 className="w-4 h-4" />
+                      </Button>
+
+                      <div className="w-px h-6 bg-border mx-1" />
+
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const selectedText = postContent.substring(start, end);
+                          const wrappedText = '**' + selectedText + '**';
+                          const newValue = postContent.substring(0, start) + wrappedText + postContent.substring(end);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            if (selectedText.length === 0) {
+                              const newPos = start + 2;
+                              textarea.selectionStart = textarea.selectionEnd = newPos;
+                            } else {
+                              textarea.selectionStart = start;
+                              textarea.selectionEnd = start + wrappedText.length;
+                            }
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="粗体" className="h-8 w-8 p-0">
+                        <Bold className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const selectedText = postContent.substring(start, end);
+                          const wrappedText = '*' + selectedText + '*';
+                          const newValue = postContent.substring(0, start) + wrappedText + postContent.substring(end);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            if (selectedText.length === 0) {
+                              const newPos = start + 1;
+                              textarea.selectionStart = textarea.selectionEnd = newPos;
+                            } else {
+                              textarea.selectionStart = start;
+                              textarea.selectionEnd = start + wrappedText.length;
+                            }
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="斜体" className="h-8 w-8 p-0">
+                        <Italic className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const selectedText = postContent.substring(start, end);
+                          const wrappedText = '`' + selectedText + '`';
+                          const newValue = postContent.substring(0, start) + wrappedText + postContent.substring(end);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            if (selectedText.length === 0) {
+                              const newPos = start + 1;
+                              textarea.selectionStart = textarea.selectionEnd = newPos;
+                            } else {
+                              textarea.selectionStart = start;
+                              textarea.selectionEnd = start + wrappedText.length;
+                            }
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="行内代码" className="h-8 w-8 p-0">
+                        <Code className="w-4 h-4" />
+                      </Button>
+
+                      <div className="w-px h-6 bg-border mx-1" />
+
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const insertText = ' - ';
+                          const newValue = postContent.substring(0, start) + insertText + postContent.substring(textarea.selectionEnd);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="无序列表" className="h-8 w-8 p-0">
+                        <List className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const insertText = ' 1. ';
+                          const newValue = postContent.substring(0, start) + insertText + postContent.substring(textarea.selectionEnd);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="有序列表" className="h-8 w-8 p-0">
+                        <ListOrdered className="w-4 h-4" />
+                      </Button>
+
+                      <div className="w-px h-6 bg-border mx-1" />
+
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const selectedText = postContent.substring(start, end);
+                          const wrappedText = '[' + selectedText + '](url)';
+                          const newValue = postContent.substring(0, start) + wrappedText + postContent.substring(end);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            if (selectedText.length === 0) {
+                              const newPos = start + 1;
+                              textarea.selectionStart = textarea.selectionEnd = newPos;
+                            } else {
+                              textarea.selectionStart = start;
+                              textarea.selectionEnd = start + wrappedText.length;
+                            }
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="链接" className="h-8 w-8 p-0">
+                        <Link className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const insertText = '![alt text](image-url)';
+                          const newValue = postContent.substring(0, start) + insertText + postContent.substring(textarea.selectionEnd);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="图片" className="h-8 w-8 p-0">
+                        <Image className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const insertText = `
+                                               | 列1 | 列2 | 列3 |
+                                               |-----|-----|-----|
+                                               | 单元格1 | 单元格2 | 单元格3 |
+                                              `;
+
+                          const newValue = postContent.substring(0, start) + insertText + postContent.substring(textarea.selectionEnd);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="表格" className="h-8 w-8 p-0">
+                        <Table className="w-4 h-4" />
+                      </Button>
+
+                      <div className="w-px h-6 bg-border mx-1" />
+
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const selectedText = postContent.substring(textarea.selectionStart, textarea.selectionEnd) || '代码';
+                          const codeBlock = `\`\`\`javascript
+${selectedText}
+\`\`\`
+`;
+                          const newValue = postContent.substring(0, start) + codeBlock + postContent.substring(textarea.selectionEnd);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + codeBlock.length;
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="代码块" className="h-8 w-8 p-0">
+                        <Code className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const selectedText = postContent.substring(textarea.selectionStart, textarea.selectionEnd);
+                          const lines = selectedText.split('');
+                          const quotedLines = lines.map(line => '> ' + line).join('');
+                          const newValue = postContent.substring(0, start) + quotedLines + postContent.substring(textarea.selectionEnd);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + quotedLines.length;
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="引用" className="h-8 w-8 p-0">
+                        <Quote className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          const start = textarea.selectionStart;
+                          const insertText = '---';
+                          const newValue = postContent.substring(0, start) + insertText + postContent.substring(textarea.selectionEnd);
+                          setPostContent(newValue);
+                          setTimeout(() => {
+                            textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+                            textarea.focus();
+                          }, 0);
+                        }
+                      }} title="分割线" className="h-8 w-8 p-0">
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
                 {/* 编辑器区域 */}
                 <div className="flex-1">
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="editor" className="flex items-center">
-                        <Edit className="w-4 h-4 mr-2" />
-                        {t.edit}
-                      </TabsTrigger>
-                      <TabsTrigger value="preview" className="flex items-center">
-                        <Eye className="w-4 h-4 mr-2" />
-                        {t.preview}
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="editor" className="h-full m-0 overflow-hidden">
+                  {activeTab === 'editor' && (
+                    <div className="h-full overflow-hidden">
                       <MarkdownEditor
                         value={postContent}
                         onChange={setPostContent}
@@ -1739,17 +2037,17 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                         isLoading={isLoading}
                         language={language}
                       />
-                    </TabsContent>
+                    </div>
+                  )}
 
-                    <TabsContent value="preview" className="h-full m-0 overflow-hidden">
-                      <div className="h-full overflow-auto">
-                        <MarkdownPreview
-                          content={postContent}
-                          className="p-6"
-                        />
-                      </div>
-                    </TabsContent>
-                  </Tabs>
+                  {activeTab === 'preview' && (
+                    <div className="h-full overflow-auto">
+                      <MarkdownPreview
+                        content={postContent}
+                        className="p-6"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
