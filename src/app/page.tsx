@@ -39,7 +39,8 @@ import {
   Heading1,
   Heading2,
   Heading3,
-  Minus
+  Minus,
+  ChevronUp
 } from 'lucide-react';
 import { Language, getTexts } from '@/utils/i18n';
 import { MarkdownEditor } from '@/components/markdown-editor';
@@ -105,6 +106,9 @@ export default function Home() {
   const [outputBoxHeight, setOutputBoxHeight] = useState<number>(128); // 默认高度 32 * 4 = 128px
   const [outputBoxWidth, setOutputBoxWidth] = useState<number>(320); // 默认宽度 80 * 4 = 320px
   const [isResizing, setIsResizing] = useState<{ type: 'height' | 'width' | null }>({ type: null });
+  
+  // 回到顶部按钮状态
+  const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
 
   // 获取当前语言的文本
   const t = getTexts(language);
@@ -181,6 +185,27 @@ export default function Home() {
       setupAutoSaveTimer();
     }
   }, [autoSaveInterval]);
+
+  // 监听滚动事件，控制回到顶部按钮的显示
+  useEffect(() => {
+    const handleScroll = () => {
+      // 当页面滚动超过300px时显示按钮
+      setShowScrollToTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // 回到顶部功能
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   // 组件加载时，尝试从localStorage加载上次选择的路径和语言设置，并检查更新
   useEffect(() => {
@@ -2139,6 +2164,17 @@ ${selectedText}
       
       {/* 通知弹窗 */}
       <Toaster />
+      
+      {/* 回到顶部按钮 */}
+      <Button
+        onClick={scrollToTop}
+        className={`fixed bottom-6 right-6 rounded-full p-3 shadow-lg transition-opacity duration-300 z-50 ${
+          showScrollToTop ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        size="icon"
+      >
+        <ChevronUp className="h-5 w-5" />
+      </Button>
     </div>
   );
 }
