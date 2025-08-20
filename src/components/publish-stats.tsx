@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Calendar } from 'lucide-react';
 
 interface Post {
@@ -22,7 +22,7 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
   const [chartData, setChartData] = useState<any[]>([]);
   const [colors, setColors] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // 生成随机颜色
   const generateRandomColors = (count: number) => {
     const colors = [];
@@ -34,7 +34,7 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
     }
     return colors;
   };
-  
+
   // 处理文章数据，生成图表数据
   useEffect(() => {
     const processPosts = async () => {
@@ -43,33 +43,33 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
         setIsLoading(false);
         return;
       }
-      
+
       setIsLoading(true);
-      
+
       try {
         // 如果在Electron环境中，读取文件内容获取日期
         if (typeof window !== 'undefined' && window.require) {
           const { ipcRenderer } = window.require('electron');
-          
+
           // 按月份统计文章数量
           const monthCounts: Record<string, number> = {};
-          
+
           for (const post of posts) {
             try {
               // 读取文件内容
               const content = await ipcRenderer.invoke('read-file', post.path);
-              
+
               // 解析front matter中的日期
               const frontMatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
               if (frontMatterMatch) {
                 const frontMatter = frontMatterMatch[1];
-                
+
                 // 提取日期
                 const dateMatch = frontMatter.match(/^date:\s*(.+)$/m);
                 if (dateMatch) {
                   const dateStr = dateMatch[1].trim();
                   const date = new Date(dateStr);
-                  
+
                   if (!isNaN(date.getTime())) {
                     const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
                     monthCounts[monthKey] = (monthCounts[monthKey] || 0) + 1;
@@ -80,7 +80,7 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
               console.error('Error processing post:', post.name, e);
             }
           }
-          
+
           // 转换为图表数据格式并按时间排序
           const data = Object.entries(monthCounts)
             .map(([month, count]) => ({
@@ -88,13 +88,13 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
               count
             }))
             .sort((a, b) => a.month.localeCompare(b.month));
-          
+
           setChartData(data);
           setColors(generateRandomColors(data.length));
         } else {
           // 非Electron环境，使用modifiedTime
           const monthCounts: Record<string, number> = {};
-          
+
           posts.forEach(post => {
             try {
               const date = new Date(post.modifiedTime);
@@ -106,7 +106,7 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
               console.error('Error parsing date:', post.modifiedTime, e);
             }
           });
-          
+
           // 转换为图表数据格式并按时间排序
           const data = Object.entries(monthCounts)
             .map(([month, count]) => ({
@@ -114,7 +114,7 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
               count
             }))
             .sort((a, b) => a.month.localeCompare(b.month));
-          
+
           setChartData(data);
           setColors(generateRandomColors(data.length));
         }
@@ -125,10 +125,10 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
         setIsLoading(false);
       }
     };
-    
+
     processPosts();
   }, [posts]);
-  
+
   return (
     <Card>
       <CardHeader>
@@ -157,16 +157,25 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip 
+                <Tooltip
                   formatter={(value) => [`${value} 篇`, language === 'zh' ? '文章数量' : 'Article Count']}
                   labelFormatter={(label) => language === 'zh' ? `月份: ${label}` : `Month: ${label}`}
+                  contentStyle={{
+                    color: '#000',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: '6px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                  }}
+                  itemStyle={{ color: '#000' }}
+                  labelStyle={{ color: '#000', fontWeight: 'bold' }}
                 />
-                <Bar 
-                  dataKey="count" 
+                <Bar
+                  dataKey="count"
                   name={language === 'zh' ? '文章数量' : 'Article Count'}
                 >
                   {chartData.map((entry, index) => (
-                    <rect key={`bar-${index}`} fill={colors[index]} />
+                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                   ))}
                 </Bar>
               </BarChart>
