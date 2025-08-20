@@ -95,6 +95,7 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState<number>(1); // 当前页码
   const [autoSaveInterval, setAutoSaveInterval] = useState<number>(3); // 默认自动保存间隔为3分钟
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null); // 自动保存定时器
+  const [editorMode, setEditorMode] = useState<'mode1' | 'mode2'>('mode1'); // 编辑模式，默认为模式1
   
   // 更新检查相关状态
   const [updateInfo, setUpdateInfo] = useState<any>(null);
@@ -261,6 +262,15 @@ export default function Home() {
         } else {
           // 如果没有保存的设置，使用默认值3分钟
           setAutoSaveInterval(3);
+        }
+
+        // 加载编辑模式设置
+        const savedEditorMode = localStorage.getItem('editor-mode');
+        if (savedEditorMode === 'mode1' || savedEditorMode === 'mode2') {
+          setEditorMode(savedEditorMode);
+        } else {
+          // 如果没有保存的设置，使用默认值mode1
+          setEditorMode('mode1');
         }
 
         // 加载项目路径
@@ -1707,6 +1717,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
                 postsPerPage={postsPerPage}
                 onPostsPerPageChange={handlePostsPerPageChange}
+                editorMode={editorMode}
+                onEditorModeChange={setEditorMode}
               />
             </div>
           ) : mainView === 'posts' ? (
@@ -1978,10 +1990,10 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                         if (textarea) {
                           const start = textarea.selectionStart;
                           const insertText = `
-                                               | 列1 | 列2 | 列3 |
-                                               |-----|-----|-----|
-                                               | 单元格1 | 单元格2 | 单元格3 |
-                                              `;
+| 列1 | 列2 | 列3 |
+|-----|-----|-----|
+| 单元格1 | 单元格2 | 单元格3 |
+`;
 
                           const newValue = postContent.substring(0, start) + insertText + postContent.substring(textarea.selectionEnd);
                           setPostContent(newValue);
@@ -2000,8 +2012,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                         const textarea = document.querySelector('textarea');
                         if (textarea) {
                           const start = textarea.selectionStart;
-                          const selectedText = postContent.substring(textarea.selectionStart, textarea.selectionEnd) || '代码';
-                          const codeBlock = `\`\`\`javascript
+                          const selectedText = postContent.substring(textarea.selectionStart, textarea.selectionEnd) || 'code here';
+                          const codeBlock = `\`\`\`js
 ${selectedText}
 \`\`\`
 `;
@@ -2019,13 +2031,29 @@ ${selectedText}
                         const textarea = document.querySelector('textarea');
                         if (textarea) {
                           const start = textarea.selectionStart;
-                          const selectedText = postContent.substring(textarea.selectionStart, textarea.selectionEnd);
-                          const lines = selectedText.split('');
-                          const quotedLines = lines.map(line => '> ' + line).join('');
-                          const newValue = postContent.substring(0, start) + quotedLines + postContent.substring(textarea.selectionEnd);
+                          const end = textarea.selectionEnd;
+                          const selectedText = postContent.substring(start, end);
+                          
+                          // 如果没有选中文本，直接插入引用符号
+                          if (!selectedText) {
+                            const insertText = '> ';
+                            const newValue = postContent.substring(0, start) + insertText + postContent.substring(end);
+                            setPostContent(newValue);
+                            setTimeout(() => {
+                              textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+                              textarea.focus();
+                            }, 0);
+                            return;
+                          }
+                          
+                          // 如果有选中文本，为每行添加引用符号
+                          const lines = selectedText.split('\n');
+                          const quotedLines = lines.map(line => '> ' + line).join('\n');
+                          const newValue = postContent.substring(0, start) + quotedLines + postContent.substring(end);
                           setPostContent(newValue);
                           setTimeout(() => {
-                            textarea.selectionStart = textarea.selectionEnd = start + quotedLines.length;
+                            textarea.selectionStart = start;
+                            textarea.selectionEnd = start + quotedLines.length;
                             textarea.focus();
                           }, 0);
                         }
@@ -2053,24 +2081,50 @@ ${selectedText}
 
                 {/* 编辑器区域 */}
                 <div className="flex-1">
-                  {activeTab === 'editor' && (
-                    <div className="h-full overflow-hidden">
-                      <MarkdownEditor
-                        value={postContent}
-                        onChange={setPostContent}
-                        onSave={savePost}
-                        isLoading={isLoading}
-                        language={language}
-                      />
-                    </div>
-                  )}
+                  {editorMode === 'mode1' ? (
+                    // 模式1：分离编辑和预览，需要手动切换
+                    <>
+                      {activeTab === 'editor' && (
+                        <div className="h-full overflow-hidden">
+                          <MarkdownEditor
+                            value={postContent}
+                            onChange={setPostContent}
+                            onSave={savePost}
+                            isLoading={isLoading}
+                            language={language}
+                          />
+                        </div>
+                      )}
 
-                  {activeTab === 'preview' && (
-                    <div className="h-full overflow-auto">
-                      <MarkdownPreview
-                        content={postContent}
-                        className="p-6"
-                      />
+                      {activeTab === 'preview' && (
+                        <div className="h-full overflow-auto">
+                          <MarkdownPreview
+                            content={postContent}
+                            className="p-6"
+                          />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    // 模式2：同时显示编辑和预览，左右分栏
+                    <div className="h-full flex flex-col md:flex-row overflow-hidden">
+                      <div className="w-full md:w-1/2 h-1/2 md:h-full border-r overflow-hidden">
+                        <div className="h-full overflow-hidden">
+                          <MarkdownEditor
+                            value={postContent}
+                            onChange={setPostContent}
+                            onSave={savePost}
+                            isLoading={isLoading}
+                            language={language}
+                          />
+                        </div>
+                      </div>
+                      <div className="w-full md:w-1/2 h-1/2 md:h-full overflow-auto">
+                        <MarkdownPreview
+                          content={postContent}
+                          className="p-4"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>

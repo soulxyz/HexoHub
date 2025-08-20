@@ -20,13 +20,16 @@ interface PanelSettingsProps {
   updateCheckInProgress?: boolean;
   autoCheckUpdates?: boolean;
   onAutoCheckUpdatesChange?: (value: boolean) => void;
+  editorMode: 'mode1' | 'mode2';
+  onEditorModeChange: (mode: 'mode1' | 'mode2') => void;
 }
 
-export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange }: PanelSettingsProps) {
+export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange }: PanelSettingsProps) {
   // 当前应用版本，从package.json中获取
   const currentVersion = '1.2.2';
   const [tempPostsPerPage, setTempPostsPerPage] = useState<number>(postsPerPage);
   const [tempAutoSaveInterval, setTempAutoSaveInterval] = useState<number>(autoSaveInterval);
+  const [tempEditorMode, setTempEditorMode] = useState<'mode1' | 'mode2'>(editorMode);
   const { toast } = useToast();
 
   // 当传入的postsPerPage变化时，更新临时值
@@ -38,6 +41,11 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
   useEffect(() => {
     setTempAutoSaveInterval(autoSaveInterval);
   }, [autoSaveInterval]);
+
+  // 当传入的editorMode变化时，更新临时值
+  useEffect(() => {
+    setTempEditorMode(editorMode);
+  }, [editorMode]);
 
   // 保存设置
   const saveSettings = () => {
@@ -61,6 +69,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
 
     onPostsPerPageChange(tempPostsPerPage);
     onAutoSaveIntervalChange(tempAutoSaveInterval === "" ? 3 : tempAutoSaveInterval);
+    onEditorModeChange(tempEditorMode);
 
     // 保存到localStorage
     if (typeof window !== 'undefined') {
@@ -68,6 +77,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
       if (tempAutoSaveInterval !== "") {
         localStorage.setItem('auto-save-interval', tempAutoSaveInterval.toString());
       }
+      localStorage.setItem('editor-mode', tempEditorMode);
     }
 
     toast({
@@ -117,6 +127,39 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
               />
               <p className="text-sm text-muted-foreground">
                 设置文章自动保存的时间间隔，范围1-60分钟，默认为3分钟
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>编辑模式</Label>
+              <div className="flex space-x-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="mode1"
+                    name="editorMode"
+                    value="mode1"
+                    checked={tempEditorMode === 'mode1'}
+                    onChange={() => setTempEditorMode('mode1')}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="mode1">模式1</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="mode2"
+                    name="editorMode"
+                    value="mode2"
+                    checked={tempEditorMode === 'mode2'}
+                    onChange={() => setTempEditorMode('mode2')}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="mode2">模式2(beta)</Label>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                模式1：编辑和预览分离，需要手动切换；模式2：编辑和预览同时显示，左右分栏
               </p>
             </div>
           </div>
