@@ -59,10 +59,11 @@
 
 如果您只需“使用”本应用程序：   
 - **操作系统**: Windows 10 或更高版本    
-- **存储**: 建议 400MB 可用空间  
+- **存储**: 建议 900MB 可用空间  
 - **Hexo**：https://hexo.io/
 - **Npm**：`npm>10`    👉https://www.npmjs.com/
 - **Node.js**：`nodejs>20`    👉https://nodejs.org/zh-cn/   
+
 随后到[Releases](https://github.com/forever218/HexoHub/releases/)下载最新版本。  
   
 ## 开发   
@@ -97,6 +98,7 @@ npm install -g cnpm --registry=http://registry.npm.taobao.org
 
 4. **打包应用**（非必须）
    ```bash
+   npm run build
    npm run make
    ```
 
@@ -168,6 +170,7 @@ i18n.init({
 
 
 # 更改日志
+更多日志请移步release查看
 ## v3 (2025-08-16)
 新功能：  
 - 在“文章列表”界面加入右键逻辑，实现快速操作  
