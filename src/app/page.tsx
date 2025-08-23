@@ -40,7 +40,8 @@ import {
   Heading2,
   Heading3,
   Minus,
-  ChevronUp
+  ChevronUp,
+  Download
 } from 'lucide-react';
 import { Language, getTexts } from '@/utils/i18n';
 import { MarkdownEditor } from '@/components/markdown-editor';
@@ -53,6 +54,7 @@ import { PublishStats } from '@/components/publish-stats';
 import { PanelSettings } from '@/components/panel-settings';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { CreateHexoDialog } from '@/components/create-hexo-dialog';
 
 interface Post {
   name: string;
@@ -1608,6 +1610,28 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 )}
+              </div>
+              <div className="flex space-x-2 mt-2">
+                <CreateHexoDialog
+                  onCreateSuccess={async (path) => {
+                    setHexoPath(path);
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('hexo-project-path', path);
+                    }
+                    await validateHexoProject(path);
+                  }}
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isLoading}
+                    title="创建新的Hexo项目"
+                    className="w-full"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    创建Hexo项目
+                  </Button>
+                </CreateHexoDialog>
               </div>
 
               {validationMessage && (

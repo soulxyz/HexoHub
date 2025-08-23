@@ -185,6 +185,34 @@ ipcMain.handle('list-files', async (event, directoryPath) => {
   }
 });
 
+// Execute arbitrary command
+ipcMain.handle('execute-command', async (event, command) => {
+  const { exec } = require('child_process');
+  const util = require('util');
+  const execPromise = util.promisify(exec);
+
+  try {
+    const { stdout, stderr } = await execPromise(command, {
+      windowsHide: false,
+      env: { ...process.env, FORCE_COLOR: '0' }, // 禁用颜色输出以避免编码问题
+      shell: true // 使用shell以支持命令查找
+    });
+
+    return {
+      success: true,
+      stdout: stdout,
+      stderr: stderr
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      stdout: error.stdout,
+      stderr: error.stderr
+    };
+  }
+});
+
 // Execute hexo commands
 ipcMain.handle('execute-hexo-command', async (event, command, workingDir) => {
   const { exec } = require('child_process');
