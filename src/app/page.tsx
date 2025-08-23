@@ -98,6 +98,9 @@ export default function Home() {
   const [autoSaveInterval, setAutoSaveInterval] = useState<number>(3); // 默认自动保存间隔为3分钟
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null); // 自动保存定时器
   const [editorMode, setEditorMode] = useState<'mode1' | 'mode2'>('mode1'); // 编辑模式，默认为模式1
+  // 背景图相关状态
+  const [backgroundImage, setBackgroundImage] = useState<string>(''); // 背景图片URL
+  const [backgroundOpacity, setBackgroundOpacity] = useState<number>(1); // 背景透明度
   
   // 更新检查相关状态
   const [updateInfo, setUpdateInfo] = useState<any>(null);
@@ -189,6 +192,27 @@ export default function Home() {
     }
   }, [autoSaveInterval]);
 
+  // 当backgroundImage变化时更新背景
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (backgroundImage) {
+        document.documentElement.style.setProperty('--bg-image', `url(${backgroundImage})`);
+        console.log('设置背景图片:', backgroundImage);
+      } else {
+        document.documentElement.style.setProperty('--bg-image', 'none');
+        console.log('清除背景图片');
+      }
+    }
+  }, [backgroundImage]);
+
+  // 当backgroundOpacity变化时更新背景透明度
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.documentElement.style.setProperty('--bg-opacity', backgroundOpacity.toString());
+      console.log('设置背景透明度:', backgroundOpacity);
+    }
+  }, [backgroundOpacity]);
+
   // 监听滚动事件，控制回到顶部按钮的显示
   useEffect(() => {
     const handleScroll = () => {
@@ -273,6 +297,21 @@ export default function Home() {
         } else {
           // 如果没有保存的设置，使用默认值mode1
           setEditorMode('mode1');
+        }
+
+        // 加载背景图设置
+        const savedBackgroundImage = localStorage.getItem('background-image');
+        if (savedBackgroundImage !== null) {
+          setBackgroundImage(savedBackgroundImage);
+        }
+
+        // 加载背景透明度设置
+        const savedBackgroundOpacity = localStorage.getItem('background-opacity');
+        if (savedBackgroundOpacity !== null) {
+          const value = parseFloat(savedBackgroundOpacity);
+          if (!isNaN(value) && value >= 0 && value <= 1) {
+            setBackgroundOpacity(value);
+          }
         }
 
         // 加载项目路径
@@ -1770,6 +1809,10 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 onPostsPerPageChange={handlePostsPerPageChange}
                 editorMode={editorMode}
                 onEditorModeChange={setEditorMode}
+                backgroundImage={backgroundImage}
+                onBackgroundImageChange={setBackgroundImage}
+                backgroundOpacity={backgroundOpacity}
+                onBackgroundOpacityChange={setBackgroundOpacity}
               />
             </div>
           ) : mainView === 'posts' ? (
@@ -2136,7 +2179,7 @@ ${selectedText}
                     // 模式1：分离编辑和预览，需要手动切换
                     <>
                       {activeTab === 'editor' && (
-                        <div className="h-full overflow-hidden">
+                        <div className="h-full overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
                           <MarkdownEditor
                             value={postContent}
                             onChange={setPostContent}
@@ -2148,7 +2191,7 @@ ${selectedText}
                       )}
 
                       {activeTab === 'preview' && (
-                        <div className="h-full overflow-auto">
+                        <div className="h-full overflow-auto" style={{ height: 'calc(100vh - 200px)' }}>
                           <MarkdownPreview
                             content={postContent}
                             className="p-6"
@@ -2158,9 +2201,9 @@ ${selectedText}
                     </>
                   ) : (
                     // 模式2：同时显示编辑和预览，左右分栏
-                    <div className="h-full flex flex-col md:flex-row overflow-hidden">
+                    <div className="h-full flex flex-col md:flex-row overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
                       <div className="w-full md:w-1/2 h-1/2 md:h-full border-r overflow-hidden">
-                        <div className="h-full overflow-hidden">
+                        <div className="h-full overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
                           <MarkdownEditor
                             value={postContent}
                             onChange={setPostContent}
@@ -2170,7 +2213,7 @@ ${selectedText}
                           />
                         </div>
                       </div>
-                      <div className="w-full md:w-1/2 h-1/2 md:h-full overflow-auto">
+                      <div className="w-full md:w-1/2 h-1/2 md:h-full overflow-auto" style={{ height: 'calc(100vh - 200px)' }}>
                         <MarkdownPreview
                           content={postContent}
                           className="p-4"

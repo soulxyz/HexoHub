@@ -208,7 +208,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
       <div className="border-b p-2 bg-muted">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 text-sm text-foreground">
@@ -217,7 +217,7 @@ useEffect(() => {
         </div>
       </div>
 
-      <div className="flex-1 flex relative" style={{ minWidth: 0, maxWidth: '100%' }}>
+      <div className="flex-1 flex relative" style={{ minWidth: 0, maxWidth: '100%', height: 'calc(100vh - 240px)' }}>
         <div
           id="line-numbers"
           className="w-12 bg-muted border-r text-muted-foreground text-sm font-mono text-right pr-2 pt-2 select-none overflow-hidden flex-shrink-0"
@@ -251,7 +251,8 @@ useEffect(() => {
               width: '100%',
               minWidth: 0,
               overflow: 'auto',
-              wordBreak: 'break-all'
+              wordBreak: 'break-all',
+              height: 'calc(100vh - 240px)'
             }}
           />
           {isDragOver && (

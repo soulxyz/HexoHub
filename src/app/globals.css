@@ -46,19 +46,19 @@
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.1 0 0); /* 更深的字体颜色 */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.1 0 0); /* 更深的卡片前景色 */
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.1 0 0); /* 更深的弹出框前景色 */
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
+  --secondary-foreground: oklch(0.1 0 0); /* 更深的次要前景色 */
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: oklch(0.4 0 0); /* 更深的次要文字颜色 */
   --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --accent-foreground: oklch(0.1 0 0); /* 更深的强调前景色 */
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -69,30 +69,34 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-foreground: oklch(0.1 0 0); /* 更深的侧边栏前景色 */
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-accent-foreground: oklch(0.1 0 0); /* 更深的侧边栏强调前景色 */
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  
+  /* 自定义背景图相关变量 */
+  --bg-image: none;
+  --bg-opacity: 1;
 }
 
 .dark {
   --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
+  --foreground: oklch(0.99 0 0); /* 更亮的字体颜色 */
   --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
+  --card-foreground: oklch(0.99 0 0); /* 更亮的卡片前景色 */
   --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  --popover-foreground: oklch(0.99 0 0); /* 更亮的弹出框前景色 */
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
+  --secondary-foreground: oklch(0.99 0 0); /* 更亮的次要前景色 */
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  --muted-foreground: oklch(0.8 0 0); /* 更亮的次要文字颜色 */
   --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent-foreground: oklch(0.99 0 0); /* 更亮的强调前景色 */
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -103,11 +107,11 @@
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.99 0 0); /* 更亮的侧边栏前景色 */
   --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.99 0 0); /* 更亮的侧边栏主要前景色 */
   --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-accent-foreground: oklch(0.99 0 0); /* 更亮的侧边栏强调前景色 */
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
@@ -118,5 +122,87 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: var(--bg-image, none);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
+    background-color: var(--sidebar);
+  }
+  
+  /* 统一背景，移除各组件之间的分界线 */
+  .card, .sidebar, .main-content {
+    background-color: var(--sidebar);
+    border: none;
+    box-shadow: none;
+    opacity: var(--bg-opacity, 1);
+  }
+  
+  /* 确保重要文字元素不受背景透明度影响 */
+  h1, h2, h3, h4, h5, h6, p, a, button, input, textarea, label, span, div {
+    opacity: 1 !important;
+  }
+  
+  /* 确保卡片、侧边栏和主内容区域的文字使用正确的颜色变量 */
+  .card, .sidebar, .main-content {
+    color: var(--foreground);
+  }
+  
+  /* 为整个页面添加遮罩层 */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--sidebar);
+    opacity: var(--bg-opacity, 0.7);
+    z-index: -1;
+    pointer-events: none;
+  }
+  
+  body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--bg-image, none);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    opacity: calc(1 - var(--bg-opacity, 0.7));
+    z-index: -2;
+    pointer-events: none;
+  }
+  
+  /* 确保所有元素都有透明背景 */
+  .bg-card, .bg-background, .bg-sidebar {
+    background-color: var(--sidebar) !important;
+    opacity: var(--bg-opacity, 1) !important;
+  }
+  
+  /* 确保背景元素内的文字不受透明度影响 */
+  .bg-card *, .bg-background *, .bg-sidebar * {
+    opacity: 1 !important;
+  }
+  
+  /* 特殊处理编辑器和预览区域 */
+  .markdown-editor, .markdown-preview {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 0.5rem;
+  }
+  
+  .dark .markdown-editor, .dark .markdown-preview {
+    background-color: rgba(20, 20, 20, 0.95);
+  }
+  
+  /* 确保编辑器和预览区域的文字清晰可见 */
+  .markdown-editor *, .markdown-preview * {
+    opacity: 1 !important;
   }
 }

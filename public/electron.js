@@ -68,7 +68,7 @@ function createWindow() {
     
     // 尝试备用加载方式
     const backupPath = path.resolve(__dirname, '../out/index.html');
-    console.log('尝试备用路径:', backupPath);
+
     mainWindow.loadFile(backupPath);
   });
 
@@ -77,27 +77,27 @@ function createWindow() {
   } else {
     // 使用 loadFile 而不是 loadURL
     const indexPath = path.join(__dirname, '../out/index.html');
-    console.log('加载文件:', indexPath);
+ 
     
     // 检查文件是否存在
     const fs = require('fs');
     if (fs.existsSync(indexPath)) {
-      console.log('文件存在，开始加载');
+
       mainWindow.loadFile(indexPath);
     } else {
-      console.log('文件不存在:', indexPath);
+    
       // 尝试相对路径
       mainWindow.loadFile('./out/index.html');
     }
   }
 
   mainWindow.once('ready-to-show', () => {
-    console.log('窗口准备显示');
+
     mainWindow.show();
   });
 
   mainWindow.webContents.on('did-finish-load', () => {
-    console.log('页面加载完成');
+  
   });
 
 
@@ -470,6 +470,24 @@ ipcMain.handle('open-url', async (event, url) => {
       error: '打开URL失败: ' + error.message
     };
   }
+});
+
+// 选择图片文件
+ipcMain.handle('select-file', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [
+      { name: '图片文件', extensions: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'] },
+      { name: '所有文件', extensions: ['*'] }
+    ],
+    title: '选择背景图片'
+  });
+
+  if (canceled) {
+    return null;
+  }
+
+  return filePaths[0];
 });
 
 // 应用退出时清理服务器进程

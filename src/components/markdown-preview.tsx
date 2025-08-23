@@ -188,7 +188,7 @@ export function MarkdownPreview({ content, className = '' }: MarkdownPreviewProp
   };
 
   return (
-    <div className={`prose prose-sm max-w-none overflow-x-auto ${className}`} style={{ minWidth: 0, width: '100%' }}>
+    <div className={`prose prose-sm max-w-none overflow-x-auto ${className}`} style={{ minWidth: 0, width: '100%', height: 'calc(100vh - 200px)', overflowY: 'auto' }}>
       {content ? (
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkBreaks]}
