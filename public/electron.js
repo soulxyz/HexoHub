@@ -50,39 +50,57 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true,
       webSecurity: false
     },
     icon: path.join(__dirname, 'icon.ico'),
     show: false
   });
 
-  const startUrl = isDev 
-    ? 'http://localhost:3000' 
-    : `file://${path.join(__dirname, '../out/index.html')}`;
-
-  // 在生产模式下，拦截请求并重定向到本地文件
-  if (!isDev) {
-    const { protocol } = require('electron');
-
-    protocol.interceptFileProtocol('file', (request, callback) => {
-      const url = request.url.substr(7); // 移除 'file://' 前缀
-
-      // 如果请求的是_next资源，重定向到正确的本地路径
-      if (url.includes('/_next/')) {
-        const localPath = url.replace(/.*\/_next\//, path.join(__dirname, '../out/_next/'));
-        callback(localPath);
-      } else {
-        callback(url);
-      }
+  // 添加错误处理
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.log('加载失败:', {
+      errorCode,
+      errorDescription,
+      validatedURL,
+      __dirname,
+      expectedPath: path.join(__dirname, '../out/index.html')
     });
+    
+    // 尝试备用加载方式
+    const backupPath = path.resolve(__dirname, '../out/index.html');
+    console.log('尝试备用路径:', backupPath);
+    mainWindow.loadFile(backupPath);
+  });
+
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:3000');
+  } else {
+    // 使用 loadFile 而不是 loadURL
+    const indexPath = path.join(__dirname, '../out/index.html');
+    console.log('加载文件:', indexPath);
+    
+    // 检查文件是否存在
+    const fs = require('fs');
+    if (fs.existsSync(indexPath)) {
+      console.log('文件存在，开始加载');
+      mainWindow.loadFile(indexPath);
+    } else {
+      console.log('文件不存在:', indexPath);
+      // 尝试相对路径
+      mainWindow.loadFile('./out/index.html');
+    }
   }
 
-  mainWindow.loadURL(startUrl);
-
   mainWindow.once('ready-to-show', () => {
+    console.log('窗口准备显示');
     mainWindow.show();
   });
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('页面加载完成');
+  });
+
+
 
   if (isDev) {
     mainWindow.webContents.openDevTools();
@@ -92,6 +110,20 @@ function createWindow() {
     mainWindow = null;
   });
 }
+
+app.whenReady().then(createWindow);
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
+});
 
 app.whenReady().then(createWindow);
 
