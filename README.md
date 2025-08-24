@@ -5,11 +5,12 @@
 
 <div align="center">
   <img 
-    src="https://github.com/user-attachments/assets/dcaf9bdc-3e3a-4eed-83e4-c7270cf5b438" 
+    src="https://github.com/user-attachments/assets/185d93c6-836b-434a-a9b8-55400dc25f3e" 
     alt="image" 
     width="80%" 
   />
 </div>
+
 
 一个基于 Electron + Next.js 构建的Hexo博客管理桌面应用程序，提供图形化界面来替代传统的命令行操作  
 > 告别繁琐的传统命令行方式（我已经厌倦了hexo xxxx🫠），以更优雅的方式管理您的hexo博客
