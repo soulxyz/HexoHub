@@ -30,7 +30,7 @@ interface PanelSettingsProps {
 
 export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange }: PanelSettingsProps) {
   // 当前应用版本，从package.json中获取
-  const currentVersion = '1.2.2';
+  const currentVersion = '2.0.0';
   const [tempPostsPerPage, setTempPostsPerPage] = useState<number>(postsPerPage);
   const [tempAutoSaveInterval, setTempAutoSaveInterval] = useState<number>(autoSaveInterval);
   const [tempEditorMode, setTempEditorMode] = useState<'mode1' | 'mode2'>(editorMode);
