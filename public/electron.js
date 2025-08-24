@@ -125,20 +125,6 @@ app.on('activate', () => {
   }
 });
 
-app.whenReady().then(createWindow);
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
-
 // IPC handlers for file system operations
 ipcMain.handle('select-directory', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
@@ -490,16 +476,50 @@ ipcMain.handle('select-file', async () => {
   return filePaths[0];
 });
 
-// 应用退出时清理服务器进程
+// 应用退出时清理所有子进程
 app.on('before-quit', () => {
+  // 清理hexo服务器进程
   if (hexoServerProcess) {
-    if (WindowsCompat.isWindows()) {
-      const { exec } = require('child_process');
-      exec(`taskkill /pid ${hexoServerProcess.pid} /T /F`);
-    } else {
-      hexoServerProcess.kill('SIGTERM');
+    try {
+      if (WindowsCompat.isWindows()) {
+        const { exec } = require('child_process');
+        // 使用taskkill强制终止进程及其子进程
+        exec(`taskkill /pid ${hexoServerProcess.pid} /T /F`, (error) => {
+          if (error) {
+            console.error('终止hexo服务器进程失败:', error);
+          }
+        });
+      } else {
+        hexoServerProcess.kill('SIGTERM');
+      }
+    } catch (error) {
+      console.error('清理hexo服务器进程时出错:', error);
     }
     hexoServerProcess = null;
+  }
+
+  // 强制清理所有可能残留的子进程
+  if (WindowsCompat.isWindows()) {
+    const { exec } = require('child_process');
+    // 查找并终止所有相关的node进程
+    exec('taskkill /F /IM node.exe /FI "WINDOWTITLE eq HexoHub*"', (error) => {
+      if (error) {
+        console.error('清理相关进程失败:', error);
+      }
+    });
+  }
+});
+
+// 确保应用退出时彻底结束
+app.on('will-quit', () => {
+  // 在应用即将退出时做最后的清理
+  if (hexoServerProcess) {
+    try {
+      hexoServerProcess.kill('SIGKILL');
+      hexoServerProcess = null;
+    } catch (error) {
+      console.error('强制终止进程失败:', error);
+    }
   }
 });
 
