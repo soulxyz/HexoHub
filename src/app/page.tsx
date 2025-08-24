@@ -108,13 +108,10 @@ export default function Home() {
   const [updateCheckInProgress, setUpdateCheckInProgress] = useState<boolean>(false);
   const [autoCheckUpdates, setAutoCheckUpdates] = useState<boolean>(true);
 
-  // 命令输出框的大小状态
-  const [outputBoxHeight, setOutputBoxHeight] = useState<number>(128); // 默认高度 32 * 4 = 128px
-  const [outputBoxWidth, setOutputBoxWidth] = useState<number>(320); // 默认宽度 80 * 4 = 320px
-  const [isResizing, setIsResizing] = useState<{ type: 'height' | 'width' | null }>({ type: null });
+  // 日志记录相关状态
+  const [commandLogs, setCommandLogs] = useState<CommandResult[]>([]); // 存储所有命令执行结果
+  const [showLogsDialog, setShowLogsDialog] = useState<boolean>(false); // 控制日志对话框显示
   
-  // 回到顶部按钮状态
-  const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
 
   // 获取当前语言的文本
   const t = getTexts(language);
@@ -213,26 +210,7 @@ export default function Home() {
     }
   }, [backgroundOpacity]);
 
-  // 监听滚动事件，控制回到顶部按钮的显示
-  useEffect(() => {
-    const handleScroll = () => {
-      // 当页面滚动超过300px时显示按钮
-      setShowScrollToTop(window.scrollY > 300);
-    };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-
-  // 回到顶部功能
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  };
 
   // 组件加载时，尝试从localStorage加载上次选择的路径和语言设置，并检查更新
   useEffect(() => {
@@ -678,6 +656,13 @@ export default function Home() {
       // 如果有标签或分类，创建文章后需要更新front matter
       const result = await ipcRenderer.invoke('execute-hexo-command', command, hexoPath);
 
+      // 添加到日志
+      const newLog = {
+        ...result,
+        timestamp: new Date().toLocaleString(),
+        command: 'create post'
+      };
+      setCommandLogs(prev => [...prev, newLog]);
       setCommandResult(result);
       if (result.success) {
         // 显示成功通知
@@ -706,10 +691,14 @@ export default function Home() {
       }
     } catch (error) {
       console.error('创建文章失败:', error);
-      setCommandResult({
+      const createErrorResult = {
         success: false,
-        error: '创建文章失败: ' + (error?.message || '未知错误')
-      });
+        error: '创建文章失败: ' + (error?.message || '未知错误'),
+        timestamp: new Date().toLocaleString(),
+        command: 'create post'
+      };
+      setCommandLogs(prev => [...prev, createErrorResult]);
+      setCommandResult(createErrorResult);
       
       // 显示错误通知
       toast({
@@ -785,10 +774,14 @@ export default function Home() {
       setPostContent(content);
     } catch (error) {
       console.error('读取文章失败:', error);
-      setCommandResult({
+      const readErrorResult = {
         success: false,
-        error: '读取文章失败: ' + error.message
-      });
+        error: '读取文章失败: ' + error.message,
+        timestamp: new Date().toLocaleString(),
+        command: 'read post'
+      };
+      setCommandLogs(prev => [...prev, readErrorResult]);
+      setCommandResult(readErrorResult);
     } finally {
       setIsLoading(false);
       // 选择文章后设置自动保存定时器
@@ -805,10 +798,14 @@ export default function Home() {
       const { ipcRenderer } = window.require('electron');
       await ipcRenderer.invoke('write-file', selectedPost.path, postContent);
 
-      setCommandResult({
+      const saveResult = {
         success: true,
-        stdout: '文章保存成功'
-      });
+        stdout: '文章保存成功',
+        timestamp: new Date().toLocaleString(),
+        command: 'save post'
+      };
+      setCommandLogs(prev => [...prev, saveResult]);
+      setCommandResult(saveResult);
       
       // 显示成功通知
       toast({
@@ -818,10 +815,14 @@ export default function Home() {
       });
     } catch (error) {
       console.error('保存文章失败:', error);
-      setCommandResult({
+      const saveErrorResult = {
         success: false,
-        error: '保存文章失败: ' + error.message
-      });
+        error: '保存文章失败: ' + error.message,
+        timestamp: new Date().toLocaleString(),
+        command: 'save post'
+      };
+      setCommandLogs(prev => [...prev, saveErrorResult]);
+      setCommandResult(saveErrorResult);
       
       // 显示错误通知
       toast({
@@ -847,10 +848,14 @@ export default function Home() {
       const { ipcRenderer } = window.require('electron');
       await ipcRenderer.invoke('delete-file', selectedPost.path);
 
-      setCommandResult({
+      const deleteResult = {
         success: true,
-        stdout: '文章删除成功'
-      });
+        stdout: '文章删除成功',
+        timestamp: new Date().toLocaleString(),
+        command: 'delete post'
+      };
+      setCommandLogs(prev => [...prev, deleteResult]);
+      setCommandResult(deleteResult);
 
       setSelectedPost(null);
       setPostContent('');
@@ -864,10 +869,14 @@ export default function Home() {
       });
     } catch (error) {
       console.error('删除文章失败:', error);
-      setCommandResult({
+      const deleteErrorResult = {
         success: false,
-        error: '删除文章失败: ' + error.message
-      });
+        error: '删除文章失败: ' + error.message,
+        timestamp: new Date().toLocaleString(),
+        command: 'delete post'
+      };
+      setCommandLogs(prev => [...prev, deleteErrorResult]);
+      setCommandResult(deleteErrorResult);
       
       // 显示错误通知
       toast({
@@ -895,10 +904,14 @@ export default function Home() {
         await ipcRenderer.invoke('delete-file', post.path);
       }
 
-      setCommandResult({
+      const batchDeleteResult = {
         success: true,
-        stdout: `成功删除 ${postsToDelete.length} 篇文章`
-      });
+        stdout: `成功删除 ${postsToDelete.length} 篇文章`,
+        timestamp: new Date().toLocaleString(),
+        command: 'batch delete posts'
+      };
+      setCommandLogs(prev => [...prev, batchDeleteResult]);
+      setCommandResult(batchDeleteResult);
 
       // 如果当前选中的文章在被删除的文章中，清空选择
       if (selectedPost && postsToDelete.some(p => p.path === selectedPost.path)) {
@@ -916,10 +929,14 @@ export default function Home() {
       });
     } catch (error) {
       console.error('批量删除文章失败:', error);
-      setCommandResult({
+      const batchDeleteErrorResult = {
         success: false,
-        error: '批量删除文章失败: ' + error.message
-      });
+        error: '批量删除文章失败: ' + error.message,
+        timestamp: new Date().toLocaleString(),
+        command: 'batch delete posts'
+      };
+      setCommandLogs(prev => [...prev, batchDeleteErrorResult]);
+      setCommandResult(batchDeleteErrorResult);
       
       // 显示错误通知
       toast({
@@ -984,10 +1001,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         }
       }
 
-      setCommandResult({
+      const batchTagResult = {
         success: true,
-        stdout: `成功为 ${successCount}/${postsToUpdate.length} 篇文章添加标签`
-      });
+        stdout: `成功为 ${successCount}/${postsToUpdate.length} 篇文章添加标签`,
+        timestamp: new Date().toLocaleString(),
+        command: 'batch add tags'
+      };
+      setCommandLogs(prev => [...prev, batchTagResult]);
+      setCommandResult(batchTagResult);
 
       // 如果当前选中的文章在被更新的文章中，重新加载内容
       if (selectedPost && postsToUpdate.some(p => p.path === selectedPost.path)) {
@@ -996,10 +1017,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       }
     } catch (error) {
       console.error('批量添加标签失败:', error);
-      setCommandResult({
+      const batchTagErrorResult = {
         success: false,
-        error: '批量添加标签失败: ' + error.message
-      });
+        error: '批量添加标签失败: ' + error.message,
+        timestamp: new Date().toLocaleString(),
+        command: 'batch add tags'
+      };
+      setCommandLogs(prev => [...prev, batchTagErrorResult]);
+      setCommandResult(batchTagErrorResult);
     } finally {
       setIsLoading(false);
     }
@@ -1071,10 +1096,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       }
     } catch (error) {
       console.error('批量添加分类失败:', error);
-      setCommandResult({
+      const batchCategoryErrorResult = {
         success: false,
-        error: '批量添加分类失败: ' + error.message
-      });
+        error: '批量添加分类失败: ' + error.message,
+        timestamp: new Date().toLocaleString(),
+        command: 'batch add categories'
+      };
+      setCommandLogs(prev => [...prev, batchCategoryErrorResult]);
+      setCommandResult(batchCategoryErrorResult);
     } finally {
       setIsLoading(false);
     }
@@ -1091,10 +1120,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       const { ipcRenderer } = window.require('electron');
       await ipcRenderer.invoke('delete-file', postToDelete.path);
 
-      setCommandResult({
+      const deleteSingleResult = {
         success: true,
-        stdout: '文章删除成功'
-      });
+        stdout: '文章删除成功',
+        timestamp: new Date().toLocaleString(),
+        command: 'delete single post'
+      };
+      setCommandLogs(prev => [...prev, deleteSingleResult]);
+      setCommandResult(deleteSingleResult);
 
       // 如果删除的是当前选中的文章，清空选择
       if (selectedPost && selectedPost.path === postToDelete.path) {
@@ -1112,10 +1145,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       });
     } catch (error) {
       console.error('删除文章失败:', error);
-      setCommandResult({
+      const deleteErrorResult = {
         success: false,
-        error: '删除文章失败: ' + error.message
-      });
+        error: '删除文章失败: ' + error.message,
+        timestamp: new Date().toLocaleString(),
+        command: 'delete post'
+      };
+      setCommandLogs(prev => [...prev, deleteErrorResult]);
+      setCommandResult(deleteErrorResult);
       
       // 显示错误通知
       toast({
@@ -1171,10 +1208,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         // 写回文件
         await ipcRenderer.invoke('write-file', postToUpdate.path, newContent);
 
-        setCommandResult({
+        const addTagResult = {
           success: true,
-          stdout: '标签添加成功'
-        });
+          stdout: '标签添加成功',
+          timestamp: new Date().toLocaleString(),
+          command: 'add tags'
+        };
+        setCommandLogs(prev => [...prev, addTagResult]);
+        setCommandResult(addTagResult);
 
         // 如果更新的是当前选中的文章，重新加载内容
         if (selectedPost && selectedPost.path === postToUpdate.path) {
@@ -1236,10 +1277,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         // 写回文件
         await ipcRenderer.invoke('write-file', postToUpdate.path, newContent);
 
-        setCommandResult({
+        const addCategoryResult = {
           success: true,
-          stdout: '分类添加成功'
-        });
+          stdout: '分类添加成功',
+          timestamp: new Date().toLocaleString(),
+          command: 'add categories'
+        };
+        setCommandLogs(prev => [...prev, addCategoryResult]);
+        setCommandResult(addCategoryResult);
 
         // 如果更新的是当前选中的文章，重新加载内容
         if (selectedPost && selectedPost.path === postToUpdate.path) {
@@ -1267,6 +1312,13 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       const { ipcRenderer } = window.require('electron');
       const result = await ipcRenderer.invoke('execute-hexo-command', command, hexoPath);
 
+      // 添加到日志
+      const newLog = {
+        ...result,
+        timestamp: new Date().toLocaleString(),
+        command: command
+      };
+      setCommandLogs(prev => [...prev, newLog]);
       setCommandResult(result);
       
       // 显示通知
@@ -1322,10 +1374,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       }
     } catch (error) {
       console.error('执行命令失败:', error);
-      setCommandResult({
+      const commandErrorResult = {
         success: false,
-        error: '执行命令失败: ' + error.message
-      });
+        error: '执行命令失败: ' + error.message,
+        timestamp: new Date().toLocaleString(),
+        command: command
+      };
+      setCommandLogs(prev => [...prev, commandErrorResult]);
+      setCommandResult(commandErrorResult);
       
       // 显示错误通知
       toast({
@@ -1350,10 +1406,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       if (result.success) {
         setIsServerRunning(true);
         setServerProcess(result.process);
-        setCommandResult({
+        const serverStartResult = {
           success: true,
-          stdout: 'Hexo服务器已启动，访问 http://localhost:4000 预览网站'
-        });
+          stdout: 'Hexo服务器已启动，访问 http://localhost:4000 预览网站',
+          timestamp: new Date().toLocaleString(),
+          command: 'start server'
+        };
+        setCommandLogs(prev => [...prev, serverStartResult]);
+        setCommandResult(serverStartResult);
 
         // 显示成功通知
         toast({
@@ -1406,10 +1466,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       if (result.success) {
         setIsServerRunning(false);
         setServerProcess(null);
-        setCommandResult({
+        const serverStopResult = {
           success: true,
-          stdout: 'Hexo服务器已停止'
-        });
+          stdout: 'Hexo服务器已停止',
+          timestamp: new Date().toLocaleString(),
+          command: 'stop server'
+        };
+        setCommandLogs(prev => [...prev, serverStopResult]);
+        setCommandResult(serverStopResult);
         
         // 显示成功通知
         toast({
@@ -1429,10 +1493,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       }
     } catch (error) {
       console.error('停止服务器失败:', error);
-      setCommandResult({
+      const serverStopErrorResult = {
         success: false,
-        error: '停止服务器失败: ' + error.message
-      });
+        error: '停止服务器失败: ' + error.message,
+        timestamp: new Date().toLocaleString(),
+        command: 'stop server'
+      };
+      setCommandLogs(prev => [...prev, serverStopErrorResult]);
+      setCommandResult(serverStopErrorResult);
       
       // 显示错误通知
       toast({
@@ -1722,18 +1790,6 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 <Plus className="w-4 h-4 mr-2" />
                 {t.createNewArticle}
               </Button>
-            </CardContent>
-          </Card>
-
-          {/* 文章统计 */}
-          <Card className="m-4">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
-                {t.articleStatistics}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
               <Button
                 variant="outline"
                 size="sm"
@@ -1772,19 +1828,23 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 <Settings className="w-4 h-4 mr-2" />
                 面板设置
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => {
+                  setSelectedPost(null);
+                  setMainView('logs');
+                }}
+                disabled={!isValidHexoProject || isLoading}
+              >
+                <Terminal className="w-4 h-4 mr-2" />
+                查看日志
+              </Button>
             </CardContent>
           </Card>
 
-          {/* 命令结果 */}
-          {commandResult && (
-            <Card className="m-4">
-              <CardContent className="p-3">
-                <div className="max-w-full overflow-hidden">
-                  {renderCommandResult()}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
         </aside>
 
         {/* 主内容区域 */}
@@ -1814,6 +1874,59 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 backgroundOpacity={backgroundOpacity}
                 onBackgroundOpacityChange={setBackgroundOpacity}
               />
+            </div>
+          ) : mainView === 'logs' ? (
+            <div className="flex-1 p-6 overflow-auto">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Terminal className="w-5 h-5 mr-2" />
+                    操作日志
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+                    {commandLogs.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        暂无日志记录
+                      </div>
+                    ) : (
+                      commandLogs.map((log, index) => (
+                        <div key={index} className={`p-3 rounded-md border ${log.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="font-medium">{log.command}</div>
+                            <div className="text-xs text-muted-foreground">{log.timestamp}</div>
+                          </div>
+                          <div className={`text-sm ${log.success ? 'text-green-700' : 'text-red-700'}`}>
+                            {log.success ? (
+                              <div>
+                                <div className="font-semibold">✓ 命令执行成功</div>
+                                {log.stdout && <div className="mt-1">{log.stdout}</div>}
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="font-semibold">✗ 命令执行失败</div>
+                                {log.error && <div className="mt-1">{log.error}</div>}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {commandLogs.length > 0 && (
+                    <div className="mt-4 flex justify-end">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setCommandLogs([])}
+                      >
+                        清空日志
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           ) : mainView === 'posts' ? (
             selectedPost ? (
@@ -2313,16 +2426,6 @@ ${selectedText}
       {/* 通知弹窗 */}
       <Toaster />
       
-      {/* 回到顶部按钮 */}
-      <Button
-        onClick={scrollToTop}
-        className={`fixed bottom-6 right-6 rounded-full p-3 shadow-lg transition-opacity duration-300 z-50 ${
-          showScrollToTop ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-        size="icon"
-      >
-        <ChevronUp className="h-5 w-5" />
-      </Button>
     </div>
   );
 }
