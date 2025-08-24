@@ -735,8 +735,17 @@ export default function Home() {
 
         // 添加标签
         if (postData.tags.length > 0) {
-          const tagsString = postData.tags.map(tag => `  - ${tag}`).join('\n');
-          frontMatter += `\\ntags:\\n${tagsString}`;
+          // 检查是否已有tags字段
+          const tagsMatch = frontMatter.match(/^tags:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
+          if (tagsMatch) {
+            // 如果已有tags字段，替换它
+            const tagsString = postData.tags.map(tag => `  - ${tag}`).join('\n');
+            frontMatter = frontMatter.replace(/^tags:\s*([\s\S]*?)(?=\n\w|\n*$)/m, `tags:\n${tagsString}`);
+          } else {
+            // 如果没有tags字段，添加它
+            const tagsString = postData.tags.map(tag => `  - ${tag}`).join('\n');
+            frontMatter += `\ntags:\n${tagsString}`;
+          }
         }
 
         // 添加分类
