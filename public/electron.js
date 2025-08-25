@@ -47,6 +47,7 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
+    frame: false, // 移除默认窗口框架
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -122,6 +123,29 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+  }
+});
+
+// 窗口控制IPC处理
+ipcMain.on('minimize-window', () => {
+  if (mainWindow) {
+    mainWindow.minimize();
+  }
+});
+
+ipcMain.on('maximize-restore-window', () => {
+  if (mainWindow) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+});
+
+ipcMain.on('close-window', () => {
+  if (mainWindow) {
+    mainWindow.close();
   }
 });
 

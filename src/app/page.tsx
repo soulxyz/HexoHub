@@ -55,6 +55,7 @@ import { PanelSettings } from '@/components/panel-settings';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { CreateHexoDialog } from '@/components/create-hexo-dialog';
+import { CustomTitlebar } from '@/components/custom-titlebar';
 
 interface Post {
   name: string;
@@ -1581,9 +1582,12 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* 顶部导航栏 */}
-      <header className="border-b bg-card">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* 自定义标题栏 - 固定在顶部 */}
+      <CustomTitlebar />
+      
+      {/* 顶部导航栏 - 添加顶部边距以避免被固定标题栏遮挡 */}
+      <header className="border-b bg-card mt-8">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold">Hexo Hub</h1>
