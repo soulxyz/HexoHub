@@ -30,7 +30,7 @@ interface PanelSettingsProps {
 
 export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange }: PanelSettingsProps) {
   // 当前应用版本，从package.json中获取
-  const currentVersion = '2.1.1';
+  const currentVersion = '2.2.0';
   const [tempPostsPerPage, setTempPostsPerPage] = useState<number>(postsPerPage);
   const [tempAutoSaveInterval, setTempAutoSaveInterval] = useState<number>(autoSaveInterval);
   const [tempEditorMode, setTempEditorMode] = useState<'mode1' | 'mode2'>(editorMode);
@@ -330,7 +330,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>版本信息</Label>
-            <p className="text-sm text-muted-foreground">HexoHub v2.1.1</p>
+            <p className="text-sm text-muted-foreground">HexoHub v2.2.0</p>
           </div>
           
           <div className="space-y-2">
