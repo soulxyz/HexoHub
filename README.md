@@ -1,7 +1,11 @@
 # HexoHub
 
 [中文文档](https://github.com/forever218/HexoHub/blob/main/README.md)  |  [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)  
-
+[![GitHub Stars](https://img.shields.io/github/stars/forever218/Hexohub)](https://github.com/forever218/Hexohub/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/forever218/Hexohub)](https://github.com/forever218/Hexohub/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/forever218/Hexohub)](https://github.com/forever218/Hexohub/issues)
+[![GitHub License](https://img.shields.io/github/license/forever218/Hexohub)](https://github.com/forever218/Hexohub)
+[![GitHub all releases](https://img.shields.io/github/downloads/forever218/Hexohub/total)](https://github.com/forever218/Hexohub/releases)
 
 <div align="center">
   <img 
