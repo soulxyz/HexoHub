@@ -2434,6 +2434,8 @@ ${selectedText}
         onOpenChange={setShowCreateDialog}
         onConfirm={handleCreatePostConfirm}
         isLoading={isLoading}
+        availableTags={availableTags}
+        availableCategories={availableCategories}
       />
       
       {/* 通知弹窗 */}
