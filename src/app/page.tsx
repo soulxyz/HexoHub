@@ -1318,6 +1318,21 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     if (!isElectron || !hexoPath) return;
 
     setIsLoading(true);
+    
+    // 显示开始执行命令的提示
+    let commandName = '';
+    if (command === 'clean') commandName = '清理缓存';
+    else if (command === 'generate') commandName = '生成静态文件';
+    else if (command === 'deploy') commandName = '部署网站';
+    else commandName = `执行命令: ${command}`;
+    
+    // 显示开始执行的通知
+    toast({
+      title: '执行中',
+      description: `正在${commandName}...`,
+      variant: 'default',
+    });
+
     try {
       const { ipcRenderer } = window.require('electron');
       const result = await ipcRenderer.invoke('execute-hexo-command', command, hexoPath);
@@ -1409,6 +1424,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     if (!isElectron || !hexoPath || isServerRunning) return;
 
     setIsLoading(true);
+    
+    // 显示开始启动服务器的通知
+    toast({
+      title: '启动中',
+      description: '正在启动Hexo服务器...',
+      variant: 'default',
+    });
+
     try {
       const { ipcRenderer } = window.require('electron');
       const result = await ipcRenderer.invoke('start-hexo-server', hexoPath);
@@ -1469,6 +1492,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     if (!isElectron || !isServerRunning) return;
 
     setIsLoading(true);
+    
+    // 显示开始停止服务器的通知
+    toast({
+      title: '停止中',
+      description: '正在停止Hexo服务器...',
+      variant: 'default',
+    });
+
     try {
       const { ipcRenderer } = window.require('electron');
       const result = await ipcRenderer.invoke('stop-hexo-server');
