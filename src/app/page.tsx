@@ -455,7 +455,7 @@ export default function Home() {
 
     try {
       const { ipcRenderer } = window.require('electron');
-      const result = await ipcRenderer.invoke('validate-hexo-project', path);
+      const result = await ipcRenderer.invoke('validate-hexo-project', path, language);
 
       setIsValidHexoProject(result.valid);
       setValidationMessage(result.message);
@@ -668,8 +668,8 @@ export default function Home() {
       if (result.success) {
         // 显示成功通知
         toast({
-          title: '成功',
-          description: '文章创建成功',
+          title: t.success,
+          description: t.articleCreateSuccess,
           variant: 'success',
         });
         
@@ -819,8 +819,8 @@ export default function Home() {
       
       // 显示成功通知
       toast({
-        title: '成功',
-        description: '文章保存成功',
+        title: t.success,
+        description: t.articleSaveSuccess,
         variant: 'success',
       });
     } catch (error) {
@@ -873,8 +873,8 @@ export default function Home() {
       
       // 显示成功通知
       toast({
-        title: '成功',
-        description: '文章删除成功',
+        title: t.success,
+        description: t.articleDeleteSuccess,
         variant: 'success',
       });
     } catch (error) {
@@ -933,8 +933,8 @@ export default function Home() {
       
       // 显示成功通知
       toast({
-        title: '成功',
-        description: `成功删除 ${postsToDelete.length} 篇文章`,
+        title: t.success,
+        description: t.articlesDeleteSuccess.replace('{count}', postsToDelete.length),
         variant: 'success',
       });
     } catch (error) {
@@ -1013,7 +1013,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
       const batchTagResult = {
         success: true,
-        stdout: `成功为 ${successCount}/${postsToUpdate.length} 篇文章添加标签`,
+        stdout: t.tagsAddSuccess.replace('{successCount}', successCount).replace('{totalCount}', postsToUpdate.length),
         timestamp: new Date().toLocaleString(),
         command: 'batch add tags'
       };
@@ -1096,7 +1096,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
       setCommandResult({
         success: true,
-        stdout: `成功为 ${successCount}/${postsToUpdate.length} 篇文章添加分类`
+        stdout: t.categoriesAddSuccess.replace('{successCount}', successCount).replace('{totalCount}', postsToUpdate.length)
       });
 
       // 如果当前选中的文章在被更新的文章中，重新加载内容
@@ -1149,8 +1149,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示成功通知
       toast({
-        title: '成功',
-        description: '文章删除成功',
+        title: t.success,
+        description: t.articleDeleteSuccess,
         variant: 'success',
       });
     } catch (error) {
@@ -1328,8 +1328,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     
     // 显示开始执行的通知
     toast({
-      title: '执行中',
-      description: `正在${commandName}...`,
+      title: t.executing,
+      description: t.commandExecuting.replace('{command}', commandName),
       variant: 'default',
     });
 
@@ -1348,14 +1348,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示通知
       if (result.success) {
-        let message = '命令执行成功';
-        if (command === 'clean') message = '清理缓存成功';
+        let message = t.commandExecuteSuccess;
+        if (command === 'clean') message = t.cleanCacheSuccess;
         else if (command === 'generate') {
           toast({
-            title: '成功',
+            title: t.success,
             description: (
               <div className="flex items-center justify-between">
-                <span>生成静态文件成功</span>
+                <span>{t.generateStaticFilesSuccess}</span>
                 <Button 
                   variant="link" 
                   className="p-0 h-auto text-blue-600 hover:text-blue-800"
@@ -1375,21 +1375,21 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
             ),
             variant: 'success',
           });
-        } else if (command === 'deploy') message = '部署成功';
+        } else if (command === 'deploy') message = t.deploySuccess;
         
         // 对于generate命令，已经在上面显示了自定义通知，这里不再显示
         if (command !== 'generate') {
           toast({
-            title: '成功',
+            title: t.success,
             description: message,
             variant: 'success',
           });
         }
       } else {
-        let message = '命令执行失败';
-        if (command === 'clean') message = '清理缓存失败';
-        else if (command === 'generate') message = '生成静态文章失败';
-        else if (command === 'deploy') message = '部署失败';
+        let message = t.commandExecuteFailed;
+        if (command === 'clean') message = t.clean + t.error;
+        else if (command === 'generate') message = t.generate + t.error;
+        else if (command === 'deploy') message = t.deploy + t.error;
         
         toast({
           title: '失败',
@@ -1427,8 +1427,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     
     // 显示开始启动服务器的通知
     toast({
-      title: '启动中',
-      description: '正在启动Hexo服务器...',
+      title: t.starting,
+      description: t.startingServer,
       variant: 'default',
     });
 
@@ -1450,8 +1450,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
         // 显示成功通知
         toast({
-          title: '成功',
-          description: 'Hexo服务器已启动',
+          title: t.success,
+          description: t.serverRunning,
           variant: 'success',
         });
 
@@ -1495,8 +1495,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     
     // 显示开始停止服务器的通知
     toast({
-      title: '停止中',
-      description: '正在停止Hexo服务器...',
+      title: t.stopping,
+      description: t.stoppingServer,
       variant: 'default',
     });
 
@@ -1518,8 +1518,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         
         // 显示成功通知
         toast({
-          title: '成功',
-          description: 'Hexo服务器已停止',
+          title: t.success,
+          description: t.serverStopped,
           variant: 'success',
         });
       } else {
@@ -1584,7 +1584,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           <div className="font-mono text-xs whitespace-pre-wrap break-words overflow-hidden max-w-full">
             {commandResult.success ? (
               <div className="text-green-700">
-                <div className="font-semibold">✓ 命令执行成功</div>
+                <div className="font-semibold">✓ {t.commandExecuteSuccess}</div>
                 {commandResult.stdout && (
                   <div className="mt-2 max-h-32 overflow-y-auto overflow-x-hidden">
                     {formatOutput(commandResult.stdout)}
@@ -1593,7 +1593,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
               </div>
             ) : (
               <div className="text-red-700">
-                <div className="font-semibold">✗ 命令执行失败</div>
+                <div className="font-semibold">✗ {t.commandExecuteFailed}</div>
                 {commandResult.error && (
                   <div className="mt-2 max-h-32 overflow-y-auto overflow-x-hidden">
                     {formatOutput(commandResult.error)}
@@ -1771,6 +1771,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                     }
                     await validateHexoProject(path);
                   }}
+                  language={language}
                 >
                   <Button
                     variant="outline"
@@ -1780,7 +1781,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                     className="w-full"
                   >
                     <Plus className="w-3 h-3 mr-1" />
-                    创建Hexo项目
+                    {t.createHexoProject}
                   </Button>
                 </CreateHexoDialog>
               </div>
@@ -1855,7 +1856,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center">
                 <Settings className="w-4 h-4 mr-2" />
-                面板设置
+                {t.panelSettings}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -1870,7 +1871,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 disabled={!isValidHexoProject || isLoading}
               >
                 <Settings className="w-4 h-4 mr-2" />
-                面板设置
+                {t.panelSettings}
               </Button>
               <Button
                 variant="outline"
@@ -1883,7 +1884,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 disabled={!isValidHexoProject || isLoading}
               >
                 <Terminal className="w-4 h-4 mr-2" />
-                查看日志
+                {t.viewLogs}
               </Button>
             </CardContent>
           </Card>
@@ -1926,14 +1927,14 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Terminal className="w-5 h-5 mr-2" />
-                    操作日志
+                    {t.operationLogs}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
                     {commandLogs.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
-                        暂无日志记录
+                        {t.noLogs}
                       </div>
                     ) : (
                       commandLogs.map((log, index) => (
@@ -1945,12 +1946,12 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                           <div className={`text-sm ${log.success ? 'text-green-700' : 'text-red-700'}`}>
                             {log.success ? (
                               <div>
-                                <div className="font-semibold">✓ 命令执行成功</div>
+                                <div className="font-semibold">{t.commandExecutedSuccess}</div>
                                 {log.stdout && <div className="mt-1">{log.stdout}</div>}
                               </div>
                             ) : (
                               <div>
-                                <div className="font-semibold">✗ 命令执行失败</div>
+                                <div className="font-semibold">{t.commandExecutedFailed}</div>
                                 {log.error && <div className="mt-1">{log.error}</div>}
                               </div>
                             )}
@@ -1966,7 +1967,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                         size="sm" 
                         onClick={() => setCommandLogs([])}
                       >
-                        清空日志
+                        {t.clearLogs}
                       </Button>
                     </div>
                   )}
@@ -2469,6 +2470,7 @@ ${selectedText}
         isLoading={isLoading}
         availableTags={availableTags}
         availableCategories={availableCategories}
+        language={language}
       />
       
       {/* 通知弹窗 */}

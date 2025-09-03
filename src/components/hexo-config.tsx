@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Settings, Save, RotateCcw, Download, Upload } from 'lucide-react';
+import { Language, getTexts } from '@/utils/i18n';
 
 interface HexoConfigProps {
   hexoPath: string;
@@ -35,8 +36,22 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
   const [rawConfig, setRawConfig] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [saveResult, setSaveResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [language, setLanguage] = useState<Language>('zh');
+  
+  // 获取当前语言的文本
+  const t = getTexts(language);
 
   const isElectron = typeof window !== 'undefined' && window.require;
+  
+  // 组件加载时，尝试从localStorage加载语言设置
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLanguage = localStorage.getItem('app-language') as Language;
+      if (savedLanguage && (savedLanguage === 'zh' || savedLanguage === 'en')) {
+        setLanguage(savedLanguage);
+      }
+    }
+  }, []);
 
   // 加载配置文件
   const loadConfig = async () => {
@@ -127,7 +142,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
 
       setSaveResult({
         success: true,
-        message: '配置保存成功'
+        message: t.configSaveSuccess
       });
 
       if (onConfigUpdate) {
@@ -179,7 +194,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
         parseConfig(content);
         setSaveResult({
           success: true,
-          message: '配置导入成功，请点击保存'
+          message: t.configImportSuccess
         });
       }
     };
@@ -251,7 +266,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center">
             <Settings className="w-4 h-4 mr-2" />
-            Hexo 配置
+            {t.hexoConfig}
           </CardTitle>
           <div className="flex items-center space-x-2">
             <Button
@@ -261,7 +276,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
               disabled={!rawConfig}
             >
               <Download className="w-3 h-3 mr-1" />
-              导出
+              {t.exportConfig}
             </Button>
             <Button
               variant="outline"
@@ -269,7 +284,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
               onClick={importConfig}
             >
               <Upload className="w-3 h-3 mr-1" />
-              导入
+              {t.importConfig}
             </Button>
             <Button
               variant="outline"
@@ -278,7 +293,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
               disabled={isLoading}
             >
               <RotateCcw className="w-3 h-3 mr-1" />
-              重置
+              {t.resetConfig}
             </Button>
             <Button
               variant="outline"
@@ -287,7 +302,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
               disabled={isLoading}
             >
               <Save className="w-3 h-3 mr-1" />
-              保存
+              {t.saveConfig}
             </Button>
           </div>
         </div>
@@ -304,14 +319,14 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
 
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="basic">基本设置</TabsTrigger>
-            <TabsTrigger value="advanced">高级设置</TabsTrigger>
+            <TabsTrigger value="basic">{t.basicSettings}</TabsTrigger>
+            <TabsTrigger value="advanced">{t.advancedSettings}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="basic" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="title">网站标题</Label>
+                <Label htmlFor="title">{t.websiteTitle}</Label>
                 <Input
                   id="title"
                   value={configData.title || ''}
@@ -321,7 +336,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="subtitle">副标题</Label>
+                <Label htmlFor="subtitle">{t.subtitle}</Label>
                 <Input
                   id="subtitle"
                   value={configData.subtitle || ''}
@@ -331,7 +346,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="author">作者</Label>
+                <Label htmlFor="author">{t.author}</Label>
                 <Input
                   id="author"
                   value={configData.author || ''}
@@ -341,7 +356,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="language">语言</Label>
+                <Label htmlFor="language">{t.language}</Label>
                 <Input
                   id="language"
                   value={configData.language || ''}
@@ -351,7 +366,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="timezone">时区</Label>
+                <Label htmlFor="timezone">{t.timezone}</Label>
                 <Input
                   id="timezone"
                   value={configData.timezone || ''}
@@ -361,7 +376,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="theme">主题</Label>
+                <Label htmlFor="theme">{t.theme}</Label>
                 <Input
                   id="theme"
                   value={configData.theme || ''}
@@ -372,7 +387,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">网站描述</Label>
+              <Label htmlFor="description">{t.websiteDescription}</Label>
               <Textarea
                 id="description"
                 value={configData.description || ''}
@@ -386,7 +401,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
           <TabsContent value="advanced" className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="url">网站 URL</Label>
+                <Label htmlFor="url">{t.websiteUrl}</Label>
                 <Input
                   id="url"
                   value={configData.url || ''}
@@ -396,7 +411,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="root">网站根目录</Label>
+                <Label htmlFor="root">{t.websiteRoot}</Label>
                 <Input
                   id="root"
                   value={configData.root || ''}
@@ -407,7 +422,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="permalink">文章永久链接格式</Label>
+              <Label htmlFor="permalink">{t.permalinkFormat}</Label>
               <Input
                 id="permalink"
                 value={configData.permalink || ''}
@@ -417,7 +432,7 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="raw-config">原始配置 (YAML)</Label>
+              <Label htmlFor="raw-config">{t.rawConfig}</Label>
               <Textarea
                 id="raw-config"
                 value={rawConfig}

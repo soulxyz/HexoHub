@@ -14,6 +14,20 @@ export interface I18nTexts {
   select: string;
   error: string;
   success: string;
+  cleanCacheSuccess: string;
+  generateStaticFilesSuccess: string;
+  deploySuccess: string;
+  articleCreateSuccess: string;
+  articleSaveSuccess: string;
+  articleDeleteSuccess: string;
+  articlesDeleteSuccess: string;
+  tagsAddSuccess: string;
+  categoriesAddSuccess: string;
+  configSaveSuccess: string;
+  configImportSuccess: string;
+  optional: string;
+  creating: string;
+  createArticle: string;
   postsPerPageRangeError: string;
   autoSaveIntervalRangeError: string;
   settingsSaved: string;
@@ -22,6 +36,8 @@ export interface I18nTexts {
   hexoProject: string;
   selectHexoDirectory: string;
   clearSavedPath: string;
+  validHexoProject: string;
+  invalidHexoProject: string;
 
   // 文章管理
   articles: string;
@@ -48,6 +64,24 @@ export interface I18nTexts {
 
   // 配置
   hexoConfig: string;
+  exportConfig: string;
+  importConfig: string;
+  resetConfig: string;
+  saveConfig: string;
+  basicSettings: string;
+  advancedSettings: string;
+  websiteTitle: string;
+  subtitle: string;
+  author: string;
+  language: string;
+  timezone: string;
+  theme: string;
+  websiteDescription: string;
+  websiteUrl: string;
+  websiteRoot: string;
+  permalinkFormat: string;
+  rawConfig: string;
+  yamlConfig: string;
 
   // 命令
   commands: string;
@@ -57,6 +91,12 @@ export interface I18nTexts {
   clean: string;
   startServer: string;
   stopServer: string;
+  executing: string;
+  commandExecuting: string;
+  commandExecuteSuccess: string;
+  commandExecuteFailed: string;
+  startingServer: string;
+  stoppingServer: string;
 
   // 状态
   serverRunning: string;
@@ -79,6 +119,10 @@ export interface I18nTexts {
   excerpt: string;
   addTag: string;
   addCategory: string;
+  pleaseEnterArticleTitle: string;
+  pleaseEnterTags: string;
+  pleaseEnterCategories: string;
+  pleaseEnterExcerpt: string;
 
   // 操作按钮
   saveArticle: string;
@@ -163,6 +207,14 @@ export interface I18nTexts {
   previousPage: string;
   nextPage: string;
 
+  // 日志记录
+  viewLogs: string;
+  operationLogs: string;
+  noLogs: string;
+  clearLogs: string;
+  commandExecutedSuccess: string;
+  commandExecutedFailed: string;
+
   // 对话框
   confirmDelete: string;
   deleteConfirmMessage: string;
@@ -177,6 +229,55 @@ export interface I18nTexts {
   categoriesPlaceholder: string;
   operationIrreversible: string;
   add: string;
+
+  // 创建Hexo项目
+  createHexoProject: string;
+  createHexoProjectDescription: string;
+  checkingEnvironment: string;
+  hexoProjectLocation: string;
+  selectDirectory: string;
+  projectFolderName: string;
+  useTaobaoMirror: string;
+  useTaobaoMirrorRecommended: string;
+  installDeployPlugin: string;
+  installDeployPluginDescription: string;
+  installationProgress: string;
+  commandOutput: string;
+  cancel: string;
+  close: string;
+  creating: string;
+  createProject: string;
+  hexoAlreadyInstalled: string;
+  hexoNotInstalled: string;
+  installNpmAndGitFirst: string;
+  settingTaobaoMirror: string;
+  taobaoMirrorSetSuccess: string;
+  installingHexoCli: string;
+  hexoCliInstallSuccess: string;
+  creatingHexoProject: string;
+  hexoProjectCreatedSuccess: string;
+  dependenciesInstalled: string;
+  installingDeployPlugin: string;
+  deployPluginInstallSuccess: string;
+  hexoProjectCreationComplete: string;
+  createSuccess: string;
+  hexoProjectCreatedSuccessfully: string;
+  createFailed: string;
+  missingDependency: string;
+  pleaseInstallNpm: string;
+  pleaseInstallGit: string;
+  selectDirectoryFailed: string;
+  unknownError: string;
+  checkingNpm: string;
+  npmInstalled: string;
+  npmNotInstalled: string;
+  checkingGit: string;
+  gitInstalled: string;
+  gitNotInstalled: string;
+  checkingHexo: string;
+  hexoInstalled: string;
+  hexoNotInstalled: string;
+  environmentCheckFailed: string;
 }
 
 export const i18nTexts: Record<Language, I18nTexts> = {
@@ -193,6 +294,20 @@ export const i18nTexts: Record<Language, I18nTexts> = {
     select: '选择',
     error: '错误',
     success: '成功',
+    cleanCacheSuccess: '清理缓存成功',
+    generateStaticFilesSuccess: '生成静态文件成功',
+    deploySuccess: '部署成功',
+    articleCreateSuccess: '文章创建成功',
+    articleSaveSuccess: '文章保存成功',
+    articleDeleteSuccess: '文章删除成功',
+    articlesDeleteSuccess: '成功删除 {count} 篇文章',
+    tagsAddSuccess: '成功为 {successCount}/{totalCount} 篇文章添加标签',
+    categoriesAddSuccess: '成功为 {successCount}/{totalCount} 篇文章添加分类',
+    configSaveSuccess: '配置保存成功',
+    configImportSuccess: '配置导入成功，请点击保存',
+    optional: '可选',
+    creating: '创建中...',
+    createArticle: '创建文章',
     postsPerPageRangeError: '每页显示文章数量必须在1-100之间',
     autoSaveIntervalRangeError: '自动保存间隔必须在1-60分钟之间',
     settingsSaved: '设置已保存',
@@ -201,6 +316,8 @@ export const i18nTexts: Record<Language, I18nTexts> = {
     hexoProject: 'Hexo项目',
     selectHexoDirectory: '选择Hexo项目目录',
     clearSavedPath: '清除保存的路径',
+    validHexoProject: '有效的Hexo项目',
+    invalidHexoProject: '不是有效的Hexo项目目录',
 
     // 文章管理
     articles: '文章',
@@ -261,7 +378,25 @@ console.log('Hello, Hexo!');
 | 内容1 | 内容2 | 内容3 |`,
 
     // 配置
-    hexoConfig: 'Hexo配置',
+    hexoConfig: 'Hexo 配置',
+    exportConfig: '导出',
+    importConfig: '导入',
+    resetConfig: '重置',
+    saveConfig: '保存',
+    basicSettings: '基本设置',
+    advancedSettings: '高级设置',
+    websiteTitle: '网站标题',
+    subtitle: '副标题',
+    author: '作者',
+    language: '语言',
+    timezone: '时区',
+    theme: '主题',
+    websiteDescription: '网站描述',
+    websiteUrl: '网站 URL',
+    websiteRoot: '网站根目录',
+    permalinkFormat: '文章永久链接格式',
+    rawConfig: '原始配置 (YAML)',
+    yamlConfig: 'YAML 配置内容',
 
     // 命令
     commands: '命令',
@@ -271,6 +406,12 @@ console.log('Hello, Hexo!');
     clean: '清理',
     startServer: '启动服务器',
     stopServer: '停止服务器',
+    executing: '执行中',
+    commandExecuting: '正在执行{command}...',
+    commandExecuteSuccess: '命令执行成功',
+    commandExecuteFailed: '命令执行失败',
+    startingServer: '正在启动Hexo服务器...',
+    stoppingServer: '正在停止Hexo服务器...',
 
     // 状态
     serverRunning: '服务器运行中',
@@ -293,6 +434,10 @@ console.log('Hello, Hexo!');
     excerpt: '摘要',
     addTag: '添加标签',
     addCategory: '添加分类',
+    pleaseEnterArticleTitle: '请输入文章标题',
+    pleaseEnterTags: '输入标签后按回车添加',
+    pleaseEnterCategories: '输入分类后按回车添加',
+    pleaseEnterExcerpt: '请输入文章摘要',
 
     // 操作按钮
     saveArticle: '保存文章',
@@ -377,6 +522,14 @@ console.log('Hello, Hexo!');
     previousPage: '上一页',
     nextPage: '下一页',
 
+    // 日志记录
+    viewLogs: '查看日志',
+    operationLogs: '操作日志',
+    noLogs: '暂无日志记录',
+    clearLogs: '清空日志',
+    commandExecutedSuccess: '✓ 命令执行成功',
+    commandExecutedFailed: '✗ 命令执行失败',
+
     // 对话框
     confirmDelete: '确认删除',
     deleteConfirmMessage: '您确定要删除选中的 {count} 篇文章吗？此操作不可撤销。',
@@ -391,6 +544,55 @@ console.log('Hello, Hexo!');
     categoriesPlaceholder: '例如：技术,教程',
     operationIrreversible: '此操作不可撤销。',
     add: '添加',
+
+    // 创建Hexo项目
+    createHexoProject: '创建 Hexo 项目',
+    createHexoProjectDescription: '创建一个新的 Hexo 博客项目',
+    checkingEnvironment: '正在检查环境...',
+    hexoProjectLocation: 'Hexo 项目安装位置',
+    selectDirectory: '选择目录',
+    projectFolderName: '项目文件夹名称',
+    useTaobaoMirror: '使用淘宝镜像源',
+    useTaobaoMirrorRecommended: '使用淘宝镜像源 (推荐)',
+    installDeployPlugin: '安装部署插件',
+    installDeployPluginDescription: '安装部署插件 (hexo-deployer-git)',
+    installationProgress: '安装进度',
+    commandOutput: '命令输出将显示在这里...',
+    cancel: '取消',
+    close: '关闭',
+    creating: '创建中...',
+    createProject: '创建项目',
+    hexoAlreadyInstalled: 'Hexo 已安装 (版本: {version})，将跳过 Hexo 安装步骤',
+    hexoNotInstalled: 'Hexo 未安装，将自动安装 Hexo',
+    installNpmAndGitFirst: '请先安装 npm 和 git',
+    settingTaobaoMirror: '设置淘宝镜像源...',
+    taobaoMirrorSetSuccess: '淘宝镜像源设置成功',
+    installingHexoCli: '安装 hexo-cli...',
+    hexoCliInstallSuccess: 'hexo-cli 安装成功',
+    creatingHexoProject: '创建 Hexo 项目到 {path}...',
+    hexoProjectCreatedSuccess: 'Hexo 项目创建成功',
+    dependenciesInstalled: '项目依赖已自动安装',
+    installingDeployPlugin: '安装部署插件...',
+    deployPluginInstallSuccess: '部署插件安装成功',
+    hexoProjectCreationComplete: 'Hexo 项目创建完成!',
+    createSuccess: '创建成功',
+    hexoProjectCreatedSuccessfully: 'Hexo 项目已成功创建',
+    createFailed: '创建失败',
+    missingDependency: '缺少依赖',
+    pleaseInstallNpm: '请先安装 npm',
+    pleaseInstallGit: '请先安装 git',
+    selectDirectoryFailed: '选择目录失败',
+    unknownError: '未知错误',
+    checkingNpm: '检查 npm...',
+    npmInstalled: 'npm 已安装: {version}',
+    npmNotInstalled: 'npm 未安装: {error}',
+    checkingGit: '检查 git...',
+    gitInstalled: 'git 已安装: {version}',
+    gitNotInstalled: 'git 未安装: {error}',
+    checkingHexo: '检查 hexo...',
+    hexoInstalled: 'hexo 已安装: {version}',
+    hexoNotInstalled: 'hexo 未安装: {error}',
+    environmentCheckFailed: '检查环境失败: {error}',
   },
 
   en: {
@@ -406,6 +608,20 @@ console.log('Hello, Hexo!');
     select: 'Select',
     error: 'Error',
     success: 'Success',
+    cleanCacheSuccess: 'Cache cleaned successfully',
+    generateStaticFilesSuccess: 'Static files generated successfully',
+    deploySuccess: 'Deployed successfully',
+    articleCreateSuccess: 'Article created successfully',
+    articleSaveSuccess: 'Article saved successfully',
+    articleDeleteSuccess: 'Article deleted successfully',
+    articlesDeleteSuccess: 'Successfully deleted {count} articles',
+    tagsAddSuccess: 'Successfully added tags to {successCount}/{totalCount} articles',
+    categoriesAddSuccess: 'Successfully added categories to {successCount}/{totalCount} articles',
+    configSaveSuccess: 'Configuration saved successfully',
+    configImportSuccess: 'Configuration imported successfully, please click save',
+    optional: 'Optional',
+    creating: 'Creating...',
+    createArticle: 'Create Article',
     postsPerPageRangeError: 'Posts per page must be between 1-100',
     autoSaveIntervalRangeError: 'Auto save interval must be between 1-60 minutes',
     settingsSaved: 'Settings saved',
@@ -414,6 +630,8 @@ console.log('Hello, Hexo!');
     hexoProject: 'Hexo Project',
     selectHexoDirectory: 'Select Hexo Project Directory',
     clearSavedPath: 'Clear Saved Path',
+    validHexoProject: 'Valid Hexo Project',
+    invalidHexoProject: 'Not a valid Hexo project directory',
 
     // 文章管理
     articles: 'Articles',
@@ -475,6 +693,24 @@ console.log('Hello, Hexo!');
 
     // 配置
     hexoConfig: 'Hexo Config',
+    exportConfig: 'Export',
+    importConfig: 'Import',
+    resetConfig: 'Reset',
+    saveConfig: 'Save',
+    basicSettings: 'Basic Settings',
+    advancedSettings: 'Advanced Settings',
+    websiteTitle: 'Website Title',
+    subtitle: 'Subtitle',
+    author: 'Author',
+    language: 'Language',
+    timezone: 'Timezone',
+    theme: 'Theme',
+    websiteDescription: 'Website Description',
+    websiteUrl: 'Website URL',
+    websiteRoot: 'Website Root',
+    permalinkFormat: 'Permalink Format',
+    rawConfig: 'Raw Config (YAML)',
+    yamlConfig: 'YAML Configuration Content',
 
     // 命令
     commands: 'Commands',
@@ -484,6 +720,12 @@ console.log('Hello, Hexo!');
     clean: 'Clean',
     startServer: 'Start Server',
     stopServer: 'Stop Server',
+    executing: 'Executing',
+    commandExecuting: 'Executing {command}...',
+    commandExecuteSuccess: 'Command executed successfully',
+    commandExecuteFailed: 'Command execution failed',
+    startingServer: 'Starting Hexo server...',
+    stoppingServer: 'Stopping Hexo server...',
 
     // 状态
     serverRunning: 'Server Running',
@@ -506,6 +748,10 @@ console.log('Hello, Hexo!');
     excerpt: 'Excerpt',
     addTag: 'Add Tag',
     addCategory: 'Add Category',
+    pleaseEnterArticleTitle: 'Please enter article title',
+    pleaseEnterTags: 'Enter tags and press Enter to add',
+    pleaseEnterCategories: 'Enter categories and press Enter to add',
+    pleaseEnterExcerpt: 'Please enter article excerpt',
 
     // 操作按钮
     saveArticle: 'Save Article',
@@ -590,6 +836,14 @@ console.log('Hello, Hexo!');
     previousPage: 'Previous Page',
     nextPage: 'Next Page',
 
+    // 日志记录
+    viewLogs: 'View Logs',
+    operationLogs: 'Operation Logs',
+    noLogs: 'No log records',
+    clearLogs: 'Clear Logs',
+    commandExecutedSuccess: '✓ Command executed successfully',
+    commandExecutedFailed: '✗ Command execution failed',
+
     // 对话框
     confirmDelete: 'Confirm Delete',
     deleteConfirmMessage: 'Are you sure you want to delete the selected {count} articles? This operation cannot be undone.',
@@ -604,6 +858,55 @@ console.log('Hello, Hexo!');
     categoriesPlaceholder: 'e.g. Technology, Tutorial',
     operationIrreversible: 'This operation cannot be undone.',
     add: 'Add',
+
+    // 创建Hexo项目
+    createHexoProject: 'Create Hexo Project',
+    createHexoProjectDescription: 'Create a new Hexo blog project',
+    checkingEnvironment: 'Checking environment...',
+    hexoProjectLocation: 'Hexo Project Installation Location',
+    selectDirectory: 'Select Directory',
+    projectFolderName: 'Project Folder Name',
+    useTaobaoMirror: 'Use Taobao Mirror',
+    useTaobaoMirrorRecommended: 'Use Taobao Mirror (Recommended)',
+    installDeployPlugin: 'Install Deploy Plugin',
+    installDeployPluginDescription: 'Install deploy plugin (hexo-deployer-git)',
+    installationProgress: 'Installation Progress',
+    commandOutput: 'Command output will be displayed here...',
+    cancel: 'Cancel',
+    close: 'Close',
+    creating: 'Creating...',
+    createProject: 'Create Project',
+    hexoAlreadyInstalled: 'Hexo is already installed (version: {version}), will skip Hexo installation',
+    hexoNotInstalled: 'Hexo is not installed, will install Hexo automatically',
+    installNpmAndGitFirst: 'Please install npm and git first',
+    settingTaobaoMirror: 'Setting Taobao mirror...',
+    taobaoMirrorSetSuccess: 'Taobao mirror set successfully',
+    installingHexoCli: 'Installing hexo-cli...',
+    hexoCliInstallSuccess: 'hexo-cli installed successfully',
+    creatingHexoProject: 'Creating Hexo project to {path}...',
+    hexoProjectCreatedSuccess: 'Hexo project created successfully',
+    dependenciesInstalled: 'Project dependencies installed automatically',
+    installingDeployPlugin: 'Installing deploy plugin...',
+    deployPluginInstallSuccess: 'Deploy plugin installed successfully',
+    hexoProjectCreationComplete: 'Hexo project creation complete!',
+    createSuccess: 'Create Success',
+    hexoProjectCreatedSuccessfully: 'Hexo project created successfully',
+    createFailed: 'Create Failed',
+    missingDependency: 'Missing Dependency',
+    pleaseInstallNpm: 'Please install npm first',
+    pleaseInstallGit: 'Please install git first',
+    selectDirectoryFailed: 'Failed to select directory',
+    unknownError: 'Unknown error',
+    checkingNpm: 'Checking npm...',
+    npmInstalled: 'npm installed: {version}',
+    npmNotInstalled: 'npm not installed: {error}',
+    checkingGit: 'Checking git...',
+    gitInstalled: 'git installed: {version}',
+    gitNotInstalled: 'git not installed: {error}',
+    checkingHexo: 'Checking hexo...',
+    hexoInstalled: 'hexo installed: {version}',
+    hexoNotInstalled: 'hexo not installed: {error}',
+    environmentCheckFailed: 'Environment check failed: {error}',
   }
 };
 

@@ -19,10 +19,12 @@ import {
 } from '@/components/ui/dialog';
 import { FolderOpen, Download, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Language, getTexts } from '@/utils/i18n';
 
 interface CreateHexoDialogProps {
   onCreateSuccess?: (path: string) => void;
   children: React.ReactNode;
+  language: Language;
 }
 
 interface CommandResult {
@@ -32,7 +34,7 @@ interface CommandResult {
   error?: string;
 }
 
-export function CreateHexoDialog({ onCreateSuccess, children }: CreateHexoDialogProps) {
+export function CreateHexoDialog({ onCreateSuccess, children, language }: CreateHexoDialogProps) {
   const [open, setOpen] = useState(false);
   const [hexoPath, setHexoPath] = useState<string>('');
   const [folderName, setFolderName] = useState<string>('blog');
@@ -48,6 +50,7 @@ export function CreateHexoDialog({ onCreateSuccess, children }: CreateHexoDialog
   const [isCheckingEnvironment, setIsCheckingEnvironment] = useState<boolean>(true);
 
   const { toast } = useToast();
+  const t = getTexts(language);
 
   // 检查是否在Electron环境中
   const isElectron = typeof window !== 'undefined' && window.require;
@@ -61,37 +64,37 @@ export function CreateHexoDialog({ onCreateSuccess, children }: CreateHexoDialog
 
   const checkEnvironment = async () => {
     setIsCheckingEnvironment(true);
-    setCommandOutput('正在检查环境...');
+    setCommandOutput(t.checkingEnvironment);
 
     try {
       const { ipcRenderer } = window.require('electron');
 
       // 检查npm
-      setCommandOutput(prev => prev + '检查 npm...');
+      setCommandOutput(prev => prev + t.checkingNpm);
       const npmResult = await ipcRenderer.invoke('execute-command', 'npm -v');
       if (npmResult.success) {
         setNpmInstalled(true);
-        setCommandOutput(prev => prev + `npm 已安装: ${npmResult.stdout}
+        setCommandOutput(prev => prev + `${t.npmInstalled.replace('{version}', npmResult.stdout)}
 `);
       } else {
-        setCommandOutput(prev => prev + `npm 未安装: ${npmResult.stderr || npmResult.error}
+        setCommandOutput(prev => prev + `${t.npmNotInstalled.replace('{error}', npmResult.stderr || npmResult.error)}
 `);
       }
 
       // 检查git
-      setCommandOutput(prev => prev + '检查 git...');
+      setCommandOutput(prev => prev + t.checkingGit);
       const gitResult = await ipcRenderer.invoke('execute-command', 'git --version');
       if (gitResult.success) {
         setGitInstalled(true);
-        setCommandOutput(prev => prev + `git 已安装: ${gitResult.stdout}
+        setCommandOutput(prev => prev + `${t.gitInstalled.replace('{version}', gitResult.stdout)}
 `);
       } else {
-        setCommandOutput(prev => prev + `git 未安装: ${gitResult.stderr || gitResult.error}
+        setCommandOutput(prev => prev + `${t.gitNotInstalled.replace('{error}', gitResult.stderr || gitResult.error)}
 `);
       }
 
       // 检查hexo
-      setCommandOutput(prev => prev + '检查 hexo...');
+      setCommandOutput(prev => prev + t.checkingHexo);
       const hexoResult = await ipcRenderer.invoke('execute-command', 'hexo -v');
       if (hexoResult.success) {
         setHexoInstalled(true);
@@ -100,15 +103,15 @@ export function CreateHexoDialog({ onCreateSuccess, children }: CreateHexoDialog
         if (versionMatch) {
           setHexoVersion(versionMatch[1]);
         }
-        setCommandOutput(prev => prev + `hexo 已安装: ${hexoResult.stdout}
+        setCommandOutput(prev => prev + `${t.hexoInstalled.replace('{version}', hexoResult.stdout)}
 `);
       } else {
-        setCommandOutput(prev => prev + `hexo 未安装: ${hexoResult.stderr || hexoResult.error}
+        setCommandOutput(prev => prev + `${t.hexoNotInstalled.replace('{error}', hexoResult.stderr || hexoResult.error)}
 `);
       }
     } catch (error) {
       console.error('检查环境失败:', error);
-      setCommandOutput(prev => prev + `检查环境失败: ${error.message}
+      setCommandOutput(prev => prev + `${t.environmentCheckFailed.replace('{error}', error.message)}
 `);
     } finally {
       setIsCheckingEnvironment(false);
@@ -128,8 +131,8 @@ export function CreateHexoDialog({ onCreateSuccess, children }: CreateHexoDialog
     } catch (error) {
       console.error('选择目录失败:', error);
       toast({
-        title: '选择目录失败',
-        description: error instanceof Error ? error.message : '未知错误',
+        title: t.selectDirectoryFailed,
+        description: error instanceof Error ? error.message : t.unknownError,
         variant: 'error',
       });
     }
@@ -139,16 +142,16 @@ export function CreateHexoDialog({ onCreateSuccess, children }: CreateHexoDialog
     if (!isElectron) return;
     if (!npmInstalled) {
       toast({
-        title: '缺少依赖',
-        description: '请先安装 npm',
+        title: t.missingDependency,
+        description: t.pleaseInstallNpm,
         variant: 'error',
       });
       return;
     }
     if (!gitInstalled) {
       toast({
-        title: '缺少依赖',
-        description: '请先安装 git',
+        title: t.missingDependency,
+        description: t.pleaseInstallGit,
         variant: 'error',
       });
       return;
@@ -156,7 +159,7 @@ export function CreateHexoDialog({ onCreateSuccess, children }: CreateHexoDialog
 
     setIsInstalling(true);
     setProgress(0);
-    setCommandOutput('开始创建 Hexo 项目...');
+    setCommandOutput(t.creatingHexoProject.replace('{path}', `${hexoPath}/${folderName}`));
 
     try {
       const { ipcRenderer } = window.require('electron');
@@ -165,62 +168,62 @@ export function CreateHexoDialog({ onCreateSuccess, children }: CreateHexoDialog
       // 设置淘宝镜像源
       if (useTaobaoMirror) {
         setProgress(10);
-        setCommandOutput(prev => prev + '设置淘宝镜像源...');
+        setCommandOutput(prev => prev + t.settingTaobaoMirror);
         const mirrorResult = await ipcRenderer.invoke('execute-command', 'npm config set registry https://registry.npmmirror.com');
         if (!mirrorResult.success) {
-          throw new Error(`设置镜像源失败: ${mirrorResult.stderr || mirrorResult.error}`);
+          throw new Error(`${t.settingTaobaoMirror}: ${mirrorResult.stderr || mirrorResult.error}`);
         }
-        setCommandOutput(prev => prev + '淘宝镜像源设置成功');
+        setCommandOutput(prev => prev + t.taobaoMirrorSetSuccess);
       }
 
       // 安装 hexo-cli（如果未安装）
       if (!hexoInstalled) {
         setProgress(20);
-        setCommandOutput(prev => prev + '安装 hexo-cli...');
+        setCommandOutput(prev => prev + t.installingHexoCli);
         const installHexoResult = await ipcRenderer.invoke('execute-command', 'npm install hexo-cli');
         if (!installHexoResult.success) {
-          throw new Error(`安装 hexo-cli 失败: ${installHexoResult.stderr || installHexoResult.error}`);
+          throw new Error(`${t.installingHexoCli}: ${installHexoResult.stderr || installHexoResult.error}`);
         }
-        setCommandOutput(prev => prev + `hexo-cli 安装成功
+        setCommandOutput(prev => prev + `${t.hexoCliInstallSuccess}
 ${installHexoResult.stdout}
 `);
       }
 
       // 创建 hexo 项目
       setProgress(40);
-      setCommandOutput(prev => prev + `创建 Hexo 项目到 ${projectPath}...
+      setCommandOutput(prev => prev + `${t.creatingHexoProject.replace('{path}', projectPath)}
 `);
       const initResult = await ipcRenderer.invoke('execute-command', `hexo init ${projectPath}`);
       if (!initResult.success) {
-        throw new Error(`创建 Hexo 项目失败: ${initResult.stderr || initResult.error}`);
+        throw new Error(`${t.creatingHexoProject}: ${initResult.stderr || initResult.error}`);
       }
-      setCommandOutput(prev => prev + `Hexo 项目创建成功
+      setCommandOutput(prev => prev + `${t.hexoProjectCreatedSuccess}
 ${initResult.stdout}
 `);
 
       // 进入项目目录（hexo init已经自动安装了依赖）
       setProgress(60);
-      setCommandOutput(prev => prev + '项目依赖已自动安装');
+      setCommandOutput(prev => prev + t.dependenciesInstalled);
 
       // 安装部署插件
       if (installDeployPlugin) {
         setProgress(80);
-        setCommandOutput(prev => prev + '安装部署插件...');
+        setCommandOutput(prev => prev + t.installingDeployPlugin);
         const installPluginResult = await ipcRenderer.invoke('execute-command', `cd ${projectPath} && npm install hexo-deployer-git --save`);
         if (!installPluginResult.success) {
-          throw new Error(`安装部署插件失败: ${installPluginResult.stderr || installPluginResult.error}`);
+          throw new Error(`${t.installingDeployPlugin}: ${installPluginResult.stderr || installPluginResult.error}`);
         }
-        setCommandOutput(prev => prev + `部署插件安装成功
+        setCommandOutput(prev => prev + `${t.deployPluginInstallSuccess}
 ${installPluginResult.stdout}
 `);
       }
 
       setProgress(100);
-      setCommandOutput(prev => prev + 'Hexo 项目创建完成!');
+      setCommandOutput(prev => prev + t.hexoProjectCreationComplete);
 
       toast({
-        title: '创建成功',
-        description: 'Hexo 项目已成功创建',
+        title: t.createSuccess,
+        description: t.hexoProjectCreatedSuccessfully,
         variant: 'success',
       });
 
@@ -233,11 +236,11 @@ ${installPluginResult.stdout}
       setTimeout(() => setOpen(false), 1500);
     } catch (error) {
       console.error('创建 Hexo 项目失败:', error);
-      setCommandOutput(prev => prev + `创建 Hexo 项目失败: ${error.message}
+      setCommandOutput(prev => prev + `${t.createFailed}: ${error.message}
 `);
       toast({
-        title: '创建失败',
-        description: error instanceof Error ? error.message : '未知错误',
+        title: t.createFailed,
+        description: error instanceof Error ? error.message : t.unknownError,
         variant: 'error',
       });
     } finally {
@@ -254,10 +257,10 @@ ${installPluginResult.stdout}
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Download className="w-5 h-5 mr-2" />
-            创建 Hexo 项目
+            {t.createHexoProject}
           </DialogTitle>
           <DialogDescription>
-            创建一个新的 Hexo 博客项目
+            {t.createHexoProjectDescription}
           </DialogDescription>
         </DialogHeader>
 
@@ -266,7 +269,7 @@ ${installPluginResult.stdout}
             <div className="space-y-2">
               <div className="flex items-center">
                 <Info className="w-4 h-4 mr-2" />
-                正在检查环境...
+                {t.checkingEnvironment}
               </div>
               <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md text-sm font-mono h-32 overflow-y-auto">
                 {commandOutput}
@@ -280,23 +283,23 @@ ${installPluginResult.stdout}
                   <AlertDescription>
                     {npmInstalled && gitInstalled ? (
                       hexoInstalled ? (
-                        `Hexo 已安装 (版本: ${hexoVersion})，将跳过 Hexo 安装步骤`
+                        t.hexoAlreadyInstalled.replace('{version}', hexoVersion)
                       ) : (
-                        'Hexo 未安装，将自动安装 Hexo'
+                        t.hexoNotInstalled
                       )
                     ) : (
-                      '请先安装 npm 和 git'
+                      t.installNpmAndGitFirst
                     )}
                   </AlertDescription>
                 </Alert>
 
                 <div className="space-y-1">
-                  <Label htmlFor="hexo-path">Hexo 项目安装位置</Label>
+                  <Label htmlFor="hexo-path">{t.hexoProjectLocation}</Label>
                   <div className="flex space-x-2">
                     <Input
                       id="hexo-path"
                       value={hexoPath}
-                      placeholder="选择安装目录"
+                      placeholder={t.selectDirectory}
                       readOnly
                       className="flex-1"
                     />
@@ -312,7 +315,7 @@ ${installPluginResult.stdout}
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="folder-name">项目文件夹名称</Label>
+                  <Label htmlFor="folder-name">{t.projectFolderName}</Label>
                   <Input
                     id="folder-name"
                     value={folderName}
@@ -329,7 +332,7 @@ ${installPluginResult.stdout}
                     onCheckedChange={(checked) => setUseTaobaoMirror(!!checked)}
                     disabled={isInstalling}
                   />
-                  <Label htmlFor="taobao-mirror">使用淘宝镜像源 (推荐)</Label>
+                  <Label htmlFor="taobao-mirror">{t.useTaobaoMirrorRecommended}</Label>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -339,14 +342,14 @@ ${installPluginResult.stdout}
                     onCheckedChange={(checked) => setInstallDeployPlugin(!!checked)}
                     disabled={isInstalling}
                   />
-                  <Label htmlFor="deploy-plugin">安装部署插件 (hexo-deployer-git)</Label>
+                  <Label htmlFor="deploy-plugin">{t.installDeployPluginDescription}</Label>
                 </div>
               </div>
 
               {isInstalling && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>安装进度</span>
+                    <span>{t.installationProgress}</span>
                     <span>{progress}%</span>
                   </div>
                   <Progress value={progress} className="w-full" />
@@ -354,7 +357,7 @@ ${installPluginResult.stdout}
               )}
 
               <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md text-sm font-mono h-48 overflow-y-auto">
-                {commandOutput || '命令输出将显示在这里...'}
+                {commandOutput || t.commandOutput}
               </div>
             </>
           )}
@@ -366,14 +369,14 @@ ${installPluginResult.stdout}
             onClick={() => setOpen(false)}
             disabled={isInstalling}
           >
-            {isCheckingEnvironment ? '取消' : '关闭'}
+            {isCheckingEnvironment ? t.cancel : t.close}
           </Button>
           {!isCheckingEnvironment && (
             <Button
               onClick={createHexoProject}
               disabled={isInstalling || !hexoPath || !npmInstalled || !gitInstalled}
             >
-              {isInstalling ? '创建中...' : '创建项目'}
+              {isInstalling ? t.creating : t.createProject}
             </Button>
           )}
         </DialogFooter>

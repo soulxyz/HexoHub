@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { X, ChevronDown } from 'lucide-react';
+import { Language, getTexts } from '@/utils/i18n';
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -19,9 +20,11 @@ interface CreatePostDialogProps {
   isLoading?: boolean;
   availableTags?: string[];
   availableCategories?: string[];
+  language?: Language;
 }
 
-export function CreatePostDialog({ open, onOpenChange, onConfirm, isLoading = false, availableTags = [], availableCategories = [] }: CreatePostDialogProps) {
+export function CreatePostDialog({ open, onOpenChange, onConfirm, isLoading = false, availableTags = [], availableCategories = [], language = 'zh' }: CreatePostDialogProps) {
+  const texts = getTexts(language);
   const [title, setTitle] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [categoryInput, setCategoryInput] = useState('');
@@ -87,7 +90,7 @@ export function CreatePostDialog({ open, onOpenChange, onConfirm, isLoading = fa
 
   const handleConfirm = () => {
     if (!title.trim()) {
-      alert('请输入文章标题');
+      alert(texts.pleaseEnterArticleTitle);
       return;
     }
 
@@ -139,32 +142,32 @@ export function CreatePostDialog({ open, onOpenChange, onConfirm, isLoading = fa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>创建新文章</DialogTitle>
+          <DialogTitle>{texts.createNewArticle}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* 文章标题 */}
           <div className="space-y-2">
-            <Label htmlFor="title">文章标题 *</Label>
+            <Label htmlFor="title">{texts.articleTitle} *</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="请输入文章标题"
+              placeholder={texts.pleaseEnterArticleTitle || "请输入文章标题"}
               disabled={isLoading}
             />
           </div>
 
           {/* 标签 */}
           <div className="space-y-2">
-            <Label>标签</Label>
+            <Label>{texts.tags}</Label>
             <div className="flex space-x-2">
               <div className="relative flex-1" ref={tagDropdownRef}>
                 <Input
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={handleTagInputKeyPress}
-                  placeholder="输入标签后按回车添加"
+                  placeholder={texts.pleaseEnterTags}
                   disabled={isLoading}
                   className="flex-1"
                   onFocus={() => setShowTagDropdown(true)}
@@ -201,7 +204,7 @@ export function CreatePostDialog({ open, onOpenChange, onConfirm, isLoading = fa
                 onClick={handleAddTag}
                 disabled={isLoading || !tagInput.trim()}
               >
-                添加
+                {texts.add}
               </Button>
             </div>
             {tags.length > 0 && (
@@ -224,14 +227,14 @@ export function CreatePostDialog({ open, onOpenChange, onConfirm, isLoading = fa
 
           {/* 分类 */}
           <div className="space-y-2">
-            <Label>分类</Label>
+            <Label>{texts.categories}</Label>
             <div className="flex space-x-2">
               <div className="relative flex-1" ref={categoryDropdownRef}>
                 <Input
                   value={categoryInput}
                   onChange={(e) => setCategoryInput(e.target.value)}
                   onKeyPress={handleCategoryInputKeyPress}
-                  placeholder="输入分类后按回车添加"
+                  placeholder={texts.pleaseEnterCategories}
                   disabled={isLoading}
                   className="flex-1"
                   onFocus={() => setShowCategoryDropdown(true)}
@@ -268,7 +271,7 @@ export function CreatePostDialog({ open, onOpenChange, onConfirm, isLoading = fa
                 onClick={handleAddCategory}
                 disabled={isLoading || !categoryInput.trim()}
               >
-                添加
+                {texts.add}
               </Button>
             </div>
             {categories.length > 0 && (
@@ -291,12 +294,12 @@ export function CreatePostDialog({ open, onOpenChange, onConfirm, isLoading = fa
 
           {/* 摘要 */}
           <div className="space-y-2">
-            <Label htmlFor="excerpt">摘要（可选）</Label>
+            <Label htmlFor="excerpt">{texts.excerpt}（{texts.optional || "可选"}）</Label>
             <Textarea
               id="excerpt"
               value={excerpt}
               onChange={(e) => setExcerpt(e.target.value)}
-              placeholder="请输入文章摘要"
+              placeholder={texts.pleaseEnterExcerpt}
               disabled={isLoading}
               rows={3}
             />
@@ -309,13 +312,13 @@ export function CreatePostDialog({ open, onOpenChange, onConfirm, isLoading = fa
             onClick={handleCancel}
             disabled={isLoading}
           >
-            取消
+            {texts.cancel}
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={isLoading || !title.trim()}
           >
-            {isLoading ? '创建中...' : '创建文章'}
+            {isLoading ? texts.creating : texts.createArticle}
           </Button>
         </DialogFooter>
       </DialogContent>

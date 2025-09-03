@@ -289,7 +289,7 @@ ipcMain.handle('execute-hexo-command', async (event, command, workingDir) => {
 });
 
 // Check if directory is a valid hexo project
-ipcMain.handle('validate-hexo-project', async (event, directoryPath) => {
+ipcMain.handle('validate-hexo-project', async (event, directoryPath, language) => {
   const fs = require('fs').promises;
   const path = require('path');
   
@@ -309,7 +309,8 @@ ipcMain.handle('validate-hexo-project', async (event, directoryPath) => {
       try {
         const configContent = await fs.readFile(configYmlPath, 'utf8');
         if (configContent.includes('title:') || configContent.includes('theme:')) {
-          return { valid: true, message: '有效的Hexo项目' };
+          const validMessage = language === 'en' ? 'Valid Hexo Project' : '有效的Hexo项目';
+          return { valid: true, message: validMessage };
         }
       } catch (configError) {
         // 配置文件读取失败，但存在，可能是权限问题
@@ -321,7 +322,8 @@ ipcMain.handle('validate-hexo-project', async (event, directoryPath) => {
         try {
           const packageContent = await fs.readFile(packageJsonPath, 'utf8');
           if (packageContent.includes('hexo')) {
-            return { valid: true, message: '有效的Hexo项目' };
+            const validMessage = language === 'en' ? 'Valid Hexo Project' : '有效的Hexo项目';
+            return { valid: true, message: validMessage };
           }
         } catch (packageError) {
           // package.json读取失败，但配置文件存在
@@ -332,7 +334,8 @@ ipcMain.handle('validate-hexo-project', async (event, directoryPath) => {
       return { valid: true, message: '找到Hexo配置文件' };
     }
     
-    return { valid: false, message: '不是有效的Hexo项目目录' };
+    const invalidMessage = language === 'en' ? 'Not a valid Hexo project directory' : '不是有效的Hexo项目目录';
+    return { valid: false, message: invalidMessage };
   } catch (error) {
     return { valid: false, message: '验证失败: ' + error.message };
   }
