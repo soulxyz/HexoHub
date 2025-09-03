@@ -230,6 +230,22 @@ export interface I18nTexts {
   operationIrreversible: string;
   add: string;
 
+  // 推送设置
+  enablePush: string;
+  enablePushDescription: string;
+  pushRepoUrl: string;
+  pushRepoUrlPlaceholder: string;
+  pushBranch: string;
+  pushBranchPlaceholder: string;
+  pushUsername: string;
+  pushUsernamePlaceholder: string;
+  pushEmail: string;
+  pushEmailPlaceholder: string;
+  push: string;
+  pushSuccess: string;
+  pushFailed: string;
+  pushing: string;
+
   // 创建Hexo项目
   createHexoProject: string;
   createHexoProjectDescription: string;
@@ -545,6 +561,22 @@ console.log('Hello, Hexo!');
     operationIrreversible: '此操作不可撤销。',
     add: '添加',
 
+    // 推送设置
+    enablePush: '启用推送',
+    enablePushDescription: '启用后可以将Hexo项目推送到远程Git仓库',
+    pushRepoUrl: '仓库地址',
+    pushRepoUrlPlaceholder: '例如: https://github.com/username/repo.git',
+    pushBranch: '分支名称',
+    pushBranchPlaceholder: '例如: main',
+    pushUsername: '用户名',
+    pushUsernamePlaceholder: 'Git用户名',
+    pushEmail: '邮箱',
+    pushEmailPlaceholder: 'Git邮箱',
+    push: '推送',
+    pushSuccess: '推送成功',
+    pushFailed: '推送失败',
+    pushing: '推送中...',
+
     // 创建Hexo项目
     createHexoProject: '创建 Hexo 项目',
     createHexoProjectDescription: '创建一个新的 Hexo 博客项目',
@@ -858,6 +890,22 @@ console.log('Hello, Hexo!');
     categoriesPlaceholder: 'e.g. Technology, Tutorial',
     operationIrreversible: 'This operation cannot be undone.',
     add: 'Add',
+    
+    // 推送设置
+    enablePush: 'Enable Push',
+    enablePushDescription: 'Enable to push Hexo project to remote Git repository',
+    pushRepoUrl: 'Repository URL',
+    pushRepoUrlPlaceholder: 'e.g. https://github.com/username/repo.git',
+    pushBranch: 'Branch Name',
+    pushBranchPlaceholder: 'e.g. main',
+    pushUsername: 'Username',
+    pushUsernamePlaceholder: 'Git username',
+    pushEmail: 'Email',
+    pushEmailPlaceholder: 'Git email',
+    push: 'Push',
+    pushSuccess: 'Push successful',
+    pushFailed: 'Push failed',
+    pushing: 'Pushing...',
 
     // 创建Hexo项目
     createHexoProject: 'Create Hexo Project',

@@ -114,6 +114,13 @@ export default function Home() {
   const [showLogsDialog, setShowLogsDialog] = useState<boolean>(false); // 控制日志对话框显示
   
 
+  // 推送设置相关状态
+  const [enablePush, setEnablePush] = useState<boolean>(false); // 是否启用推送
+  const [pushRepoUrl, setPushRepoUrl] = useState<string>(''); // 推送仓库地址
+  const [pushBranch, setPushBranch] = useState<string>('main'); // 推送分支
+  const [pushUsername, setPushUsername] = useState<string>(''); // 推送用户名
+  const [pushEmail, setPushEmail] = useState<string>(''); // 推送邮箱
+
   // 获取当前语言的文本
   const t = getTexts(language);
   
@@ -291,6 +298,32 @@ export default function Home() {
           if (!isNaN(value) && value >= 0 && value <= 1) {
             setBackgroundOpacity(value);
           }
+        }
+        
+        // 加载推送设置
+        const savedEnablePush = localStorage.getItem('enable-push');
+        if (savedEnablePush !== null) {
+          setEnablePush(savedEnablePush === 'true');
+        }
+        
+        const savedPushRepoUrl = localStorage.getItem('push-repo-url');
+        if (savedPushRepoUrl !== null) {
+          setPushRepoUrl(savedPushRepoUrl);
+        }
+        
+        const savedPushBranch = localStorage.getItem('push-branch');
+        if (savedPushBranch !== null) {
+          setPushBranch(savedPushBranch);
+        }
+        
+        const savedPushUsername = localStorage.getItem('push-username');
+        if (savedPushUsername !== null) {
+          setPushUsername(savedPushUsername);
+        }
+        
+        const savedPushEmail = localStorage.getItem('push-email');
+        if (savedPushEmail !== null) {
+          setPushEmail(savedPushEmail);
         }
 
         // 加载项目路径
@@ -1487,6 +1520,86 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     }
   };
 
+  // 推送项目到远程仓库
+  const pushToRemote = async () => {
+    if (!isElectron || !hexoPath) return;
+    
+    // 检查推送设置是否完整
+    if (!pushRepoUrl || !pushUsername || !pushEmail) {
+      toast({
+        title: '错误',
+        description: '请先在面板设置中配置推送信息',
+        variant: 'error',
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    // 显示开始推送的通知
+    toast({
+      title: t.pushing,
+      description: '正在将项目推送到远程仓库...',
+      variant: 'default',
+    });
+    
+    try {
+      const { ipcRenderer } = window.require('electron');
+      
+      // 配置Git用户信息
+      await ipcRenderer.invoke('execute-command', `git config user.name "${pushUsername}"`, hexoPath);
+      await ipcRenderer.invoke('execute-command', `git config user.email "${pushEmail}"`, hexoPath);
+      
+      // 添加远程仓库
+      const remoteName = 'origin';
+      await ipcRenderer.invoke('execute-command', `git remote add ${remoteName} ${pushRepoUrl}`, hexoPath);
+      
+      // 添加所有文件到暂存区
+      const addResult = await ipcRenderer.invoke('execute-command', 'git add .', hexoPath);
+      
+      // 提交更改
+      const commitResult = await ipcRenderer.invoke('execute-command', 'git commit -m "Update Hexo site"', hexoPath);
+      
+      // 推送到远程仓库
+      const pushResult = await ipcRenderer.invoke('execute-command', `git push -u ${remoteName} ${pushBranch}`, hexoPath);
+      
+      const pushSuccessResult = {
+        success: true,
+        stdout: '项目已成功推送到远程仓库',
+        timestamp: new Date().toLocaleString(),
+        command: 'push to remote'
+      };
+      setCommandLogs(prev => [...prev, pushSuccessResult]);
+      setCommandResult(pushSuccessResult);
+      
+      // 显示成功通知
+      toast({
+        title: t.success,
+        description: t.pushSuccess,
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error('推送失败:', error);
+      const pushErrorResult = {
+        success: false,
+        error: '推送失败: ' + error.message,
+        timestamp: new Date().toLocaleString(),
+        command: 'push to remote'
+      };
+      setCommandLogs(prev => [...prev, pushErrorResult]);
+      setCommandResult(pushErrorResult);
+      
+      // 显示错误通知
+      toast({
+        title: '失败',
+        description: t.pushFailed,
+        variant: 'error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 停止Hexo服务器
   const stopHexoServer = async () => {
     if (!isElectron || !isServerRunning) return;
@@ -1674,6 +1787,17 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
               <Globe className="w-4 h-4 mr-2" />
               {t.deploy}
             </Button>
+            {enablePush && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={pushToRemote}
+                disabled={!isValidHexoProject || isLoading}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {t.push}
+              </Button>
+            )}
             <Button
               variant={isServerRunning ? "destructive" : "default"}
               size="sm"
@@ -1919,6 +2043,17 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 backgroundOpacity={backgroundOpacity}
                 onBackgroundOpacityChange={setBackgroundOpacity}
                 language={language}
+                // 推送设置
+                enablePush={enablePush}
+                onEnablePushChange={setEnablePush}
+                pushRepoUrl={pushRepoUrl}
+                onPushRepoUrlChange={setPushRepoUrl}
+                pushBranch={pushBranch}
+                onPushBranchChange={setPushBranch}
+                pushUsername={pushUsername}
+                onPushUsernameChange={setPushUsername}
+                pushEmail={pushEmail}
+                onPushEmailChange={setPushEmail}
               />
             </div>
           ) : mainView === 'logs' ? (

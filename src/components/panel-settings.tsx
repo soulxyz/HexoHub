@@ -28,9 +28,20 @@ interface PanelSettingsProps {
   backgroundOpacity?: number;
   onBackgroundOpacityChange?: (value: number) => void;
   language: 'zh' | 'en';
+  // 推送设置
+  enablePush?: boolean;
+  onEnablePushChange?: (value: boolean) => void;
+  pushRepoUrl?: string;
+  onPushRepoUrlChange?: (value: string) => void;
+  pushBranch?: string;
+  onPushBranchChange?: (value: string) => void;
+  pushUsername?: string;
+  onPushUsernameChange?: (value: string) => void;
+  pushEmail?: string;
+  onPushEmailChange?: (value: string) => void;
 }
 
-export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language }: PanelSettingsProps) {
+export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange }: PanelSettingsProps) {
   // 当前应用版本，从package.json中获取
   const currentVersion = '2.2.2';
   // 获取当前语言的文本
@@ -41,6 +52,12 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
   const [tempBackgroundImage, setTempBackgroundImage] = useState<string>(backgroundImage);
   const [tempBackgroundOpacity, setTempBackgroundOpacity] = useState<number>(backgroundOpacity);
   const [showWarningToast, setShowWarningToast] = useState<boolean>(false);
+  // 推送设置相关状态
+  const [tempEnablePush, setTempEnablePush] = useState<boolean>(enablePush);
+  const [tempPushRepoUrl, setTempPushRepoUrl] = useState<string>(pushRepoUrl);
+  const [tempPushBranch, setTempPushBranch] = useState<string>(pushBranch);
+  const [tempPushUsername, setTempPushUsername] = useState<string>(pushUsername);
+  const [tempPushEmail, setTempPushEmail] = useState<string>(pushEmail);
   const { toast } = useToast();
 
   // 当传入的postsPerPage变化时，更新临时值
@@ -68,6 +85,31 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     setTempBackgroundOpacity(backgroundOpacity);
   }, [backgroundOpacity]);
 
+  // 当传入的enablePush变化时，更新临时值
+  useEffect(() => {
+    setTempEnablePush(enablePush);
+  }, [enablePush]);
+
+  // 当传入的pushRepoUrl变化时，更新临时值
+  useEffect(() => {
+    setTempPushRepoUrl(pushRepoUrl);
+  }, [pushRepoUrl]);
+
+  // 当传入的pushBranch变化时，更新临时值
+  useEffect(() => {
+    setTempPushBranch(pushBranch);
+  }, [pushBranch]);
+
+  // 当传入的pushUsername变化时，更新临时值
+  useEffect(() => {
+    setTempPushUsername(pushUsername);
+  }, [pushUsername]);
+
+  // 当传入的pushEmail变化时，更新临时值
+  useEffect(() => {
+    setTempPushEmail(pushEmail);
+  }, [pushEmail]);
+
   // 保存设置
   const saveSettings = () => {
     if (tempPostsPerPage < 1 || tempPostsPerPage > 100) {
@@ -93,6 +135,12 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     onEditorModeChange(tempEditorMode);
     if (onBackgroundImageChange) onBackgroundImageChange(tempBackgroundImage);
     if (onBackgroundOpacityChange) onBackgroundOpacityChange(tempBackgroundOpacity);
+    // 保存推送设置
+    if (onEnablePushChange) onEnablePushChange(tempEnablePush);
+    if (onPushRepoUrlChange) onPushRepoUrlChange(tempPushRepoUrl);
+    if (onPushBranchChange) onPushBranchChange(tempPushBranch);
+    if (onPushUsernameChange) onPushUsernameChange(tempPushUsername);
+    if (onPushEmailChange) onPushEmailChange(tempPushEmail);
 
     // 保存到localStorage
     if (typeof window !== 'undefined') {
@@ -103,6 +151,12 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
       localStorage.setItem('editor-mode', tempEditorMode);
       localStorage.setItem('background-image', tempBackgroundImage);
       localStorage.setItem('background-opacity', tempBackgroundOpacity.toString());
+      // 保存推送设置
+      localStorage.setItem('enable-push', tempEnablePush.toString());
+      localStorage.setItem('push-repo-url', tempPushRepoUrl);
+      localStorage.setItem('push-branch', tempPushBranch);
+      localStorage.setItem('push-username', tempPushUsername);
+      localStorage.setItem('push-email', tempPushEmail);
     }
 
     toast({
@@ -299,6 +353,75 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* 推送设置 */}
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="enablePush"
+                  checked={tempEnablePush}
+                  onChange={(e) => setTempEnablePush(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="enablePush">{t.enablePush || '启用推送'}</Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t.enablePushDescription || '启用后可以将Hexo项目推送到远程Git仓库'}
+              </p>
+
+              {tempEnablePush && (
+                <div className="mt-4 space-y-4 pl-6 border-l-2 border-gray-200">
+                  <div className="space-y-2">
+                    <Label htmlFor="pushRepoUrl">{t.pushRepoUrl || '仓库地址'}</Label>
+                    <Input
+                      id="pushRepoUrl"
+                      type="text"
+                      value={tempPushRepoUrl}
+                      onChange={(e) => setTempPushRepoUrl(e.target.value)}
+                      placeholder={t.pushRepoUrlPlaceholder || '例如: https://github.com/username/repo.git'}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pushBranch">{t.pushBranch || '分支名称'}</Label>
+                    <Input
+                      id="pushBranch"
+                      type="text"
+                      value={tempPushBranch}
+                      onChange={(e) => setTempPushBranch(e.target.value)}
+                      placeholder={t.pushBranchPlaceholder || '例如: main'}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pushUsername">{t.pushUsername || '用户名'}</Label>
+                    <Input
+                      id="pushUsername"
+                      type="text"
+                      value={tempPushUsername}
+                      onChange={(e) => setTempPushUsername(e.target.value)}
+                      placeholder={t.pushUsernamePlaceholder || 'Git用户名'}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pushEmail">{t.pushEmail || '邮箱'}</Label>
+                    <Input
+                      id="pushEmail"
+                      type="email"
+                      value={tempPushEmail}
+                      onChange={(e) => setTempPushEmail(e.target.value)}
+                      placeholder={t.pushEmailPlaceholder || 'Git邮箱'}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
