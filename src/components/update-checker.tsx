@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Download, ExternalLink, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getTexts } from '@/utils/i18n';
 
 interface GitHubRelease {
   id: number;
@@ -29,14 +30,17 @@ interface UpdateCheckerProps {
   repoName: string;
   autoCheckUpdates?: boolean;
   onAutoCheckUpdatesChange?: (value: boolean) => void;
+  language: 'zh' | 'en';
 }
 
-export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUpdates = true, onAutoCheckUpdatesChange }: UpdateCheckerProps) {
+export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUpdates = true, onAutoCheckUpdatesChange, language }: UpdateCheckerProps) {
   const [latestRelease, setLatestRelease] = useState<GitHubRelease | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const { toast } = useToast();
+  // 获取当前语言的文本
+  const t = getTexts(language);
 
   // 从localStorage加载上次检查时间和自动更新设置
   useEffect(() => {
@@ -62,7 +66,7 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
     try {
       const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
       if (!response.ok) {
-        throw new Error('获取更新信息失败');
+        throw new Error(t.checkUpdateFailed);
       }
 
       const release: GitHubRelease = await response.json();
@@ -81,22 +85,22 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
 
       if (isUpdateAvailable) {
         toast({
-          title: '发现新版本',
-          description: `新版本 ${release.tag_name} 已发布`,
+          title: t.newVersionFound,
+          description: t.newVersionDescription.replace('{version}', release.tag_name),
           variant: 'default',
         });
       } else {
         toast({
-          title: '已是最新版本',
-          description: `当前版本 ${currentVersion} 已是最新`,
+          title: t.alreadyLatest,
+          description: t.alreadyLatestDescription.replace('{version}', currentVersion),
           variant: 'success',
         });
       }
     } catch (error) {
       console.error('检查更新失败:', error);
       toast({
-        title: '检查更新失败',
-        description: error instanceof Error ? error.message : '未知错误',
+        title: t.checkUpdateFailed,
+        description: error instanceof Error ? error.message : t.unknownError,
         variant: 'error',
       });
     } finally {
@@ -144,7 +148,7 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
   // 格式化日期
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('zh-CN', {
+    return date.toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -162,7 +166,7 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>更新检查</span>
+          <span>{t.updateCheck}</span>
           <Button 
             variant="outline" 
             size="sm" 
@@ -170,7 +174,7 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
             disabled={isLoading}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            检查更新
+            {t.checkForUpdates}
           </Button>
         </CardTitle>
       </CardHeader>
@@ -178,9 +182,9 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
         {/* 自动检查更新开关 */}
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <div className="font-medium">是否自动检查更新</div>
+            <div className="font-medium">{t.autoCheckUpdates}</div>
             <p className="text-sm text-muted-foreground">
-              如果您被更新弹窗所困扰，可以选择关闭更新检查
+              {t.autoCheckUpdatesDescription}
             </p>
           </div>
           <button
@@ -194,48 +198,48 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
               aria-hidden="true"
               className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoCheckUpdates ? 'translate-x-5' : 'translate-x-0'}`}
             />
-            <span className="sr-only">切换自动检查更新</span>
+            <span className="sr-only">{t.toggleAutoCheckUpdates || t.autoCheckUpdates}</span>
           </button>
         </div>
         
         <div className="flex items-center justify-between">
-          <span>当前版本:</span>
+          <span>{t.currentVersion}</span>
           <Badge variant="outline">{currentVersion}</Badge>
         </div>
 
         {lastChecked && (
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>上次检查时间:</span>
-            <span>{new Date(lastChecked).toLocaleString('zh-CN')}</span>
+            <span>{t.lastCheckTime}</span>
+            <span>{new Date(lastChecked).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US')}</span>
           </div>
         )}
 
         {latestRelease && (
           <>
             <div className="flex items-center justify-between">
-              <span>最新版本:</span>
+              <span>{t.latestVersion}</span>
               <div className="flex items-center gap-2">
                 <Badge variant={updateAvailable ? "default" : "secondary"}>
                   {latestRelease.tag_name}
                 </Badge>
                 {updateAvailable ? (
                   <Badge variant="default" className="bg-green-600">
-                    有新版本
+                    {t.newVersionAvailable}
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="text-green-600 border-green-600">
-                    已是最新
+                    {t.upToDate}
                   </Badge>
                 )}
               </div>
             </div>
 
             <div className="text-sm text-muted-foreground">
-              发布时间: {formatDate(latestRelease.published_at)}
+              {t.publishTime} {formatDate(latestRelease.published_at)}
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-medium">更新内容:</h4>
+              <h4 className="font-medium">{t.updateContent}</h4>
               <div className="text-sm bg-muted p-3 rounded-md max-h-40 overflow-y-auto">
                 {latestRelease.body.split('\n').map((line, index) => (
                   <p key={index} className="mb-1 last:mb-0">
@@ -247,7 +251,7 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
 
             {updateAvailable && latestRelease.assets.length > 0 && (
               <div className="space-y-2">
-                <h4 className="font-medium">下载链接:</h4>
+                <h4 className="font-medium">{t.downloadLinks}</h4>
                 <div className="space-y-2">
                   {latestRelease.assets.map((asset, index) => (
                     <div key={index} className="flex items-center justify-between p-2 border rounded-md">
@@ -262,7 +266,7 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
                         onClick={() => window.open(asset.browser_download_url, '_blank')}
                       >
                         <Download className="w-4 h-4 mr-2" />
-                        下载
+                        {t.download}
                       </Button>
                     </div>
                   ))}
@@ -283,7 +287,7 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
                 }}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                在GitHub上查看
+                {t.viewOnGitHub}
               </Button>
             </div>
           </>

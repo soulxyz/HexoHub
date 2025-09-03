@@ -1917,6 +1917,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 onBackgroundImageChange={setBackgroundImage}
                 backgroundOpacity={backgroundOpacity}
                 onBackgroundOpacityChange={setBackgroundOpacity}
+                language={language}
               />
             </div>
           ) : mainView === 'logs' ? (

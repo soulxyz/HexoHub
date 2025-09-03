@@ -12,6 +12,11 @@ export interface I18nTexts {
   create: string;
   clear: string;
   select: string;
+  error: string;
+  success: string;
+  postsPerPageRangeError: string;
+  autoSaveIntervalRangeError: string;
+  settingsSaved: string;
 
   // 项目管理
   hexoProject: string;
@@ -90,6 +95,55 @@ export interface I18nTexts {
   lightMode: string;
   darkMode: string;
   toggleTheme: string;
+
+  // 面板设置
+  panelSettings: string;
+  postsPerPage: string;
+  postsPerPageDescription: string;
+  autoSaveInterval: string;
+  autoSaveIntervalDescription: string;
+  editorMode: string;
+  mode1: string;
+  mode2: string;
+  modeDescription: string;
+  backgroundSettings: string;
+  backgroundImageUrl: string;
+  selectImage: string;
+  clear: string;
+  backgroundImageDescription: string;
+  backgroundOpacity: string;
+  backgroundOpacityDescription: string;
+  saveSettings: string;
+  about: string;
+  versionInfo: string;
+  projectAddress: string;
+  contactMe: string;
+  supportMessage: string;
+  stopWarning: string;
+  disappearWarning: string;
+
+  // 更新检查
+  updateCheck: string;
+  checkForUpdates: string;
+  autoCheckUpdates: string;
+  autoCheckUpdatesDescription: string;
+  toggleAutoCheckUpdates: string;
+  currentVersion: string;
+  lastCheckTime: string;
+  latestVersion: string;
+  newVersionAvailable: string;
+  upToDate: string;
+  publishTime: string;
+  updateContent: string;
+  downloadLinks: string;
+  download: string;
+  viewOnGitHub: string;
+  newVersionFound: string;
+  newVersionDescription: string;
+  alreadyLatest: string;
+  alreadyLatestDescription: string;
+  checkUpdateFailed: string;
+  unknownError: string;
 }
 
 export const i18nTexts: Record<Language, I18nTexts> = {
@@ -104,6 +158,11 @@ export const i18nTexts: Record<Language, I18nTexts> = {
     create: '创建',
     clear: '清除',
     select: '选择',
+    error: '错误',
+    success: '成功',
+    postsPerPageRangeError: '每页显示文章数量必须在1-100之间',
+    autoSaveIntervalRangeError: '自动保存间隔必须在1-60分钟之间',
+    settingsSaved: '设置已保存',
 
     // 项目管理
     hexoProject: 'Hexo项目',
@@ -217,6 +276,55 @@ console.log('Hello, Hexo!');
     lightMode: '明亮模式',
     darkMode: '黑夜模式',
     toggleTheme: '切换主题模式',
+
+    // 面板设置
+    panelSettings: '面板设置',
+    postsPerPage: '每页显示文章数量',
+    postsPerPageDescription: '设置文章列表每页显示的文章数量，范围1-100',
+    autoSaveInterval: '自动保存间隔（分钟）',
+    autoSaveIntervalDescription: '设置文章自动保存的时间间隔，范围1-60分钟，默认为3分钟',
+    editorMode: '编辑模式',
+    mode1: '模式1',
+    mode2: '模式2(beta)',
+    modeDescription: '模式1：编辑和预览分离，需要手动切换；模式2：编辑和预览同时显示，左右分栏',
+    backgroundSettings: '背景设置',
+    backgroundImageUrl: '背景图片URL',
+    selectImage: '选择图片',
+    clear: '清除',
+    backgroundImageDescription: '输入图片URL或从本地选择图片作为背景',
+    backgroundOpacity: '背景透明度',
+    backgroundOpacityDescription: '调整背景透明度，0为完全透明，1为完全不透明',
+    saveSettings: '保存设置',
+    about: '关于',
+    versionInfo: '版本信息',
+    projectAddress: '项目地址',
+    contactMe: '联系我',
+    supportMessage: '您的star⭐是对我最大的支持😊',
+    stopWarning: '住手啊！',
+    disappearWarning: '这样下去......会消失的喵！',
+
+    // 更新检查
+    updateCheck: '更新检查',
+    checkForUpdates: '检查更新',
+    autoCheckUpdates: '是否自动检查更新',
+    autoCheckUpdatesDescription: '如果您被更新弹窗所困扰，可以选择关闭更新检查',
+    toggleAutoCheckUpdates: '切换自动检查更新',
+    currentVersion: '当前版本:',
+    lastCheckTime: '上次检查时间:',
+    latestVersion: '最新版本:',
+    newVersionAvailable: '有新版本',
+    upToDate: '已是最新',
+    publishTime: '发布时间:',
+    updateContent: '更新内容:',
+    downloadLinks: '下载链接:',
+    download: '下载',
+    viewOnGitHub: '在GitHub上查看',
+    newVersionFound: '发现新版本',
+    newVersionDescription: '新版本 {version} 已发布',
+    alreadyLatest: '已是最新版本',
+    alreadyLatestDescription: '当前版本 {version} 已是最新',
+    checkUpdateFailed: '检查更新失败',
+    unknownError: '未知错误',
   },
 
   en: {
@@ -230,6 +338,11 @@ console.log('Hello, Hexo!');
     create: 'Create',
     clear: 'Clear',
     select: 'Select',
+    error: 'Error',
+    success: 'Success',
+    postsPerPageRangeError: 'Posts per page must be between 1-100',
+    autoSaveIntervalRangeError: 'Auto save interval must be between 1-60 minutes',
+    settingsSaved: 'Settings saved',
 
     // 项目管理
     hexoProject: 'Hexo Project',
@@ -343,6 +456,55 @@ console.log('Hello, Hexo!');
     lightMode: 'Light Mode',
     darkMode: 'Dark Mode',
     toggleTheme: 'Toggle Theme',
+
+    // 面板设置
+    panelSettings: 'Panel Settings',
+    postsPerPage: 'Posts Per Page',
+    postsPerPageDescription: 'Set the number of articles to display per page in the article list, range 1-100',
+    autoSaveInterval: 'Auto Save Interval (minutes)',
+    autoSaveIntervalDescription: 'Set the time interval for auto-saving articles, range 1-60 minutes, default is 3 minutes',
+    editorMode: 'Editor Mode',
+    mode1: 'Mode 1',
+    mode2: 'Mode 2 (beta)',
+    modeDescription: 'Mode 1: Edit and preview are separated, manual switching required; Mode 2: Edit and preview are displayed simultaneously, split left and right',
+    backgroundSettings: 'Background Settings',
+    backgroundImageUrl: 'Background Image URL',
+    selectImage: 'Select Image',
+    clear: 'Clear',
+    backgroundImageDescription: 'Enter image URL or select an image from local as background',
+    backgroundOpacity: 'Background Opacity',
+    backgroundOpacityDescription: 'Adjust background opacity, 0 is completely transparent, 1 is completely opaque',
+    saveSettings: 'Save Settings',
+    about: 'About',
+    versionInfo: 'Version Info',
+    projectAddress: 'Project Address',
+    contactMe: 'Contact Me',
+    supportMessage: 'Your star⭐ is my biggest support😊',
+    stopWarning: 'Stop it!',
+    disappearWarning: 'This way... it will disappear, meow!',
+
+    // 更新检查
+    updateCheck: 'Update Check',
+    checkForUpdates: 'Check for Updates',
+    autoCheckUpdates: 'Auto Check Updates',
+    autoCheckUpdatesDescription: 'If you are bothered by update pop-ups, you can turn off update checking',
+    toggleAutoCheckUpdates: 'Toggle Auto Check Updates',
+    currentVersion: 'Current Version:',
+    lastCheckTime: 'Last Check Time:',
+    latestVersion: 'Latest Version:',
+    newVersionAvailable: 'New Version Available',
+    upToDate: 'Up to Date',
+    publishTime: 'Publish Time:',
+    updateContent: 'Update Content:',
+    downloadLinks: 'Download Links:',
+    download: 'Download',
+    viewOnGitHub: 'View on GitHub',
+    newVersionFound: 'New Version Found',
+    newVersionDescription: 'New version {version} has been released',
+    alreadyLatest: 'Already Latest Version',
+    alreadyLatestDescription: 'Current version {version} is already the latest',
+    checkUpdateFailed: 'Failed to check for updates',
+    unknownError: 'Unknown error',
   }
 };
 
