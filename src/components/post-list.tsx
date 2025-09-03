@@ -4,6 +4,7 @@ import { useState } from 'react';
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { Language, getTexts } from '@/utils/i18n';
 import { FileText, Calendar, File, ArrowUpDown, ArrowUp, ArrowDown, CheckSquare, Square, Trash2, Tag, FolderOpen, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -55,12 +56,14 @@ interface PostListProps {
   currentPage?: number;
   postsPerPage?: number;
   onPageChange?: (page: number) => void;
+  language?: Language;
 }
 
 type SortField = 'name' | 'modifiedTime';
 type SortOrder = 'asc' | 'desc';
 
-export function PostList({ posts, selectedPost, onPostSelect, isLoading = false, onDeletePosts, onAddTagsToPosts, onAddCategoriesToPosts, onDeletePost, onAddTagsToPost, onAddCategoriesToPost, availableTags = [], availableCategories = [], onFilterByTag, onFilterByCategory, onClearFilter, currentFilter = null, currentPage = 1, postsPerPage = 15, onPageChange }: PostListProps) {
+export function PostList({ posts, selectedPost, onPostSelect, isLoading = false, onDeletePosts, onAddTagsToPosts, onAddCategoriesToPosts, onDeletePost, onAddTagsToPost, onAddCategoriesToPost, availableTags = [], availableCategories = [], onFilterByTag, onFilterByCategory, onClearFilter, currentFilter = null, currentPage = 1, postsPerPage = 15, onPageChange, language = 'zh' }: PostListProps) {
+  const texts = getTexts(language);
   const [sortField, setSortField] = useState<SortField>('modifiedTime');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectionMode, setSelectionMode] = useState<boolean>(false);
@@ -131,8 +134,8 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
   };
 
   const getSortLabel = () => {
-    const fieldName = sortField === 'name' ? '文件名' : '修改时间';
-    const orderName = sortOrder === 'asc' ? '升序' : '降序';
+    const fieldName = sortField === 'name' ? texts.sortByFileName : texts.sortByModifiedTime;
+    const orderName = sortOrder === 'asc' ? texts.ascending : texts.descending;
     return `${fieldName} (${orderName})`;
   };
 
@@ -342,7 +345,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          上一页
+          {texts.previousPage}
         </Button>
         
         <div className="flex items-center space-x-1">
@@ -392,7 +395,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
-          下一页
+          {texts.nextPage}
         </Button>
       </div>
     );
@@ -409,7 +412,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
             className="h-8"
           >
             {selectionMode ? <CheckSquare className="w-4 h-4 mr-1" /> : <Square className="w-4 h-4 mr-1" />}
-            {selectionMode ? `已选 ${selectedPosts.length} 篇` : '选择'}
+            {selectionMode ? texts.selected.replace('{count}', selectedPosts.length.toString()) : texts.select}
           </Button>
 
           {selectionMode && (
@@ -420,7 +423,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
                 onClick={toggleSelectAll}
                 className="h-8"
               >
-                {selectedPosts.length === sortedPosts.length ? '取消全选' : '全选'}
+                {selectedPosts.length === sortedPosts.length ? texts.deselectAll : texts.selectAll}
               </Button>
               <Button
                 variant="outline"
@@ -430,7 +433,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
                 disabled={selectedPosts.length === 0}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
-                删除
+                {texts.delete}
               </Button>
               <Button
                 variant="outline"
@@ -440,7 +443,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
                 disabled={selectedPosts.length === 0}
               >
                 <Tag className="w-4 h-4 mr-1" />
-                添加标签
+                {texts.addTags}
               </Button>
               <Button
                 variant="outline"
@@ -450,7 +453,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
                 disabled={selectedPosts.length === 0}
               >
                 <FolderOpen className="w-4 h-4 mr-1" />
-                添加分类
+                {texts.addCategories}
               </Button>
             </>
           )}
@@ -458,7 +461,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
 
         <div className="flex items-center space-x-2">
           <div className="text-sm text-muted-foreground">
-            共 {posts.length} 篇文章
+            {texts.totalArticles.replace('{count}', posts.length.toString())}
           </div>
           
           {/* 筛选器 */}
@@ -470,10 +473,10 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
                     <Filter className="w-4 h-4 mr-1" />
                     {currentFilter ? (
                       <span>
-                        按{currentFilter.type === 'tag' ? '标签' : '分类'}: {currentFilter.value}
+                        {currentFilter.type === 'tag' ? texts.filterByTag : texts.filterByCategory}: {currentFilter.value}
                       </span>
                     ) : (
-                      <span>按标签/分类显示</span>
+                      <span>{texts.filterByTagCategory}</span>
                     )}
                   </Button>
                 </DropdownMenuTrigger>
@@ -482,7 +485,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
                     <>
                       <DropdownMenuItem onClick={onClearFilter}>
                         <X className="w-4 h-4 mr-2" />
-                        清除筛选
+                        {texts.clearFilter}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
@@ -491,7 +494,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
                   {availableTags.length > 0 && (
                     <>
                       <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                        标签
+                        {texts.tags}
                       </div>
                       {availableTags.map((tag) => (
                         <DropdownMenuItem 
@@ -512,7 +515,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
                   {availableCategories.length > 0 && (
                     <>
                       <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                        分类
+                        {texts.categories}
                       </div>
                       {availableCategories.map((category) => (
                         <DropdownMenuItem 
@@ -542,14 +545,14 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
                 onClick={() => handleSortChange('name')}
                 className="flex items-center justify-between"
               >
-                <span>按文件名</span>
+                <span>{texts.sortByFileName}</span>
                 {getSortIcon('name')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => handleSortChange('modifiedTime')}
                 className="flex items-center justify-between"
               >
-                <span>按修改时间</span>
+                <span>{texts.sortByModifiedTime}</span>
                 {getSortIcon('modifiedTime')}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -611,17 +614,17 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
+            <DialogTitle>{texts.confirmDelete}</DialogTitle>
             <DialogDescription>
-              您确定要删除选中的 {selectedPosts.length} 篇文章吗？此操作不可撤销。
+              {texts.deleteConfirmMessage.replace('{count}', selectedPosts.length.toString())}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              取消
+              {texts.cancel}
             </Button>
             <Button variant="destructive" onClick={confirmBatchDelete}>
-              确认删除
+              {texts.confirmDelete}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -631,17 +634,17 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
       <Dialog open={showTagsDialog} onOpenChange={setShowTagsDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>添加标签</DialogTitle>
+            <DialogTitle>{texts.addTagsDialogTitle}</DialogTitle>
             <DialogDescription>
-              为选中的 {selectedPosts.length} 篇文章添加标签（多个标签用逗号分隔）
+              {texts.addTagsDialogDescription.replace('{count}', selectedPosts.length.toString())}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="tags">标签</Label>
+              <Label htmlFor="tags">{texts.tags}</Label>
               <Input
                 id="tags"
-                placeholder="例如：技术,教程,前端"
+                placeholder={texts.tagsPlaceholder}
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
               />
@@ -649,10 +652,10 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowTagsDialog(false)}>
-              取消
+              {texts.cancel}
             </Button>
             <Button onClick={confirmBatchAddTags}>
-              添加
+              {texts.add}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -662,17 +665,17 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
       <Dialog open={showCategoriesDialog} onOpenChange={setShowCategoriesDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>添加分类</DialogTitle>
+            <DialogTitle>{texts.addCategoriesDialogTitle}</DialogTitle>
             <DialogDescription>
-              为选中的 {selectedPosts.length} 篇文章添加分类（多个分类用逗号分隔）
+              {texts.addCategoriesDialogDescription.replace('{count}', selectedPosts.length.toString())}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="categories">分类</Label>
+              <Label htmlFor="categories">{texts.categories}</Label>
               <Input
                 id="categories"
-                placeholder="例如：技术,教程"
+                placeholder={texts.categoriesPlaceholder}
                 value={categoriesInput}
                 onChange={(e) => setCategoriesInput(e.target.value)}
               />
@@ -680,10 +683,10 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCategoriesDialog(false)}>
-              取消
+              {texts.cancel}
             </Button>
             <Button onClick={confirmBatchAddCategories}>
-              添加
+              {texts.add}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -702,15 +705,15 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           >
             <DropdownMenuItem onClick={handleSingleDelete}>
               <Trash2 className="w-4 h-4 mr-2" />
-              删除
+              {texts.delete}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleSingleAddTags}>
               <Tag className="w-4 h-4 mr-2" />
-              添加标签
+              {texts.addTags}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleSingleAddCategories}>
               <FolderOpen className="w-4 h-4 mr-2" />
-              添加分类
+              {texts.addCategories}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -720,17 +723,17 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
       <Dialog open={showSingleDeleteDialog} onOpenChange={setShowSingleDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>确认删除</DialogTitle>
+            <DialogTitle>{texts.confirmDelete}</DialogTitle>
             <DialogDescription>
-              您确定要删除文章 "{contextMenuPost?.name.replace(/\.(md|markdown)$/, '')}" 吗？此操作不可撤销。
+              {texts.deleteConfirmMessageSingle.replace('{title}', contextMenuPost?.name.replace(/\.(md|markdown)$/, '') || '')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSingleDeleteDialog(false)}>
-              取消
+              {texts.cancel}
             </Button>
             <Button variant="destructive" onClick={confirmSingleDelete}>
-              确认删除
+              {texts.confirmDelete}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -740,17 +743,17 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
       <Dialog open={showSingleTagsDialog} onOpenChange={setShowSingleTagsDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>添加标签</DialogTitle>
+            <DialogTitle>{texts.addTagsDialogTitle}</DialogTitle>
             <DialogDescription>
-              为文章 "{contextMenuPost?.name.replace(/\.(md|markdown)$/, '')}" 添加标签（多个标签用逗号分隔）
+              {texts.addTagsDialogDescriptionSingle.replace('{title}', contextMenuPost?.name.replace(/\.(md|markdown)$/, '') || '')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="single-tags">标签</Label>
+              <Label htmlFor="single-tags">{texts.tags}</Label>
               <Input
                 id="single-tags"
-                placeholder="例如：技术,教程,前端"
+                placeholder={texts.tagsPlaceholder}
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
               />
@@ -758,10 +761,10 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSingleTagsDialog(false)}>
-              取消
+              {texts.cancel}
             </Button>
             <Button onClick={confirmSingleAddTags}>
-              添加
+              {texts.add}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -771,17 +774,17 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
       <Dialog open={showSingleCategoriesDialog} onOpenChange={setShowSingleCategoriesDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>添加分类</DialogTitle>
+            <DialogTitle>{texts.addCategoriesDialogTitle}</DialogTitle>
             <DialogDescription>
-              为文章 "{contextMenuPost?.name.replace(/\.(md|markdown)$/, '')}" 添加分类（多个分类用逗号分隔）
+              {texts.addCategoriesDialogDescriptionSingle.replace('{title}', contextMenuPost?.name.replace(/\.(md|markdown)$/, '') || '')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="single-categories">分类</Label>
+              <Label htmlFor="single-categories">{texts.categories}</Label>
               <Input
                 id="single-categories"
-                placeholder="例如：技术,教程"
+                placeholder={texts.categoriesPlaceholder}
                 value={categoriesInput}
                 onChange={(e) => setCategoriesInput(e.target.value)}
               />
@@ -789,10 +792,10 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSingleCategoriesDialog(false)}>
-              取消
+              {texts.cancel}
             </Button>
             <Button onClick={confirmSingleAddCategories}>
-              添加
+              {texts.add}
             </Button>
           </DialogFooter>
         </DialogContent>

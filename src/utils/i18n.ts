@@ -144,6 +144,39 @@ export interface I18nTexts {
   alreadyLatestDescription: string;
   checkUpdateFailed: string;
   unknownError: string;
+
+  // 工具栏
+  selected: string;
+  selectAll: string;
+  deselectAll: string;
+  addTags: string;
+  addCategories: string;
+  totalArticles: string;
+  filterByTagCategory: string;
+  filterByTag: string;
+  filterByCategory: string;
+  clearFilter: string;
+  sortByFileName: string;
+  sortByModifiedTime: string;
+  ascending: string;
+  descending: string;
+  previousPage: string;
+  nextPage: string;
+
+  // 对话框
+  confirmDelete: string;
+  deleteConfirmMessage: string;
+  deleteConfirmMessageSingle: string;
+  addTagsDialogTitle: string;
+  addTagsDialogDescription: string;
+  addTagsDialogDescriptionSingle: string;
+  addCategoriesDialogTitle: string;
+  addCategoriesDialogDescription: string;
+  addCategoriesDialogDescriptionSingle: string;
+  tagsPlaceholder: string;
+  categoriesPlaceholder: string;
+  operationIrreversible: string;
+  add: string;
 }
 
 export const i18nTexts: Record<Language, I18nTexts> = {
@@ -325,6 +358,39 @@ console.log('Hello, Hexo!');
     alreadyLatestDescription: '当前版本 {version} 已是最新',
     checkUpdateFailed: '检查更新失败',
     unknownError: '未知错误',
+
+    // 工具栏
+    selected: '已选 {count} 篇',
+    selectAll: '全选',
+    deselectAll: '取消全选',
+    addTags: '添加标签',
+    addCategories: '添加分类',
+    totalArticles: '共 {count} 篇文章',
+    filterByTagCategory: '按标签/分类显示',
+    filterByTag: '按标签',
+    filterByCategory: '按分类',
+    clearFilter: '清除筛选',
+    sortByFileName: '按文件名',
+    sortByModifiedTime: '按修改时间',
+    ascending: '升序',
+    descending: '降序',
+    previousPage: '上一页',
+    nextPage: '下一页',
+
+    // 对话框
+    confirmDelete: '确认删除',
+    deleteConfirmMessage: '您确定要删除选中的 {count} 篇文章吗？此操作不可撤销。',
+    deleteConfirmMessageSingle: '您确定要删除文章 "{title}" 吗？此操作不可撤销。',
+    addTagsDialogTitle: '添加标签',
+    addTagsDialogDescription: '为选中的 {count} 篇文章添加标签（多个标签用逗号分隔）',
+    addTagsDialogDescriptionSingle: '为文章 "{title}" 添加标签（多个标签用逗号分隔）',
+    addCategoriesDialogTitle: '添加分类',
+    addCategoriesDialogDescription: '为选中的 {count} 篇文章添加分类（多个分类用逗号分隔）',
+    addCategoriesDialogDescriptionSingle: '为文章 "{title}" 添加分类（多个分类用逗号分隔）',
+    tagsPlaceholder: '例如：技术,教程,前端',
+    categoriesPlaceholder: '例如：技术,教程',
+    operationIrreversible: '此操作不可撤销。',
+    add: '添加',
   },
 
   en: {
@@ -505,6 +571,39 @@ console.log('Hello, Hexo!');
     alreadyLatestDescription: 'Current version {version} is already the latest',
     checkUpdateFailed: 'Failed to check for updates',
     unknownError: 'Unknown error',
+
+    // 工具栏
+    selected: '{count} selected',
+    selectAll: 'Select All',
+    deselectAll: 'Deselect All',
+    addTags: 'Add Tags',
+    addCategories: 'Add Categories',
+    totalArticles: 'Total {count} articles',
+    filterByTagCategory: 'Filter by Tag/Category',
+    filterByTag: 'Filter by Tag',
+    filterByCategory: 'Filter by Category',
+    clearFilter: 'Clear Filter',
+    sortByFileName: 'Sort by File Name',
+    sortByModifiedTime: 'Sort by Modified Time',
+    ascending: 'Ascending',
+    descending: 'Descending',
+    previousPage: 'Previous Page',
+    nextPage: 'Next Page',
+
+    // 对话框
+    confirmDelete: 'Confirm Delete',
+    deleteConfirmMessage: 'Are you sure you want to delete the selected {count} articles? This operation cannot be undone.',
+    deleteConfirmMessageSingle: 'Are you sure you want to delete the article "{title}"? This operation cannot be undone.',
+    addTagsDialogTitle: 'Add Tags',
+    addTagsDialogDescription: 'Add tags to the selected {count} articles (separate multiple tags with commas)',
+    addTagsDialogDescriptionSingle: 'Add tags to the article "{title}" (separate multiple tags with commas)',
+    addCategoriesDialogTitle: 'Add Categories',
+    addCategoriesDialogDescription: 'Add categories to the selected {count} articles (separate multiple categories with commas)',
+    addCategoriesDialogDescriptionSingle: 'Add categories to the article "{title}" (separate multiple categories with commas)',
+    tagsPlaceholder: 'e.g. Technology, Tutorial, Frontend',
+    categoriesPlaceholder: 'e.g. Technology, Tutorial',
+    operationIrreversible: 'This operation cannot be undone.',
+    add: 'Add',
   }
 };
 

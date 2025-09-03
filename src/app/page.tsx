@@ -2426,6 +2426,7 @@ ${selectedText}
                       currentPage={currentPage}
                       postsPerPage={postsPerPage}
                       onPageChange={setCurrentPage}
+                      language={language}
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full">
