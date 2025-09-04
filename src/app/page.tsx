@@ -1555,6 +1555,11 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       };
       setCommandLogs(prev => [...prev, configNameLog]);
       
+      // 检查配置用户名是否成功
+      if (!configNameResult.success) {
+        throw new Error(`配置Git用户名失败: ${configNameResult.stderr || configNameResult.error || '未知错误'}`);
+      }
+      
       const configEmailResult = await ipcRenderer.invoke('execute-command', `git config user.email "${pushEmail}"`, hexoPath);
       const configEmailLog = {
         ...configEmailResult,
@@ -1562,6 +1567,11 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         command: `git config user.email "${pushEmail}"`
       };
       setCommandLogs(prev => [...prev, configEmailLog]);
+      
+      // 检查配置邮箱是否成功
+      if (!configEmailResult.success) {
+        throw new Error(`配置Git邮箱失败: ${configEmailResult.stderr || configEmailResult.error || '未知错误'}`);
+      }
       
       // 添加远程仓库
       const remoteName = 'origin';
@@ -1573,6 +1583,12 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       };
       setCommandLogs(prev => [...prev, addRemoteLog]);
       
+      // 检查添加远程仓库是否成功
+      // 注意：如果远程仓库已存在，命令会失败，但这不是致命错误，可以继续
+      if (!addRemoteResult.success && !addRemoteResult.stderr?.includes('already exists')) {
+        throw new Error(`添加远程仓库失败: ${addRemoteResult.stderr || addRemoteResult.error || '未知错误'}`);
+      }
+      
       // 添加所有文件到暂存区
       const addResult = await ipcRenderer.invoke('execute-command', 'git add .', hexoPath);
       const addLog = {
@@ -1581,6 +1597,11 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         command: 'git add .'
       };
       setCommandLogs(prev => [...prev, addLog]);
+      
+      // 检查添加文件是否成功
+      if (!addResult.success) {
+        throw new Error(`添加文件到暂存区失败: ${addResult.stderr || addResult.error || '未知错误'}`);
+      }
       
       // 提交更改
       const commitResult = await ipcRenderer.invoke('execute-command', 'git commit -m "Update Hexo site"', hexoPath);
@@ -1591,6 +1612,12 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       };
       setCommandLogs(prev => [...prev, commitLog]);
       
+      // 检查提交是否成功
+      // 注意：如果没有更改需要提交，git会返回非零状态码，但这不是错误
+      if (!commitResult.success && !commitResult.stderr?.includes('nothing to commit')) {
+        throw new Error(`提交更改失败: ${commitResult.stderr || commitResult.error || '未知错误'}`);
+      }
+      
       // 推送到远程仓库
       const pushResult = await ipcRenderer.invoke('execute-command', `git push -u ${remoteName} ${pushBranch}`, hexoPath);
       const pushLog = {
@@ -1599,6 +1626,11 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         command: `git push -u ${remoteName} ${pushBranch}`
       };
       setCommandLogs(prev => [...prev, pushLog]);
+      
+      // 检查推送是否成功
+      if (!pushResult.success) {
+        throw new Error(`推送到远程仓库失败: ${pushResult.stderr || pushResult.error || '未知错误'}`);
+      }
       
       const pushSuccessResult = {
         success: true,
