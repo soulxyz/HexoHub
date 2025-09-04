@@ -2144,7 +2144,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                       commandLogs.map((log, index) => (
                         <div key={index} className={`p-3 rounded-md border ${log.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
                           <div className="flex justify-between items-start mb-2">
-                            <div className="font-medium">{log.command}</div>
+                            <div className="font-medium text-black dark:text-black">{log.command}</div>
                             <div className="text-xs text-muted-foreground">{log.timestamp}</div>
                           </div>
                           <div className={`text-sm ${log.success ? 'text-green-700' : 'text-red-700'}`}>
