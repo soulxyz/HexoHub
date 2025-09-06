@@ -15,6 +15,9 @@ interface MarkdownPreviewProps {
 }
 
 export function MarkdownPreview({ content, className = '' }: MarkdownPreviewProps) {
+  // 移除front matter
+  const processedContent = content.replace(/^---\s*[\s\S]*?---\s*/, '');
+
   const components = {
     code({ node, inline, className, children, ...props }: any) {
       const match = /language-(\w+)/.exec(className || '');
@@ -198,7 +201,7 @@ export function MarkdownPreview({ content, className = '' }: MarkdownPreviewProp
           rehypePlugins={[rehypeKatex]}
           components={components}
         >
-          {content}
+          {processedContent}
         </ReactMarkdown>
       ) : (
         <div className="text-center py-12 text-muted-foreground">
