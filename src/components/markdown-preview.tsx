@@ -5,6 +5,9 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 interface MarkdownPreviewProps {
   content: string;
@@ -191,7 +194,8 @@ export function MarkdownPreview({ content, className = '' }: MarkdownPreviewProp
     <div className={`prose prose-sm max-w-none overflow-x-auto ${className}`} style={{ minWidth: 0, width: '100%', height: 'calc(100vh - 200px)', overflowY: 'auto' }}>
       {content ? (
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkBreaks]}
+          remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
           components={components}
         >
           {content}
