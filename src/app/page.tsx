@@ -41,7 +41,8 @@ import {
   Heading3,
   Minus,
   ChevronUp,
-  Download
+  Download,
+  Upload
 } from 'lucide-react';
 import { Language, getTexts } from '@/utils/i18n';
 import { MarkdownEditor } from '@/components/markdown-editor';
@@ -1863,7 +1864,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 onClick={pushToRemote}
                 disabled={!isValidHexoProject || isLoading}
               >
-                <Download className="w-4 h-4 mr-2" />
+                <Upload className="w-4 h-4 mr-2" />
                 {t.push}
               </Button>
             )}
