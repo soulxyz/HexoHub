@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Settings, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UpdateChecker } from '@/components/update-checker';
@@ -39,9 +40,16 @@ interface PanelSettingsProps {
   onPushUsernameChange?: (value: string) => void;
   pushEmail?: string;
   onPushEmailChange?: (value: string) => void;
+  // AI设置
+  enableAI?: boolean;
+  onEnableAIChange?: (value: boolean) => void;
+  apiKey?: string;
+  onApiKeyChange?: (value: string) => void;
+  prompt?: string;
+  onPromptChange?: (value: string) => void;
 }
 
-export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange }: PanelSettingsProps) {
+export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange }: PanelSettingsProps) {
   // 当前应用版本，从package.json中获取
   const currentVersion = '2.4.0';
   // 获取当前语言的文本
@@ -58,6 +66,10 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
   const [tempPushBranch, setTempPushBranch] = useState<string>(pushBranch);
   const [tempPushUsername, setTempPushUsername] = useState<string>(pushUsername);
   const [tempPushEmail, setTempPushEmail] = useState<string>(pushEmail);
+  // AI设置相关状态
+  const [tempEnableAI, setTempEnableAI] = useState<boolean>(enableAI);
+  const [tempApiKey, setTempApiKey] = useState<string>(apiKey);
+  const [tempPrompt, setTempPrompt] = useState<string>(prompt);
   const { toast } = useToast();
 
   // 当传入的postsPerPage变化时，更新临时值
@@ -110,6 +122,21 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     setTempPushEmail(pushEmail);
   }, [pushEmail]);
 
+  // 当传入的enableAI变化时，更新临时值
+  useEffect(() => {
+    setTempEnableAI(enableAI);
+  }, [enableAI]);
+
+  // 当传入的apiKey变化时，更新临时值
+  useEffect(() => {
+    setTempApiKey(apiKey);
+  }, [apiKey]);
+
+  // 当传入的prompt变化时，更新临时值
+  useEffect(() => {
+    setTempPrompt(prompt);
+  }, [prompt]);
+
   // 保存设置
   const saveSettings = () => {
     if (tempPostsPerPage < 1 || tempPostsPerPage > 100) {
@@ -141,6 +168,10 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     if (onPushBranchChange) onPushBranchChange(tempPushBranch);
     if (onPushUsernameChange) onPushUsernameChange(tempPushUsername);
     if (onPushEmailChange) onPushEmailChange(tempPushEmail);
+    // 保存AI设置
+    if (onEnableAIChange) onEnableAIChange(tempEnableAI);
+    if (onApiKeyChange) onApiKeyChange(tempApiKey);
+    if (onPromptChange) onPromptChange(tempPrompt);
 
     // 保存到localStorage
     if (typeof window !== 'undefined') {
@@ -157,6 +188,10 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
       localStorage.setItem('push-branch', tempPushBranch);
       localStorage.setItem('push-username', tempPushUsername);
       localStorage.setItem('push-email', tempPushEmail);
+      // 保存AI设置
+      localStorage.setItem('enable-ai', tempEnableAI.toString());
+      localStorage.setItem('api-key', tempApiKey);
+      localStorage.setItem('prompt', tempPrompt);
     }
 
     toast({
@@ -411,6 +446,65 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                 </div>
               )}
             </div>
+          </div>
+
+          {/* AI设置 */}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="enableAI"
+                checked={tempEnableAI}
+                onChange={(e) => setTempEnableAI(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="enableAI">{t.enableAI}</Label>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {t.enableAIDescription}
+            </p>
+
+            {tempEnableAI && (
+              <div className="mt-4 space-y-4 pl-6 border-l-2 border-gray-200">
+                <div className="space-y-2">
+                  <Label htmlFor="aiProvider">{t.aiProvider}</Label>
+                  <Input
+                    id="aiProvider"
+                    type="text"
+                    value="DeepSeek"
+                    disabled
+                    className="w-full"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    {t.aiProviderDescription}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="apiKey">{t.apiKey}</Label>
+                  <Input
+                    id="apiKey"
+                    type="password"
+                    value={tempApiKey}
+                    onChange={(e) => setTempApiKey(e.target.value)}
+                    placeholder={t.apiKeyPlaceholder}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="prompt">{t.prompt}</Label>
+                  <Textarea
+                    id="prompt"
+                    value={tempPrompt}
+                    onChange={(e) => setTempPrompt(e.target.value)}
+                    placeholder={t.promptPlaceholder}
+                    className="w-full"
+                    rows={4}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end">

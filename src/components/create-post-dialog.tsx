@@ -140,7 +140,7 @@ export function CreatePostDialog({ open, onOpenChange, onConfirm, isLoading = fa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-800">
         <DialogHeader>
           <DialogTitle>{texts.createNewArticle}</DialogTitle>
         </DialogHeader>

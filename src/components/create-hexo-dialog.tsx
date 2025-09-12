@@ -253,7 +253,7 @@ ${installPluginResult.stdout}
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl bg-white dark:bg-gray-800">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Download className="w-5 h-5 mr-2" />

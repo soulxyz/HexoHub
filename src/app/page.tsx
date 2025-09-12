@@ -42,7 +42,8 @@ import {
   Minus,
   ChevronUp,
   Download,
-  Upload
+  Upload,
+  Lightbulb
 } from 'lucide-react';
 import { Language, getTexts } from '@/utils/i18n';
 import { MarkdownEditor } from '@/components/markdown-editor';
@@ -57,6 +58,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { CreateHexoDialog } from '@/components/create-hexo-dialog';
 import { CustomTitlebar } from '@/components/custom-titlebar';
+import { AIInspirationDialog } from '@/components/ai-inspiration-dialog';
 
 interface Post {
   name: string;
@@ -121,6 +123,12 @@ export default function Home() {
   const [pushBranch, setPushBranch] = useState<string>('main'); // 推送分支
   const [pushUsername, setPushUsername] = useState<string>(''); // 推送用户名
   const [pushEmail, setPushEmail] = useState<string>(''); // 推送邮箱
+
+  // AI设置相关状态
+  const [enableAI, setEnableAI] = useState<boolean>(false); // 是否启用AI
+  const [apiKey, setApiKey] = useState<string>(''); // API密钥
+  const [prompt, setPrompt] = useState<string>('你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段'); // 提示词
+  const [showInspirationDialog, setShowInspirationDialog] = useState<boolean>(false); // 是否显示灵感对话框
 
   // 获取当前语言的文本
   const t = getTexts(language);
@@ -325,6 +333,25 @@ export default function Home() {
         const savedPushEmail = localStorage.getItem('push-email');
         if (savedPushEmail !== null) {
           setPushEmail(savedPushEmail);
+        }
+
+        // 加载AI设置
+        const savedEnableAI = localStorage.getItem('enable-ai');
+        if (savedEnableAI !== null) {
+          setEnableAI(savedEnableAI === 'true');
+        }
+
+        const savedApiKey = localStorage.getItem('api-key');
+        if (savedApiKey !== null) {
+          setApiKey(savedApiKey);
+        }
+
+        const savedPrompt = localStorage.getItem('prompt');
+        if (savedPrompt !== null) {
+          setPrompt(savedPrompt);
+        } else {
+          // 设置默认提示词
+          setPrompt('你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段');
         }
 
         // 加载项目路径
@@ -1813,6 +1840,18 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           </div>
 
           <div className="flex items-center space-x-2">
+            {enableAI && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowInspirationDialog(true)}
+                disabled={!isValidHexoProject || isLoading || !apiKey}
+                title={t.getInspiration}
+              >
+                <Lightbulb className="w-4 h-4 mr-2" />
+                {t.getInspiration}
+              </Button>
+            )}
             <Button
               variant={mainView === 'posts' ? 'default' : 'outline'}
               size="sm"
@@ -2124,6 +2163,13 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 onPushUsernameChange={setPushUsername}
                 pushEmail={pushEmail}
                 onPushEmailChange={setPushEmail}
+                // AI设置
+                enableAI={enableAI}
+                onEnableAIChange={setEnableAI}
+                apiKey={apiKey}
+                onApiKeyChange={setApiKey}
+                prompt={prompt}
+                onPromptChange={setPrompt}
               />
             </div>
           ) : mainView === 'logs' ? (
@@ -2224,6 +2270,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                         <Trash2 className="w-4 h-4 mr-2" />
                         删除
                       </Button>
+
                     </div>
                   </div>
 
@@ -2680,6 +2727,15 @@ ${selectedText}
       
       {/* 通知弹窗 */}
       <Toaster />
+
+      {/* AI灵感对话框 */}
+      <AIInspirationDialog
+        open={showInspirationDialog}
+        onOpenChange={setShowInspirationDialog}
+        apiKey={apiKey}
+        prompt={prompt}
+        language={language}
+      />
       
     </div>
   );
