@@ -320,18 +320,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                       value={tempBackgroundOpacity}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value);
-                        if (value < 0.3) {
-                          if (!showWarningToast) {
-                            setShowWarningToast(true);
-                            toast({
-                              title: t.stopWarning,
-                              description: t.disappearWarning,
-                              variant: "destructive",
-                            });
-                            setTimeout(() => setShowWarningToast(false), 3000);
-                          }
-                        }
-                        setTempBackgroundOpacity(Math.max(value, 0.3));
+                        setTempBackgroundOpacity(value);
                       }}
                       className="w-full"
                       style={{
@@ -344,8 +333,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                       }}
                     />
                     <div 
-                      className="absolute top-0 left-0 h-full pointer-events-none" 
-                      style={{ width: "30%", backgroundColor: "rgba(239, 68, 68, 0.2)" }}
+
                     ></div>
                   </div>
                   <p className="text-sm text-muted-foreground">

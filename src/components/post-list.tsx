@@ -403,7 +403,7 @@ export function PostList({ posts, selectedPost, onPostSelect, isLoading = false,
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between px-4 py-3 bg-muted rounded-lg">
+      <div className="flex items-center justify-between px-4 py-3 bg-background rounded-lg">
         <div className="flex items-center space-x-2">
           <Button
             variant={selectionMode ? "default" : "outline"}

@@ -128,20 +128,14 @@
     background-repeat: no-repeat;
     background-attachment: fixed;
     min-height: 100vh;
-    background-color: var(--sidebar);
+    background-color: var(--background);
   }
   
   /* 统一背景，移除各组件之间的分界线 */
   .card, .sidebar, .main-content {
-    background-color: var(--sidebar);
+    background-color: rgba(from var(--background) r g b / var(--bg-opacity, 1));
     border: none;
     box-shadow: none;
-    opacity: var(--bg-opacity, 1);
-  }
-  
-  /* 确保重要文字元素不受背景透明度影响 */
-  h1, h2, h3, h4, h5, h6, p, a, button, input, textarea, label, span, div {
-    opacity: 1 !important;
   }
   
   /* 确保卡片、侧边栏和主内容区域的文字使用正确的颜色变量 */
@@ -157,8 +151,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: var(--sidebar);
-    opacity: var(--bg-opacity, 0.7);
+    background-color: rgba(from var(--background) r g b / var(--bg-opacity, 0.7));
     z-index: -1;
     pointer-events: none;
   }
@@ -181,14 +174,13 @@
   }
   
   /* 确保所有元素都有透明背景 */
-  .bg-card, .bg-background, .bg-sidebar {
-    background-color: var(--sidebar) !important;
-    opacity: var(--bg-opacity, 1) !important;
+  .bg-card, .bg-background {
+    background-color: rgba(from var(--background) r g b / var(--bg-opacity, 1)) !important;
   }
-  
-  /* 确保背景元素内的文字不受透明度影响 */
-  .bg-card *, .bg-background *, .bg-sidebar * {
-    opacity: 1 !important;
+
+  /* 侧边栏使用与主界面相同的背景色和透明度 */
+  .bg-sidebar {
+    background-color: rgba(from var(--background) r g b / var(--bg-opacity, 1)) !important;
   }
   
   /* 特殊处理编辑器和预览区域 */

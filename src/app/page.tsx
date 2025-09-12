@@ -1919,7 +1919,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
       <div className="flex h-[calc(100vh-73px)]">
         {/* 侧边栏 */}
-        <aside className="w-80 border-r bg-card/50 flex flex-col">
+        <aside className="w-80 border-r bg-background flex flex-col">
           {/* 项目选择 */}
           <Card className="m-4">
             <CardHeader className="pb-3">
