@@ -599,6 +599,7 @@ console.log('Hello, Hexo!');
     // AI设置
     enableAI: '启用AI',
     enableAIDescription: '启用后获得AI支持',
+    aboutAILink: '[关于]',
     aiProvider: 'AI提供商',
     aiProviderDescription: '目前仅支持DeepSeek',
     apiKey: 'API密钥',
@@ -948,6 +949,7 @@ console.log('Hello, Hexo!');
     // AI设置
     enableAI: 'Enable AI',
     enableAIDescription: 'Enable to get AI support',
+    aboutAILink: '[About]',
     aiProvider: 'AI Provider',
     aiProviderDescription: 'Currently only supports DeepSeek',
     apiKey: 'API Key',

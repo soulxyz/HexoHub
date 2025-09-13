@@ -53,7 +53,7 @@ interface PanelSettingsProps {
 
 export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange }: PanelSettingsProps) {
   // 当前应用版本，从package.json中获取
-  const currentVersion = '2.4.0';
+  const currentVersion = '2.5.0';
   // 获取当前语言的文本
   const t = getTexts(language);
   const [tempPostsPerPage, setTempPostsPerPage] = useState<number>(postsPerPage);
@@ -472,9 +472,28 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
               />
               <Label htmlFor="enableAI">{t.enableAI}</Label>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {t.enableAIDescription}
-            </p>
+            <div className="flex items-center">
+              <p className="text-sm text-muted-foreground mr-2">
+                {t.enableAIDescription}
+              </p>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (typeof window !== 'undefined' && window.require) {
+                    const { shell } = window.require('electron');
+                    shell.openExternal('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD');
+                  } else {
+                    window.open('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD', '_blank');
+                  }
+                }}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                {t.aboutAILink}
+              </a>
+            </div>
 
             {tempEnableAI && (
               <div className="mt-4 space-y-4 pl-6 border-l-2 border-gray-200">
