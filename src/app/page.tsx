@@ -43,7 +43,8 @@ import {
   ChevronUp,
   Download,
   Upload,
-  Lightbulb
+  Lightbulb,
+  BarChart3
 } from 'lucide-react';
 import { Language, getTexts } from '@/utils/i18n';
 import { MarkdownEditor } from '@/components/markdown-editor';
@@ -59,6 +60,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { CreateHexoDialog } from '@/components/create-hexo-dialog';
 import { CustomTitlebar } from '@/components/custom-titlebar';
 import { AIInspirationDialog } from '@/components/ai-inspiration-dialog';
+import { AIAnalysisDialog } from '@/components/ai-analysis-dialog';
 
 interface Post {
   name: string;
@@ -96,6 +98,7 @@ export default function Home() {
   const [currentFilter, setCurrentFilter] = useState<{ type: 'tag' | 'category'; value: string } | null>(null);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [allTagsForCloud, setAllTagsForCloud] = useState<string[]>([]);
+  const [publishStatsData, setPublishStatsData] = useState<any[]>([]); // 发布统计数据
   // 面板设置相关状态
   const [postsPerPage, setPostsPerPage] = useState<number>(15); // 默认每页显示15篇文章
   const [currentPage, setCurrentPage] = useState<number>(1); // 当前页码
@@ -128,7 +131,9 @@ export default function Home() {
   const [enableAI, setEnableAI] = useState<boolean>(false); // 是否启用AI
   const [apiKey, setApiKey] = useState<string>(''); // API密钥
   const [prompt, setPrompt] = useState<string>('你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段'); // 提示词
+  const [analysisPrompt, setAnalysisPrompt] = useState<string>('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段'); // 分析提示词
   const [showInspirationDialog, setShowInspirationDialog] = useState<boolean>(false); // 是否显示灵感对话框
+  const [showAnalysisDialog, setShowAnalysisDialog] = useState<boolean>(false); // 是否显示分析对话框
 
   // 获取当前语言的文本
   const t = getTexts(language);
@@ -352,6 +357,14 @@ export default function Home() {
         } else {
           // 设置默认提示词
           setPrompt('你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段');
+        }
+
+        const savedAnalysisPrompt = localStorage.getItem('analysis-prompt');
+        if (savedAnalysisPrompt !== null) {
+          setAnalysisPrompt(savedAnalysisPrompt);
+        } else {
+          // 设置默认分析提示词
+          setAnalysisPrompt('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段');
         }
 
         // 加载项目路径
@@ -2130,7 +2143,37 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           {mainView === 'statistics' ? (
             <div className="flex-1 p-6 overflow-auto">
               <TagCloud tags={allTagsForCloud} language={language} />
-              <PublishStats posts={posts} language={language} />
+              <PublishStats 
+                posts={posts} 
+                language={language} 
+                onStatsDataChange={setPublishStatsData} 
+              />
+              {enableAI && (
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <BarChart3 className="w-5 h-5 mr-2 text-blue-500" />
+                      {t.articleAnalysis}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'zh' 
+                          ? '使用AI分析您的博客数据，获得鼓励性的反馈和建议。' 
+                          : 'Use AI to analyze your blog data and get encouraging feedback and suggestions.'}
+                      </p>
+                      <Button
+                        onClick={() => setShowAnalysisDialog(true)}
+                        disabled={!apiKey}
+                        className="w-full"
+                      >
+                        {language === 'zh' ? '开始分析' : 'Start Analysis'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           ) : mainView === 'settings' ? (
             <div className="flex-1 p-6 overflow-auto">
@@ -2170,6 +2213,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 onApiKeyChange={setApiKey}
                 prompt={prompt}
                 onPromptChange={setPrompt}
+                analysisPrompt={analysisPrompt}
+                onAnalysisPromptChange={setAnalysisPrompt}
               />
             </div>
           ) : mainView === 'logs' ? (
@@ -2735,6 +2780,17 @@ ${selectedText}
         apiKey={apiKey}
         prompt={prompt}
         language={language}
+      />
+
+      {/* AI分析对话框 */}
+      <AIAnalysisDialog
+        open={showAnalysisDialog}
+        onOpenChange={setShowAnalysisDialog}
+        apiKey={apiKey}
+        analysisPrompt={analysisPrompt}
+        language={language}
+        tagsData={allTagsForCloud}
+        publishStatsData={publishStatsData}
       />
       
     </div>

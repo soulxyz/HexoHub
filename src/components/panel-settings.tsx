@@ -47,9 +47,11 @@ interface PanelSettingsProps {
   onApiKeyChange?: (value: string) => void;
   prompt?: string;
   onPromptChange?: (value: string) => void;
+  analysisPrompt?: string;
+  onAnalysisPromptChange?: (value: string) => void;
 }
 
-export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange }: PanelSettingsProps) {
+export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange }: PanelSettingsProps) {
   // 当前应用版本，从package.json中获取
   const currentVersion = '2.4.0';
   // 获取当前语言的文本
@@ -70,6 +72,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
   const [tempEnableAI, setTempEnableAI] = useState<boolean>(enableAI);
   const [tempApiKey, setTempApiKey] = useState<string>(apiKey);
   const [tempPrompt, setTempPrompt] = useState<string>(prompt);
+  const [tempAnalysisPrompt, setTempAnalysisPrompt] = useState<string>('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段');
   const { toast } = useToast();
 
   // 当传入的postsPerPage变化时，更新临时值
@@ -137,6 +140,13 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     setTempPrompt(prompt);
   }, [prompt]);
 
+  // 当传入的analysisPrompt变化时，更新临时值
+  useEffect(() => {
+    if (analysisPrompt) {
+      setTempAnalysisPrompt(analysisPrompt);
+    }
+  }, [analysisPrompt]);
+
   // 保存设置
   const saveSettings = () => {
     if (tempPostsPerPage < 1 || tempPostsPerPage > 100) {
@@ -172,6 +182,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     if (onEnableAIChange) onEnableAIChange(tempEnableAI);
     if (onApiKeyChange) onApiKeyChange(tempApiKey);
     if (onPromptChange) onPromptChange(tempPrompt);
+    if (onAnalysisPromptChange) onAnalysisPromptChange(tempAnalysisPrompt);
 
     // 保存到localStorage
     if (typeof window !== 'undefined') {
@@ -192,6 +203,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
       localStorage.setItem('enable-ai', tempEnableAI.toString());
       localStorage.setItem('api-key', tempApiKey);
       localStorage.setItem('prompt', tempPrompt);
+      localStorage.setItem('analysis-prompt', tempAnalysisPrompt);
     }
 
     toast({
@@ -502,6 +514,24 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                     className="w-full"
                     rows={4}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="analysisPrompt">{t.analysisPrompt}</Label>
+                  <Textarea
+                    id="analysisPrompt"
+                    value={tempAnalysisPrompt}
+                    onChange={(e) => setTempAnalysisPrompt(e.target.value)}
+                    placeholder={t.analysisPromptPlaceholder}
+                    className="w-full"
+                    rows={4}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'zh' 
+                      ? '此提示词用于分析博客数据，{"{content}"}将被替换为实际数据'
+                      : 'This prompt is used to analyze blog data, {"{content}"} will be replaced with actual data'
+                    }
+                  </p>
                 </div>
               </div>
             )}

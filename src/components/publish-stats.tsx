@@ -16,9 +16,10 @@ interface Post {
 interface PublishStatsProps {
   posts: Post[];
   language: 'zh' | 'en';
+  onStatsDataChange?: (data: any[]) => void;
 }
 
-export function PublishStats({ posts, language }: PublishStatsProps) {
+export function PublishStats({ posts, language, onStatsDataChange }: PublishStatsProps) {
   const [chartData, setChartData] = useState<any[]>([]);
   const [colors, setColors] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -91,6 +92,11 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
 
           setChartData(data);
           setColors(generateRandomColors(data.length));
+
+          // 调用回调函数，将数据传递给父组件
+          if (onStatsDataChange) {
+            onStatsDataChange(data);
+          }
         } else {
           // 非Electron环境，使用modifiedTime
           const monthCounts: Record<string, number> = {};
@@ -117,6 +123,11 @@ export function PublishStats({ posts, language }: PublishStatsProps) {
 
           setChartData(data);
           setColors(generateRandomColors(data.length));
+
+          // 调用回调函数，将数据传递给父组件
+          if (onStatsDataChange) {
+            onStatsDataChange(data);
+          }
         }
       } catch (error) {
         console.error('Error processing posts for stats:', error);
