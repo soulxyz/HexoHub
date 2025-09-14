@@ -1616,11 +1616,11 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 添加远程仓库
       const remoteName = 'origin';
-      const addRemoteResult = await ipcRenderer.invoke('execute-command', `git remote add ${remoteName} ${pushRepoUrl}`, hexoPath);
+      const addRemoteResult = await ipcRenderer.invoke('execute-command', `git remote set-url ${remoteName} ${pushRepoUrl}`, hexoPath);
       const addRemoteLog = {
         ...addRemoteResult,
         timestamp: new Date().toLocaleString(),
-        command: `git remote add ${remoteName} ${pushRepoUrl}`
+        command: `git remote set-url ${remoteName} ${pushRepoUrl}`
       };
       setCommandLogs(prev => [...prev, addRemoteLog]);
       
