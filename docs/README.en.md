@@ -1,6 +1,6 @@
 # HexoHub
 
-[中文文档](https://github.com/forever218/HexoHub/blob/main/README.md)  |  [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)
+[中文文档](https://github.com/forever218/HexoHub/blob/main/README.md)  |  [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)  
 
 [![GitHub Stars](https://img.shields.io/github/stars/forever218/Hexohub)](https://github.com/forever218/Hexohub/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/forever218/Hexohub)](https://github.com/forever218/Hexohub/network/members)
@@ -10,23 +10,30 @@
 
 <div align="center">
   <img 
-    src="https://github.com/user-attachments/assets/cac9facb-b0e1-414e-b0a9-21c488f790ef" 
+    src="https://github.com/user-attachments/assets/185d93c6-836b-434a-a9b8-55400dc25f3e" 
     alt="image" 
     width="80%" 
   />
 </div>
 
-A Hexo blog management desktop application built with Electron + Next.js, providing a graphical interface to replace traditional command-line operations.  
-> Say goodbye to the cumbersome command line (I’m tired of typing hexo xxxx🫠) and manage your Hexo blog in a more elegant way.
+<div align="center">
+  <img 
+    src="https://github.com/user-attachments/assets/10fadb85-4fb7-438f-884d-b80e90886e5e" 
+    alt="image" 
+    width="80%" 
+  />
+</div>
 
+A Hexo blog management desktop application built with Electron + Next.js, providing a graphical interface to replace traditional command-line operations.
+> Say goodbye to tedious traditional command-line methods (I'm already tired of hexo xxxx🫠), manage your Hexo blog in a more elegant way.
 
-## 📝 Post Management
+## Article Management
 
-In this application, you can visually: **create new posts**, **view post list**, **edit posts**, **real-time preview**, **start local preview**, **generate and deploy static files**, **delete posts**.
+In this application, you can visually: **Create new articles**, **View article list**, **Edit articles**, **Real-time preview**, **Start local preview**, **Generate and push static files**, **Delete articles**
 
-## 🧩 Drag-and-Drop Images
-This might be one of the highlights of this app. When you enable Hexo’s asset folder ([what’s this?](https://hexo.io/docs/asset-folders)), you can use the `{% asset_img example.jpg %}` tag to reference local images in your blog.  
-However, frequently typing `{% asset_img example.jpg %}` is clearly inconvenient (especially when filenames are complex). In this app, you only need to place the image into the resource folder with the same name as the post (for example: `\blog\source\_posts\Test Post`) and drag the image into the editor window—it will automatically insert `{% asset_img example.jpg %}` for you, saving the trouble of typing filenames.    
+## Image Drag & Drop
+This might be one of the highlights of this application. When you enable Hexo's asset folder feature ([What is this?](https://hexo.io/docs/asset-folders)), you can use the `{% asset_img example.jpg %}` tag to reference local images in your blog.
+However, frequently typing `{% asset_img example.jpg %}` is obviously unsatisfactory (especially when image filenames are complex). So in this application, you just need to place images in the asset folder with the same name as the article (e.g., `\blog\source\_posts\Test Article`), then drag the image into the editing window to automatically insert the `{% asset_img example.jpg %}` tag, saving you the trouble of typing filenames.
 
 <div align="center">
   <img 
@@ -44,48 +51,47 @@ However, frequently typing `{% asset_img example.jpg %}` is clearly inconvenient
   />
 </div>
 
-
-## ⚙️ Hexo Operations 
-**Command Execution**: Graphical execution of common Hexo commands, including:  
-  - `hexo clean` - Clear cache files
+## Hexo Operations 
+**Command Execution**: Graphically execute common Hexo commands, including:  
+  - `hexo clean` - Clean cache files
   - `hexo generate` - Generate static files
   - `hexo deploy` - Deploy to remote server
-  - `hexo se` - Start local preview   
-**Real-time Feedback**: Display execution results and error messages.
+  - `hexo serve` - Start local preview   
+**Real-time Feedback**: Display command execution results and error messages
 
-## 🔧 Configuration Management
-**Basic Settings**: Site title, subtitle, author, language  
+## Configuration Management
+**Basic Settings**: Website title, subtitle, author, language  
 **Advanced Settings**: URL configuration, permalink format  
-**YAML Editing**: Directly edit raw configuration files  
-**Import/Export**: Backup and restore configuration files, making theme migration easier.
+**YAML Editing**: Support direct editing of raw configuration files  
+**Import/Export**: Configuration file backup and restore, making theme migration more convenient
 
-# 🚀 Quick Start  
+# Quick Start  
 ## Usage
 
-If you just want to “use” this app:   
-- **OS**: Windows 10 or higher  
-- **Storage**: Recommended 400MB available space  
+If you only need to "use" this application:   
+- **Operating System**: Windows 10 or higher    
+- **Storage**: Recommended 900MB available space  
 - **Hexo**: https://hexo.io/
-- **Npm**: `npm > 10` 👉 https://www.npmjs.com/
-- **Node.js**: `nodejs > 20` 👉 https://nodejs.org/   
+- **Npm**: `npm>10`    👉https://www.npmjs.com/
+- **Node.js**: `nodejs>20`    👉https://nodejs.org/   
+
 Then go to [Releases](https://github.com/forever218/HexoHub/releases/) to download the latest version.  
   
 ## Development   
 
-If you want to “develop” this app, you’ll also need:   
+If you need to "develop" this application, here are the additional requirements:   
 - **Git**: https://git-scm.com/   
-- **nodejs**: `TypeScript > 4.5`, `React > 19`, `Next.js > 15`   
+- **nodejs**: `TypeScript>4.5`, `React>19`, `Next.js>15`   
 
-
-⚠️ For speed, I used `cnpm` during development and modified some parts of `package.json`. Please take this into consideration. If you want to use `cnpm`, run:  
+⚠️ For speed considerations, I used `cnpm` during development and modified some `package.json` content. Please consider this when using. If you want to use `cnpm`, please execute:  
 
 ```bash
 npm install -g cnpm --registry=http://registry.npm.taobao.org
 ```
 
-Then you can replace `npm` with `cnpm`.
+Then you can replace `npm` with `cnpm`
 
-1. **Clone the repository**
+1. **Clone this repository**
    ```bash
    git clone https://github.com/forever218/HexoHub.git
    ```
@@ -95,54 +101,53 @@ Then you can replace `npm` with `cnpm`.
    npm install
    ```
 
-3. **Run in development mode**—you can already use it at this step
+3. **Run in development mode** - You can use it at this step
    ```bash
    npm run electron
    ```
 
-4. **Package the app** (optional)
+4. **Package the application** (Optional)
    ```bash
+   npm run build
    npm run make
    ```
 
-> **Note**: This application is packaged with `electron-builder`, not `electron-forge`. When modifying config files, make sure to follow the `electron-builder` format. [electron-builder](https://www.electron.build/)
+> **Note**: This application is packaged with `electron-builder`, not `electron-forge`. When modifying related configuration files, please note to use the `electron-builder` configuration file format. [electron-builder](https://www.electron.build/)
 
-
-# 🛠️ Tech Stack
+# Tech Stack
 
 - **Next.js 15** - React full-stack framework
-- **React** - UI library
+- **React** - User interface library
 - **TypeScript** - Type-safe JavaScript  
 - **Tailwind CSS** - CSS framework  
-- **Electron** - Cross-platform desktop framework
-- **electron-builder** - App packaging tool
-- **NSIS** - Windows installer builder
-- **remark-gfm** - GitHub flavored Markdown extension
+- **Electron** - Cross-platform desktop application framework
+- **electron-builder** - Application packaging tool
+- **NSIS** - Windows installer creation tool
+- **remark-gfm** - GitHub Flavored Markdown extension
+- [Hexo](https://hexo.io/) - Static blog generator
 
-
-
-# 🤝 Contribution Guide
+# Contributing Guidelines
 
 Issues and Pull Requests are welcome!  
-1. Fork the repo  
-2. Create a feature branch  
-3. Commit changes  
-4. Create a Pull Request  
+1. Fork the project
+2. Create a feature branch
+3. Commit changes
+4. Create a Pull Request
 
 ---
 
-I encountered many problems during development. If you could join this project as a like-minded friend, I’d be very grateful—I’ll even buy you a coffee! ☕  
-You can reach me via:  
-- Email: 3316703158@qq.com  
-- Blog: https://2am.top  
-- GitHub  
+I encountered many problems during development. If you can join this project and become a like-minded friend, I would be extremely grateful and buy you a cup of coffee! ☕
+You can contact me through:
+- Email: 3316703158@qq.com
+- My blog: https://2am.top
+- GitHub
 
 ## Internationalization (i18n)
-This project uses `next-i18next` for i18n. You can configure your language packs in `i18n.js`, helping your project easily support multiple languages so users worldwide can use it without barriers.   
+This project uses `next-i18next` for internationalization. You can configure your language packs in `i18n.js`, aimed at helping your project easily support multiple languages, allowing users worldwide to use it without barriers.   
 
--  Multi-language support: easily switch languages  
--  Simple integration: quick setup, compatible with popular frameworks  
--  Extensible: customize translations and language packs  
+-  Multi-language support: Easily switch between different languages   
+-  Simple integration: Quick to get started, compatible with mainstream frameworks   
+-  Extensible: Custom translations and language packs  
 
 ```bash
 # Install module
@@ -150,7 +155,7 @@ npm install your-i18n-module
 ```
 
 ```typescript
-// Initialization
+// Initialize
 import i18n from 'your-i18n-module';
 
 i18n.init({
@@ -159,45 +164,36 @@ i18n.init({
 });
 ```
 
+## Code Standards
+No standards (actually my code is a mess👻), as long as what you write is human language
 
-## Code Style
-No strict rules (my code is actually a mess👻), as long as it’s readable. 
- 
-#  LICENSE
+# LICENSE
 
-This project is licensed under the [MIT](https://choosealicense.com/licenses/mit/) License. Please comply with relevant laws and regulations when using this project.
-
-
-# 🙏 Acknowledgements
-
-- [Next.js](https://nextjs.org/) - React framework  
-- [Electron](https://www.electronjs.org/) - Desktop framework  
-- [shadcn/ui](https://ui.shadcn.com/) - UI component library  
-- [Tailwind CSS](https://tailwindcss.com/) - CSS framework  
-- [Hexo](https://hexo.io/) - Static site generator  
+This project uses the [MIT](https://choosealicense.com/licenses/mit/) license. Please comply with relevant laws and regulations when using this project.
 
 # Changelog
+For more logs, please check releases
 ## v3 (2025-08-16)
-New Features:  
-- Added right-click logic in “Post List” for quick actions  
-- Added “Tag Cloud” on the left sidebar  
+New features:  
+- Added right-click logic to the "Article List" interface for quick operations  
+- Added "Tag Cloud" on the left side  
  
-Bug Fixes:  
-- Fixed “Site Title” setting failure under Hexo config  
-- Fixed occasional sorting disorder when sorting by post name  
-- Fixed error when generating static files if “Author” was empty  
+Bug fixes: 
+- Fixed the issue where "Website Title" setting failed in Hexo configuration   
+- Fixed occasional sorting confusion when "Sort by Article Name"  
+- Fixed the error when generating static files when "Author" is empty  
 
 ## v2 (2025-08-13)
-New Features:  
-- Refactored “Post List” to the right main window  
-- Added “Show posts by tag/category” feature  
-- Added batch post processing (batch delete/add tags/add categories)  
-- Added internationalization support  
+New features:  
+- Refactored "Article List" functionality, placed it in the right main window   
+- Added "Display articles by tags/categories" functionality   
+- Added batch article processing (batch delete/add tags/add categories) 
+- Added internationalization support   
 
-Bug Fixes:  
-- Fixed some light/dark mode anomalies  
+Bug fixes:  
+- Fixed some light/dark theme switching anomalies  
 
 ## v1 (2025-08-10)
 - Initial build  
-- Basic commands, post sorting by date/name  
-- Basic feature implementation  
+- Basic commands, article sorting by date/name  
+- Basic functionality implementation
