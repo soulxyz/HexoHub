@@ -103,6 +103,7 @@ export default function Home() {
   const [postsPerPage, setPostsPerPage] = useState<number>(15); // 默认每页显示15篇文章
   const [currentPage, setCurrentPage] = useState<number>(1); // 当前页码
   const [autoSaveInterval, setAutoSaveInterval] = useState<number>(3); // 默认自动保存间隔为3分钟
+  const [iframeUrlMode, setIframeUrlMode] = useState<'hexo' | 'root'>('hexo'); // iframe地址获取方式，默认为hexo标准地址
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null); // 自动保存定时器
   const [editorMode, setEditorMode] = useState<'mode1' | 'mode2'>('mode1'); // 编辑模式，默认为模式1
   // 背景图相关状态
@@ -134,6 +135,9 @@ export default function Home() {
   const [analysisPrompt, setAnalysisPrompt] = useState<string>('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段'); // 分析提示词
   const [showInspirationDialog, setShowInspirationDialog] = useState<boolean>(false); // 是否显示灵感对话框
   const [showAnalysisDialog, setShowAnalysisDialog] = useState<boolean>(false); // 是否显示分析对话框
+  // 预览模式相关状态
+  const [previewMode, setPreviewMode] = useState<'static' | 'server'>('static'); // 预览模式，默认为静态预览
+  const [forcePreviewRefresh, setForcePreviewRefresh] = useState<boolean>(false); // 控制预览框强制刷新
 
   // 获取当前语言的文本
   const t = getTexts(language);
@@ -365,6 +369,15 @@ export default function Home() {
         } else {
           // 设置默认分析提示词
           setAnalysisPrompt('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段');
+        }
+
+        // 加载预览模式设置
+        const savedPreviewMode = localStorage.getItem('preview-mode');
+        if (savedPreviewMode === 'static' || savedPreviewMode === 'server') {
+          setPreviewMode(savedPreviewMode);
+        } else {
+          // 如果没有保存的设置，使用默认值static
+          setPreviewMode('static');
         }
 
         // 加载项目路径
@@ -897,6 +910,11 @@ export default function Home() {
         description: t.articleSaveSuccess,
         variant: 'success',
       });
+      
+      // 如果是服务器预览模式，触发预览框强制刷新
+      if (previewMode === 'server' && editorMode === 'mode2') {
+        setForcePreviewRefresh(true);
+      }
     } catch (error) {
       console.error('保存文章失败:', error);
       const saveErrorResult = {
@@ -1529,10 +1547,12 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           variant: 'success',
         });
 
-        // 打开浏览器预览
-        setTimeout(() => {
-          ipcRenderer.invoke('open-url', 'http://localhost:4000');
-        }, 2000);
+        // 只有在非服务器预览模式下才打开浏览器预览
+        if (previewMode !== 'server') {
+          setTimeout(() => {
+            ipcRenderer.invoke('open-url', 'http://localhost:4000');
+          }, 2000);
+        }
       } else {
         setCommandResult(result);
         
@@ -2216,6 +2236,10 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 onPromptChange={setPrompt}
                 analysisPrompt={analysisPrompt}
                 onAnalysisPromptChange={setAnalysisPrompt}
+                previewMode={previewMode}
+                onPreviewModeChange={setPreviewMode}
+                iframeUrlMode={iframeUrlMode}
+                onIframeUrlModeChange={setIframeUrlMode}
               />
             </div>
           ) : mainView === 'logs' ? (
@@ -2652,6 +2676,12 @@ ${selectedText}
                           <MarkdownPreview
                             content={postContent}
                             className="p-6"
+                            previewMode={previewMode}
+                            hexoPath={hexoPath}
+                            selectedPost={selectedPost}
+                            isServerRunning={isServerRunning}
+                            onStartServer={startHexoServer}
+                            iframeUrlMode={iframeUrlMode}
                           />
                         </div>
                       )}
@@ -2674,6 +2704,14 @@ ${selectedText}
                         <MarkdownPreview
                           content={postContent}
                           className="p-4"
+                          previewMode={previewMode}
+                          hexoPath={hexoPath}
+                          selectedPost={selectedPost}
+                          isServerRunning={isServerRunning}
+                          onStartServer={startHexoServer}
+                          forceRefresh={forcePreviewRefresh}
+                          onForceRefreshComplete={() => setForcePreviewRefresh(false)}
+                          iframeUrlMode={iframeUrlMode}
                         />
                       </div>
                     </div>

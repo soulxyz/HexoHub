@@ -354,17 +354,46 @@ ipcMain.handle('start-hexo-server', async (event, workingDir) => {
       hexoServerProcess.kill();
       hexoServerProcess = null;
     }
+    
+    // 尝试杀死占用4000端口的进程
+    const { exec } = require('child_process');
+    if (WindowsCompat.isWindows()) {
+      exec('netstat -ano | findstr :4000', (error, stdout, stderr) => {
+        if (!error) {
+          const lines = stdout.split('\n');
+          for (const line of lines) {
+            if (line.includes(':4000') && line.includes('LISTENING')) {
+              const parts = line.trim().split(/\s+/);
+              const pid = parts[parts.length - 1];
+              if (pid && !isNaN(parseInt(pid))) {
+                exec(`taskkill /F /PID ${pid}`, (killError) => {
+                  if (killError) {
+                  } else {
+                  }
+                });
+              }
+            }
+          }
+        }
+      });
+    } else {
+      // Linux/Mac系统
+      exec('lsof -ti:4000 | xargs kill -9', (error, stdout, stderr) => {
+      });
+    }
 
     // 使用Windows兼容性工具
     const hexoCommand = WindowsCompat.getHexoCommand();
 
     // 启动Hexo服务器
+
     hexoServerProcess = spawn(hexoCommand, ['server'], {
       cwd: workingDir,
       shell: true,
       detached: false,
       stdio: ['pipe', 'pipe', 'pipe']
     });
+    
 
     return new Promise((resolve) => {
       let output = '';
@@ -377,7 +406,7 @@ ipcMain.handle('start-hexo-server', async (event, workingDir) => {
         output += text;
 
         // 检查服务器是否已启动
-        if (text.includes('Hexo is running') || text.includes('localhost:4000')) {
+        if (text.includes('Hexo is running') || text.includes('localhost:4000') || text.includes('INFO  Hexo is running at http://localhost:4000/')) {
           if (!serverStarted) {
             serverStarted = true;
             resolve({
@@ -391,7 +420,7 @@ ipcMain.handle('start-hexo-server', async (event, workingDir) => {
 
       // 监听错误输出
       hexoServerProcess.stderr.on('data', (data) => {
-        errorOutput += data.toString();
+        const errorText = data.toString();
       });
 
       // 监听进程退出
@@ -400,7 +429,7 @@ ipcMain.handle('start-hexo-server', async (event, workingDir) => {
           resolve({
             success: false,
             error: `服务器启动失败，退出码: ${code}`,
-            stderr: errorOutput
+            stderr: errorOutput,
           });
         }
         hexoServerProcess = null;
@@ -411,7 +440,7 @@ ipcMain.handle('start-hexo-server', async (event, workingDir) => {
         if (!serverStarted) {
           resolve({
             success: false,
-            error: '启动服务器失败: ' + error.message
+            error: '启动服务器失败: ' + error.message,
           });
         }
         hexoServerProcess = null;
@@ -422,7 +451,7 @@ ipcMain.handle('start-hexo-server', async (event, workingDir) => {
         if (!serverStarted) {
           resolve({
             success: false,
-            error: '服务器启动超时'
+            error: '服务器启动超时',
           });
         }
       }, 10000); // 10秒超时

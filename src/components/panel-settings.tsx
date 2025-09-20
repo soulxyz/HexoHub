@@ -49,9 +49,15 @@ interface PanelSettingsProps {
   onPromptChange?: (value: string) => void;
   analysisPrompt?: string;
   onAnalysisPromptChange?: (value: string) => void;
+  // 预览模式设置
+  previewMode?: 'static' | 'server';
+  onPreviewModeChange?: (value: 'static' | 'server') => void;
+  // iframe地址获取方式设置
+  iframeUrlMode?: 'hexo' | 'root';
+  onIframeUrlModeChange?: (value: 'hexo' | 'root') => void;
 }
 
-export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange }: PanelSettingsProps) {
+export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange, previewMode = 'static', onPreviewModeChange, iframeUrlMode = 'hexo', onIframeUrlModeChange }: PanelSettingsProps) {
   // 当前应用版本，从package.json中获取
   const currentVersion = '2.5.0';
   // 获取当前语言的文本
@@ -73,12 +79,20 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
   const [tempApiKey, setTempApiKey] = useState<string>(apiKey);
   const [tempPrompt, setTempPrompt] = useState<string>(prompt);
   const [tempAnalysisPrompt, setTempAnalysisPrompt] = useState<string>('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段');
+  // 预览模式相关状态
+  const [tempPreviewMode, setTempPreviewMode] = useState<'static' | 'server'>(previewMode);
+  const [tempIframeUrlMode, setTempIframeUrlMode] = useState<'hexo' | 'root'>(iframeUrlMode);
   const { toast } = useToast();
 
   // 当传入的postsPerPage变化时，更新临时值
   useEffect(() => {
     setTempPostsPerPage(postsPerPage);
   }, [postsPerPage]);
+  
+  // 当传入的iframeUrlMode变化时，更新临时值
+  useEffect(() => {
+    setTempIframeUrlMode(iframeUrlMode);
+  }, [iframeUrlMode]);
 
   // 当传入的autoSaveInterval变化时，更新临时值
   useEffect(() => {
@@ -147,6 +161,11 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     }
   }, [analysisPrompt]);
 
+  // 当传入的previewMode变化时，更新临时值
+  useEffect(() => {
+    setTempPreviewMode(previewMode);
+  }, [previewMode]);
+
   // 保存设置
   const saveSettings = () => {
     if (tempPostsPerPage < 1 || tempPostsPerPage > 100) {
@@ -183,6 +202,10 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     if (onApiKeyChange) onApiKeyChange(tempApiKey);
     if (onPromptChange) onPromptChange(tempPrompt);
     if (onAnalysisPromptChange) onAnalysisPromptChange(tempAnalysisPrompt);
+    // 保存预览模式设置
+    if (onPreviewModeChange) onPreviewModeChange(tempPreviewMode);
+    // 保存iframe地址获取方式设置
+    if (onIframeUrlModeChange) onIframeUrlModeChange(tempIframeUrlMode);
 
     // 保存到localStorage
     if (typeof window !== 'undefined') {
@@ -204,6 +227,10 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
       localStorage.setItem('api-key', tempApiKey);
       localStorage.setItem('prompt', tempPrompt);
       localStorage.setItem('analysis-prompt', tempAnalysisPrompt);
+      // 保存预览模式设置
+      localStorage.setItem('preview-mode', tempPreviewMode);
+      // 保存iframe地址获取方式设置
+      localStorage.setItem('iframe-url-mode', tempIframeUrlMode);
     }
 
     toast({
@@ -288,6 +315,75 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                 {t.modeDescription}
               </p>
             </div>
+
+                      {/* 预览模式设置 */}
+          <div className="space-y-2">
+            <Label>{t.previewMode}</Label>
+            <div className="flex space-x-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="static"
+                  name="previewMode"
+                  value="static"
+                  checked={tempPreviewMode === 'static'}
+                  onChange={() => setTempPreviewMode('static')}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="static">{t.staticPreview}</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="server"
+                  name="previewMode"
+                  value="server"
+                  checked={tempPreviewMode === 'server'}
+                  onChange={() => setTempPreviewMode('server')}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="server">{t.serverPreview}</Label>
+              </div>
+            </div>
+            
+            {/* 当预览模式为服务器时，显示iframe地址获取方式选项 */}
+            {tempPreviewMode === 'server' && (
+              <div className="mt-4 space-y-2">
+                <Label className="text-base font-medium">iframe地址获取方式</Label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="hexo"
+                    name="iframeUrlMode"
+                    value="hexo"
+                    checked={tempIframeUrlMode === 'hexo'}
+                    onChange={() => setTempIframeUrlMode('hexo')}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="hexo">Hexo标准地址</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="root"
+                    name="iframeUrlMode"
+                    value="root"
+                    checked={tempIframeUrlMode === 'root'}
+                    onChange={() => setTempIframeUrlMode('root')}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="root">根地址</Label>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  默认为“Hexo标准地址”，如果渲染失败请选择“根地址”
+                </p>
+              </div>
+            )}
+            
+            <p className="text-sm text-muted-foreground">
+              {t.previewModeDescription}
+            </p>
+          </div>
 
             <div className="space-y-2">
               <Label>{t.backgroundSettings}</Label>
@@ -555,6 +651,8 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
               </div>
             )}
           </div>
+
+
 
           <div className="flex justify-end">
             <Button onClick={saveSettings}>
