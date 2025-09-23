@@ -2,6 +2,41 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
 
+// ---------------------------------------------------------------------------
+// Linux VSync / GPU 兼容性处理
+// 在部分 Arch/Manjaro + Wayland/Mesa 环境下，Electron (Chromium) 会输出：
+//   GetVSyncParametersIfAvailable() failed for N times!
+// 这是由于底层 GL / VSync 提供方（尤其 Wayland 或无合适的 DRM/GLX 时间戳）返回空参数，
+// 通常不影响功能，但大量日志会干扰用户。这里做几件事：
+// 1. 默认添加 "disable-gpu-vsync" 减少相关调用频率。
+// 2. Wayland 下尝试启用 ozone 自动平台提示，改进兼容性。
+// 3. 提供环境变量 HEXOHUB_DISABLE_GPU=1 用于完全禁用硬件加速（最后兜底）。
+// 4. 若在没有 DISPLAY 的环境（可能是打包或 CI）也自动禁用加速，避免初始化失败。
+// 如果仍有问题，用户可以：
+//   HEXOHUB_DISABLE_GPU=1 hexohub
+// 或在 AUR 包装脚本里导出该变量。
+// ---------------------------------------------------------------------------
+const isLinux = process.platform === 'linux';
+if (isLinux) {
+  // 禁用 vsync 调用，降低 GetVSyncParametersIfAvailable 触发
+  app.commandLine.appendSwitch('disable-gpu-vsync');
+
+  // Wayland 环境尝试自动平台提示
+  if (process.env.XDG_SESSION_TYPE === 'wayland') {
+    app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
+    // 可选：为部分环境增加装饰支持
+    app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations');
+  }
+
+  // 若用户显式要求禁用 GPU 或无图形显示变量
+  if (process.env.HEXOHUB_DISABLE_GPU === '1' || !process.env.DISPLAY) {
+    app.disableHardwareAcceleration();
+  }
+}
+
+// 关闭 Electron 安全警告（已知我们在受控桌面环境中运行）
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
+
 // Windows兼容性工具
 const WindowsCompat = {
   isWindows: () => process.platform === 'win32',
