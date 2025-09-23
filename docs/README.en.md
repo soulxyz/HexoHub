@@ -114,6 +114,33 @@ Then you can replace `npm` with `cnpm`
 
 > **Note**: This application is packaged with `electron-builder`, not `electron-forge`. When modifying related configuration files, please note to use the `electron-builder` configuration file format. [electron-builder](https://www.electron.build/)
 
+## Linux Compatibility & Troubleshooting
+The AppImage ships with an embedded Electron runtime. On some Arch / Manjaro / Wayland or Mesa driver setups you may see repeated console lines like:
+
+```
+GetVSyncParametersIfAvailable() failed for X times!
+```
+
+These are Chromium GPU / VSync timing warnings and usually harmless. To mitigate or suppress them:
+
+1. The app already adds `--disable-gpu-vsync` internally to reduce spam.
+2. If you still see flickering / blank window, run with GPU disabled:
+  ```bash
+  HEXOHUB_DISABLE_GPU=1 ./HexoHub-<version>.AppImage
+  ```
+3. On Wayland, Electron tries auto ozone platform detection. If window decorations or input behave oddly, try switching session (Wayland <-> X11).
+4. In headless / remote desktop (llvmpipe / no real GPU) environments, prefer the `HEXOHUB_DISABLE_GPU=1` launch.
+
+When reporting graphics issues, please include:
+```
+Distribution & version:
+Desktop environment & session (X11/Wayland):
+GPU vendor / driver (e.g. NVIDIA proprietary, Mesa AMD, Intel):
+Whether HEXOHUB_DISABLE_GPU was required (yes/no):
+```
+
+If disabling GPU fully resolves the issue, open an Issue—we may add smarter auto detection paths.
+
 # Tech Stack
 
 - **Next.js 15** - React full-stack framework
