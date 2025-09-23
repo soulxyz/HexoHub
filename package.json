@@ -166,7 +166,7 @@
           ]
         }
       ],
-      "icon": "public/icon.png"
+      "icon": "public/icon.svg"
     },
     "nsis": {
       "oneClick": false,
