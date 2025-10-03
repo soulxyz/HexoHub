@@ -21,6 +21,10 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
+# 权限声明：允许创建 Release 和上传文件
+permissions:
+  contents: write  # 允许创建 Release 和上传资产
+
 jobs:
   # ========================
   # 创建 GitHub Release
