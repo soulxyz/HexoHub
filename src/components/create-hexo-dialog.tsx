@@ -74,11 +74,9 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
       const npmResult = await ipcRenderer.invoke('execute-command', 'npm -v');
       if (npmResult.success) {
         setNpmInstalled(true);
-        setCommandOutput(prev => prev + `${t.npmInstalled.replace('{version}', npmResult.stdout)}
-`);
+        setCommandOutput(prev => prev + t.npmInstalled.replace('{version}', npmResult.stdout));
       } else {
-        setCommandOutput(prev => prev + `${t.npmNotInstalled.replace('{error}', npmResult.stderr || npmResult.error)}
-`);
+        setCommandOutput(prev => prev + t.npmNotInstalled.replace('{error}', npmResult.stderr || npmResult.error));
       }
 
       // 检查git
@@ -86,11 +84,9 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
       const gitResult = await ipcRenderer.invoke('execute-command', 'git --version');
       if (gitResult.success) {
         setGitInstalled(true);
-        setCommandOutput(prev => prev + `${t.gitInstalled.replace('{version}', gitResult.stdout)}
-`);
+        setCommandOutput(prev => prev + t.gitInstalled.replace('{version}', gitResult.stdout));
       } else {
-        setCommandOutput(prev => prev + `${t.gitNotInstalled.replace('{error}', gitResult.stderr || gitResult.error)}
-`);
+        setCommandOutput(prev => prev + t.gitNotInstalled.replace('{error}', gitResult.stderr || gitResult.error));
       }
 
       // 检查hexo
@@ -103,16 +99,13 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
         if (versionMatch) {
           setHexoVersion(versionMatch[1]);
         }
-        setCommandOutput(prev => prev + `${t.hexoInstalled.replace('{version}', hexoResult.stdout)}
-`);
+        setCommandOutput(prev => prev + t.hexoInstalled.replace('{version}', hexoResult.stdout));
       } else {
-        setCommandOutput(prev => prev + `${t.hexoNotInstalled.replace('{error}', hexoResult.stderr || hexoResult.error)}
-`);
+        setCommandOutput(prev => prev + t.hexoNotInstalled.replace('{error}', hexoResult.stderr || hexoResult.error));
       }
     } catch (error) {
       console.error('检查环境失败:', error);
-      setCommandOutput(prev => prev + `${t.environmentCheckFailed.replace('{error}', error.message)}
-`);
+      setCommandOutput(prev => prev + t.environmentCheckFailed.replace('{error}', error instanceof Error ? error.message : String(error)));
     } finally {
       setIsCheckingEnvironment(false);
     }
@@ -184,22 +177,17 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
         if (!installHexoResult.success) {
           throw new Error(`${t.installingHexoCli}: ${installHexoResult.stderr || installHexoResult.error}`);
         }
-        setCommandOutput(prev => prev + `${t.hexoCliInstallSuccess}
-${installHexoResult.stdout}
-`);
+        setCommandOutput(prev => prev + t.hexoCliInstallSuccess + '\n' + installHexoResult.stdout);
       }
 
       // 创建 hexo 项目
       setProgress(40);
-      setCommandOutput(prev => prev + `${t.creatingHexoProject.replace('{path}', projectPath)}
-`);
+      setCommandOutput(prev => prev + t.creatingHexoProject.replace('{path}', projectPath));
       const initResult = await ipcRenderer.invoke('execute-command', `hexo init ${projectPath}`);
       if (!initResult.success) {
         throw new Error(`${t.creatingHexoProject}: ${initResult.stderr || initResult.error}`);
       }
-      setCommandOutput(prev => prev + `${t.hexoProjectCreatedSuccess}
-${initResult.stdout}
-`);
+      setCommandOutput(prev => prev + t.hexoProjectCreatedSuccess + '\n' + initResult.stdout);
 
       // 进入项目目录（hexo init已经自动安装了依赖）
       setProgress(60);
@@ -213,9 +201,7 @@ ${initResult.stdout}
         if (!installPluginResult.success) {
           throw new Error(`${t.installingDeployPlugin}: ${installPluginResult.stderr || installPluginResult.error}`);
         }
-        setCommandOutput(prev => prev + `${t.deployPluginInstallSuccess}
-${installPluginResult.stdout}
-`);
+        setCommandOutput(prev => prev + t.deployPluginInstallSuccess + '\n' + installPluginResult.stdout);
       }
 
       setProgress(100);
@@ -236,8 +222,7 @@ ${installPluginResult.stdout}
       setTimeout(() => setOpen(false), 1500);
     } catch (error) {
       console.error('创建 Hexo 项目失败:', error);
-      setCommandOutput(prev => prev + `${t.createFailed}: ${error.message}
-`);
+      setCommandOutput(prev => prev + `${t.createFailed}: ${error instanceof Error ? error.message : String(error)}`);
       toast({
         title: t.createFailed,
         description: error instanceof Error ? error.message : t.unknownError,
@@ -271,7 +256,7 @@ ${installPluginResult.stdout}
                 <Info className="w-4 h-4 mr-2" />
                 {t.checkingEnvironment}
               </div>
-              <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md text-sm font-mono h-32 overflow-y-auto">
+              <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md text-sm font-mono h-32 overflow-y-auto whitespace-pre-wrap">
                 {commandOutput}
               </div>
             </div>
@@ -356,7 +341,7 @@ ${installPluginResult.stdout}
                 </div>
               )}
 
-              <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md text-sm font-mono h-48 overflow-y-auto">
+              <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md text-sm font-mono h-48 overflow-y-auto whitespace-pre-wrap">
                 {commandOutput || t.commandOutput}
               </div>
             </>
