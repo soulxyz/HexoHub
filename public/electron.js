@@ -71,7 +71,44 @@ const WindowsCompat = {
     
     return false;
   },
-  getHexoCommand: () => WindowsCompat.isWindows() ? 'hexo.cmd' : 'hexo'
+  getHexoCommand: () => WindowsCompat.isWindows() ? 'hexo.cmd' : 'hexo',
+  
+  /**
+   * 解码命令输出（PowerShell 输出 UTF-8，只需处理换行符）
+   */
+  decodeCommandOutput: (data) => {
+    if (typeof data === 'string') {
+      return data.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    }
+    if (!Buffer.isBuffer(data) || data.length === 0) {
+      return String(data || '');
+    }
+    return data.toString('utf8').replace(/\r\n/g, '\n');
+  },
+  
+  /**
+   * 获取执行命令的选项
+   */
+  getExecOptions: (options = {}) => {
+    return {
+      ...options,
+      shell: true,
+      windowsHide: false,
+      encoding: 'utf8',
+      env: { ...process.env, ...options.env, FORCE_COLOR: '0' }
+    };
+  },
+  
+  /**
+   * 包装命令：Windows 用 PowerShell（UTF-8），其他平台直接返回
+   */
+  wrapCommand: (command) => {
+    if (!WindowsCompat.isWindows()) {
+      return command;
+    }
+    const escaped = command.replace(/"/g, '`"');
+    return `powershell -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; ${escaped}"`;
+  }
 };
 
 let mainWindow;
@@ -269,11 +306,21 @@ ipcMain.handle('execute-command', async (event, command) => {
   const execPromise = util.promisify(exec);
 
   try {
-    const { stdout, stderr } = await execPromise(command, {
-      windowsHide: false,
-      env: { ...process.env, FORCE_COLOR: '0' }, // 禁用颜色输出以避免编码问题
-      shell: true // 使用shell以支持命令查找
+    // 包装命令（Windows 上使用 PowerShell 或 CMD+chcp）
+    const wrappedCommand = WindowsCompat.wrapCommand(command);
+    
+    // 获取执行选项（PowerShell 使用 utf8，CMD 使用 buffer）
+    const execOptions = WindowsCompat.getExecOptions({
+      windowsHide: false
     });
+    
+    const result = await execPromise(wrappedCommand, execOptions);
+    
+    // 智能解码输出
+    // PowerShell: 已经是 UTF-8 字符串，直接返回
+    // CMD: buffer 模式，需要解码
+    const stdout = WindowsCompat.decodeCommandOutput(result.stdout);
+    const stderr = WindowsCompat.decodeCommandOutput(result.stderr);
 
     return {
       success: true,
@@ -281,11 +328,15 @@ ipcMain.handle('execute-command', async (event, command) => {
       stderr: stderr
     };
   } catch (error) {
+    // 智能解码错误输出（即使失败也要正确显示错误信息）
+    const stdout = WindowsCompat.decodeCommandOutput(error.stdout || '');
+    const stderr = WindowsCompat.decodeCommandOutput(error.stderr || '');
+    
     return {
       success: false,
       error: error.message,
-      stdout: error.stdout,
-      stderr: error.stderr
+      stdout: stdout,
+      stderr: stderr
     };
   }
 });
@@ -297,16 +348,26 @@ ipcMain.handle('execute-hexo-command', async (event, command, workingDir) => {
   const execPromise = util.promisify(exec);
   
   try {
-    // 使用Windows兼容性工具
+    // 构建 Hexo 命令（Windows 使用 hexo.cmd）
     const hexoCommand = WindowsCompat.getHexoCommand();
-    const fullCommand = `${hexoCommand} ${command}`;
+    const baseCommand = `${hexoCommand} ${command}`;
     
-    const { stdout, stderr } = await execPromise(fullCommand, {
+    // 包装命令（Windows 上使用 PowerShell 或 CMD+chcp）
+    const wrappedCommand = WindowsCompat.wrapCommand(baseCommand);
+    
+    // 获取执行选项（PowerShell 使用 utf8，CMD 使用 buffer）
+    const execOptions = WindowsCompat.getExecOptions({
       cwd: workingDir,
-      windowsHide: false,
-      env: { ...process.env, FORCE_COLOR: '0' }, // 禁用颜色输出以避免编码问题
-      shell: true // 使用shell以支持命令查找
+      windowsHide: false
     });
+    
+    const result = await execPromise(wrappedCommand, execOptions);
+    
+    // 智能解码输出
+    // PowerShell: 已经是 UTF-8 字符串，直接返回
+    // CMD: buffer 模式，需要解码
+    const stdout = WindowsCompat.decodeCommandOutput(result.stdout);
+    const stderr = WindowsCompat.decodeCommandOutput(result.stderr);
     
     return {
       success: true,
@@ -314,11 +375,15 @@ ipcMain.handle('execute-hexo-command', async (event, command, workingDir) => {
       stderr: stderr
     };
   } catch (error) {
+    // 智能解码错误输出（hexo 错误信息通常是中文）
+    const stdout = WindowsCompat.decodeCommandOutput(error.stdout || '');
+    const stderr = WindowsCompat.decodeCommandOutput(error.stderr || '');
+    
     return {
       success: false,
       error: error.message,
-      stdout: error.stdout,
-      stderr: error.stderr
+      stdout: stdout,
+      stderr: stderr
     };
   }
 });
