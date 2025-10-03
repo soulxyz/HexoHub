@@ -27,77 +27,10 @@ permissions:
 
 jobs:
   # ========================
-  # 创建 GitHub Release
-  # ========================
-  create-release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.get_version.outputs.version }}
-    
-    steps:
-      - name: 获取版本号
-        id: get_version
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 生成 Release Notes
-        id: release_notes
-        run: |
-          VERSION="${{ steps.get_version.outputs.version }}"
-          
-          # 判断是否为预发布版本
-          if [[ $VERSION == *"beta"* ]] || [[ $VERSION == *"alpha"* ]]; then
-            echo "prerelease=true" >> $GITHUB_OUTPUT
-            TITLE="🧪 HexoHub $VERSION (测试版)"
-          else
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-            TITLE="🚀 HexoHub $VERSION"
-          fi
-          
-          echo "title=$TITLE" >> $GITHUB_OUTPUT
-          
-          # 生成 Release Notes
-          cat > release_notes.md << 'EOF'
-          ## 📦 安装包
-          
-          - **Windows**: `HexoHub-Setup-${VERSION}.exe`
-          - **Linux**: `HexoHub-${VERSION}.AppImage`
-          
-          ## 📝 更新内容
-          
-          请查看下方的提交记录。
-          
-          ---
-          
-          **注意**：Windows 首次运行可能提示 SmartScreen 警告，点击"更多信息" → "仍要运行"即可。
-          EOF
-
-      - name: 创建 GitHub Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.get_version.outputs.version }}
-          name: ${{ steps.release_notes.outputs.title }}
-          body_path: release_notes.md
-          draft: true  # 🔑 先创建草稿，确认无误后再发布
-          prerelease: ${{ steps.release_notes.outputs.prerelease }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # ========================
   # Windows 构建
   # ========================
   build-windows:
     name: Build Windows
-    needs: create-release
     runs-on: windows-latest
     
     steps:
@@ -139,7 +72,6 @@ jobs:
   # ========================
   build-linux:
     name: Build Linux
-    needs: create-release
     runs-on: ubuntu-latest
     
     steps:
