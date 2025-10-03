@@ -33,7 +33,6 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
       version: ${{ steps.get_version.outputs.version }}
     
     steps:
@@ -90,15 +89,15 @@ jobs:
 
       - name: 创建 GitHub Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.get_version.outputs.version }}
-          release_name: ${{ steps.release_notes.outputs.title }}
+          name: ${{ steps.release_notes.outputs.title }}
           body_path: release_notes.md
           draft: true  # 🔑 先创建草稿，确认无误后再发布
           prerelease: ${{ steps.release_notes.outputs.prerelease }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ========================
   # Windows 构建
@@ -128,28 +127,10 @@ jobs:
       - name: 构建桌面版
         run: npm run build
 
-      - name: 打包 Windows 应用
-        run: npm run make -- --win
+      - name: 打包并上传 Windows 应用
+        run: npm run make -- --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 查找安装包
-        id: find_installer
-        shell: pwsh
-        run: |
-          $installer = Get-ChildItem -Path dist -Filter "HexoHub-Setup-*.exe" -Recurse | Select-Object -First 1
-          echo "path=$($installer.FullName)" >> $env:GITHUB_OUTPUT
-          echo "name=$($installer.Name)" >> $env:GITHUB_OUTPUT
-
-      - name: 上传 Windows 安装包
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ${{ steps.find_installer.outputs.path }}
-          asset_name: ${{ steps.find_installer.outputs.name }}
-          asset_content_type: application/octet-stream
 
       - name: 上传构建产物（调试用）
         uses: actions/upload-artifact@v4
@@ -188,27 +169,10 @@ jobs:
       - name: 构建桌面版
         run: npm run build
 
-      - name: 打包 Linux 应用
-        run: npm run make -- --linux
+      - name: 打包并上传 Linux 应用
+        run: npm run make -- --linux --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 查找 AppImage 文件
-        id: find_appimage
-        run: |
-          APPIMAGE=$(find dist -name "*.AppImage" -type f | head -n 1)
-          echo "path=$APPIMAGE" >> $GITHUB_OUTPUT
-          echo "name=$(basename $APPIMAGE)" >> $GITHUB_OUTPUT
-
-      - name: 上传 Linux AppImage
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ${{ steps.find_appimage.outputs.path }}
-          asset_name: ${{ steps.find_appimage.outputs.name }}
-          asset_content_type: application/octet-stream
 
       - name: 上传构建产物（调试用）
         uses: actions/upload-artifact@v4
