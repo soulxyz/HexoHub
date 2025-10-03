@@ -21,87 +21,16 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
+# 权限声明：允许创建 Release 和上传文件
+permissions:
+  contents: write  # 允许创建 Release 和上传资产
+
 jobs:
-  # ========================
-  # 创建 GitHub Release
-  # ========================
-  create-release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      version: ${{ steps.get_version.outputs.version }}
-    
-    steps:
-      - name: 获取版本号
-        id: get_version
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 生成 Release Notes
-        id: release_notes
-        run: |
-          VERSION="${{ steps.get_version.outputs.version }}"
-          
-          # 判断是否为预发布版本
-          if [[ $VERSION == *"beta"* ]] || [[ $VERSION == *"alpha"* ]]; then
-            echo "prerelease=true" >> $GITHUB_OUTPUT
-            TITLE="🧪 HexoHub $VERSION (测试版)"
-          else
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-            TITLE="🚀 HexoHub $VERSION"
-          fi
-          
-          echo "title=$TITLE" >> $GITHUB_OUTPUT
-          
-          # 生成简单的 Release Notes
-          cat > release_notes.md << 'EOF'
-          ## 📦 下载
-          
-          根据您的系统选择对应的安装包：
-          
-          - **Windows**: `HexoHub-Setup-${VERSION}.exe`
-          - **Linux**: `HexoHub-${VERSION}.AppImage`
-          
-          ## 📝 更新内容
-          
-          请查看下方的提交记录。
-          
-          ## ⚠️ 注意事项
-          
-          - Windows 用户首次运行可能会收到 SmartScreen 警告，请点击"更多信息" -> "仍要运行"
-          - Linux 用户需要给 AppImage 添加执行权限：`chmod +x HexoHub-*.AppImage`
-          
-          ## 🐛 问题反馈
-          
-          如遇到问题，请在 [Issues](https://github.com/${{ github.repository }}/issues) 中反馈。
-          EOF
-
-      - name: 创建 GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.get_version.outputs.version }}
-          release_name: ${{ steps.release_notes.outputs.title }}
-          body_path: release_notes.md
-          draft: true  # 🔑 先创建草稿，确认无误后再发布
-          prerelease: ${{ steps.release_notes.outputs.prerelease }}
-
   # ========================
   # Windows 构建
   # ========================
   build-windows:
     name: Build Windows
-    needs: create-release
     runs-on: windows-latest
     
     steps:
@@ -124,28 +53,10 @@ jobs:
       - name: 构建桌面版
         run: npm run build
 
-      - name: 打包 Windows 应用
-        run: npm run make -- --win
+      - name: 打包并上传 Windows 应用
+        run: npm run make -- --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 查找安装包
-        id: find_installer
-        shell: pwsh
-        run: |
-          $installer = Get-ChildItem -Path dist -Filter "HexoHub-Setup-*.exe" -Recurse | Select-Object -First 1
-          echo "path=$($installer.FullName)" >> $env:GITHUB_OUTPUT
-          echo "name=$($installer.Name)" >> $env:GITHUB_OUTPUT
-
-      - name: 上传 Windows 安装包
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ${{ steps.find_installer.outputs.path }}
-          asset_name: ${{ steps.find_installer.outputs.name }}
-          asset_content_type: application/octet-stream
 
       - name: 上传构建产物（调试用）
         uses: actions/upload-artifact@v4
@@ -161,7 +72,6 @@ jobs:
   # ========================
   build-linux:
     name: Build Linux
-    needs: create-release
     runs-on: ubuntu-latest
     
     steps:
@@ -184,27 +94,10 @@ jobs:
       - name: 构建桌面版
         run: npm run build
 
-      - name: 打包 Linux 应用
-        run: npm run make -- --linux
+      - name: 打包并上传 Linux 应用
+        run: npm run make -- --linux --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 查找 AppImage 文件
-        id: find_appimage
-        run: |
-          APPIMAGE=$(find dist -name "*.AppImage" -type f | head -n 1)
-          echo "path=$APPIMAGE" >> $GITHUB_OUTPUT
-          echo "name=$(basename $APPIMAGE)" >> $GITHUB_OUTPUT
-
-      - name: 上传 Linux AppImage
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ${{ steps.find_appimage.outputs.path }}
-          asset_name: ${{ steps.find_appimage.outputs.name }}
-          asset_content_type: application/octet-stream
 
       - name: 上传构建产物（调试用）
         uses: actions/upload-artifact@v4
