@@ -64,11 +64,9 @@ jobs:
           
           echo "title=$TITLE" >> $GITHUB_OUTPUT
           
-          # 生成简单的 Release Notes
+          # 生成 Release Notes
           cat > release_notes.md << 'EOF'
-          ## 📦 下载
-          
-          根据您的系统选择对应的安装包：
+          ## 📦 安装包
           
           - **Windows**: `HexoHub-Setup-${VERSION}.exe`
           - **Linux**: `HexoHub-${VERSION}.AppImage`
@@ -77,14 +75,9 @@ jobs:
           
           请查看下方的提交记录。
           
-          ## ⚠️ 注意事项
+          ---
           
-          - Windows 用户首次运行可能会收到 SmartScreen 警告，请点击"更多信息" -> "仍要运行"
-          - Linux 用户需要给 AppImage 添加执行权限：`chmod +x HexoHub-*.AppImage`
-          
-          ## 🐛 问题反馈
-          
-          如遇到问题，请在 [Issues](https://github.com/${{ github.repository }}/issues) 中反馈。
+          **注意**：Windows 首次运行可能提示 SmartScreen 警告，点击"更多信息" → "仍要运行"即可。
           EOF
 
       - name: 创建 GitHub Release
