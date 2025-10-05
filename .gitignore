@@ -83,10 +83,11 @@ export-*.png
 test-*.png
 
 # Tauri auto-generated icons (keep only essential ones)
-src-tauri/icons/*.png
+
 
 # Keep only essential project icons
 !src-tauri/icons/icon.ico
 !src-tauri/icons/icon.icns
+!src-tauri/icons/icon.png
 !public/icon.*
 !src/assets/images/**

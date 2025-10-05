@@ -37,7 +37,8 @@
     "targets": "all",
     "icon": [
       "icons/icon.icns",
-      "icons/icon.ico"
+      "icons/icon.ico",
+      "icons/icon.png"
     ],
     "windows": {
       "nsis": {
