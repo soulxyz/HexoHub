@@ -1,20 +1,20 @@
 name: Build and Release Desktop
 
-# 🎯 触发条件：只在推送版本标签时触发
+# 🎯 触发条件：仅手动触发（避免与 Tauri 工作流冲突）
 on:
-  push:
-    tags:
-      - 'v*.*.*'           # 匹配 v2.7.0, v3.0.0 等正式版本
-      - 'v*.*.*-beta.*'    # 匹配 v2.7.0-beta.1 等测试版本
-      - 'v*.*.*-alpha.*'   # 匹配 v2.7.0-alpha.1 等内测版本
-
-  # 🛠️ 可选：手动触发（用于测试工作流）
   workflow_dispatch:
     inputs:
       version:
         description: '版本号 (例如: v2.7.0)'
         required: true
         type: string
+      build_type:
+        description: '构建类型'
+        required: true
+        default: 'electron'
+        type: choice
+        options:
+          - electron
 
 # 确保同一时间只运行一个构建任务
 concurrency:

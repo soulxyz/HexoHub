@@ -3,7 +3,12 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
 use std::time::SystemTime;
-use tauri::{Manager, State};//get_webview_window 方法需要Manager导入
+use tauri::State;
+
+// Manager 仅在 debug 模式下使用（用于 get_webview_window 方法）
+#[cfg(debug_assertions)]
+use tauri::Manager;
+
 use serde::{Deserialize, Serialize};
 
 // Windows 平台特定的导入，用于隐藏命令行窗口和处理编码
@@ -179,10 +184,11 @@ async fn execute_command(command: String) -> CommandResult {
         // 在 Windows 上使用 cmd.exe，它在隐藏窗口模式下更可靠
         // 使用 chcp 65001 切换到 UTF-8 编码，但会产生额外输出
         // 所以我们还是用 GBK 编码，然后在 Rust 侧转码
-        Command::new("cmd")
-            .args(&["/C", &command])
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .output()
+        let mut cmd = Command::new("cmd");
+        cmd.args(&["/C", &command]);
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        cmd.output()
     } else {
         Command::new("sh")
             .arg("-c")
@@ -229,11 +235,12 @@ async fn execute_hexo_command(command: String, working_dir: String) -> CommandRe
     
     let output = if cfg!(target_os = "windows") {
         // 还是用回 cmd.exe，据说它在隐藏窗口模式下更可靠
-        Command::new("cmd")
-            .args(&["/C", &full_command])
-            .current_dir(&working_dir)
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .output()
+        let mut cmd = Command::new("cmd");
+        cmd.args(&["/C", &full_command])
+           .current_dir(&working_dir);
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        cmd.output()
     } else {
         Command::new("sh")
             .arg("-c")
