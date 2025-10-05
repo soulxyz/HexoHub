@@ -2024,7 +2024,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
       <div className="flex h-[calc(100vh-73px)]">
         {/* 侧边栏 */}
-        <aside className="w-80 border-r bg-background flex flex-col">
+        {/* 左侧栏内容过多时，设置 overflow-y-auto，会在侧边栏内部滚动，而不会影响整个页面的大小 */}
+        <aside className="w-80 border-r bg-background flex flex-col overflow-y-auto">
           {/* 项目选择 */}
           <Card className="m-4">
             <CardHeader className="pb-3">
