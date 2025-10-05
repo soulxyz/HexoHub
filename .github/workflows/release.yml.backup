@@ -1,0 +1,110 @@
+name: Build and Release Desktop
+
+# 🎯 触发条件：仅手动触发（避免与 Tauri 工作流冲突）
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (例如: v2.7.0)'
+        required: true
+        type: string
+      build_type:
+        description: '构建类型'
+        required: true
+        default: 'electron'
+        type: choice
+        options:
+          - electron
+
+# 确保同一时间只运行一个构建任务
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+# 权限声明：允许创建 Release 和上传文件
+permissions:
+  contents: write  # 允许创建 Release 和上传资产
+
+jobs:
+  # ========================
+  # Windows 构建
+  # ========================
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 配置 Electron 缓存
+        run: |
+          echo "ELECTRON_BUILDER_CACHE=$HOME/.cache/electron-builder" >> $env:GITHUB_ENV
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建桌面版
+        run: npm run build
+
+      - name: 打包并上传 Windows 应用
+        run: npm run make -- --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 上传构建产物（调试用）
+        uses: actions/upload-artifact@v4
+        if: failure()  # 只在失败时上传，用于调试
+        with:
+          name: windows-build-logs
+          path: |
+            dist/
+            *.log
+
+  # ========================
+  # Linux 构建
+  # ========================
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 配置 Electron 缓存
+        run: |
+          echo "ELECTRON_BUILDER_CACHE=$HOME/.cache/electron-builder" >> $GITHUB_ENV
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建桌面版
+        run: npm run build
+
+      - name: 打包并上传 Linux 应用
+        run: npm run make -- --linux --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 上传构建产物（调试用）
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: linux-build-logs
+          path: |
+            dist/
+            *.log
+
