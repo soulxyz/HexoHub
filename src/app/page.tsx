@@ -231,15 +231,31 @@ export default function Home() {
           const isLocalPath = /^([a-zA-Z]:[\\/]|\/|\.\.?\/)/.test(backgroundImage) && 
                              !backgroundImage.startsWith('data:') &&
                              !backgroundImage.startsWith('http://') &&
-                             !backgroundImage.startsWith('https://');
+                             !backgroundImage.startsWith('https://') &&
+                             !backgroundImage.startsWith('asset://');
           
           if (isLocalPath && isDesktopApp()) {
             try {
-              // 如果是本地路径且在桌面环境中，转换为base64
-              const ipcRenderer = await getIpcRenderer();
-              const base64Image = await ipcRenderer.invoke('read-file-base64', backgroundImage);
-              document.documentElement.style.setProperty('--bg-image', `url(${base64Image})`);
-              console.log('设置背景图片 (本地文件转base64):', backgroundImage);
+              // 使用统一的环境检测函数
+              const { isTauri } = await import('@/lib/desktop-api');
+              const isTauriEnv = isTauri();
+              
+              console.log('环境检测结果:', {
+                isTauri: isTauriEnv,
+                backgroundImage
+              });
+              
+              if (isTauriEnv) {
+                // Tauri 环境使用 convertFileSrc（推荐方式，无需 base64 编码）
+                const { convertFileSrc } = await import('@tauri-apps/api/core');
+                const assetUrl = convertFileSrc(backgroundImage);
+                document.documentElement.style.setProperty('--bg-image', `url(${assetUrl})`);
+                console.log('设置背景图片 (Tauri asset URL):', assetUrl);
+              } else {
+                // Electron 环境直接使用文件路径
+                document.documentElement.style.setProperty('--bg-image', `url(${backgroundImage})`);
+                console.log('设置背景图片 (Electron 直接路径):', backgroundImage);
+              }
             } catch (error) {
               console.error('读取本地背景图片失败:', error);
               document.documentElement.style.setProperty('--bg-image', 'none');

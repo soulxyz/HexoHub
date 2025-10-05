@@ -1,14 +1,13 @@
 // Tauri API 适配器 - 替代 Electron IPC
 // 注意：这个文件只在 Tauri 环境中使用，使用动态导入避免构建错误
 
-// 检测是否在 Tauri 环境
+// 检测是否在 Tauri 环境 - 兼容 Tauri 2.x 的多种检测方法
 function isTauriEnvironment(): boolean {
   if (typeof window === 'undefined') return false;
   
-  return '__TAURI__' in window || 
-         '__TAURI_INTERNALS__' in window || 
-         (window as any).ipc !== undefined ||
-         (window as any).__TAURI_INVOKE__ !== undefined;
+  return !!(window as any).__TAURI__ || 
+         !!(window as any).__TAURI_INTERNALS__ || 
+         !!(window as any).ipc;
 }
 
 // 窗口控制
@@ -85,11 +84,13 @@ export const fileOperations = {
     throw new Error('Not in Tauri environment');
   },
   
-  readFileBase64: async (filePath: string): Promise<string> => {
+  
+  // 将本地文件路径转换为可在浏览器中使用的 asset URL
+  // 这是 Tauri 推荐的方式，无需 base64 编码，性能更好
+  convertFileSrc: async (filePath: string): Promise<string> => {
     if (isTauriEnvironment()) {
-      const { invoke } = await import('@tauri-apps/api/core');
-      // 读取文件内容为 base64
-      return await invoke('read_file_base64', { filePath });
+      const { convertFileSrc } = await import('@tauri-apps/api/core');
+      return convertFileSrc(filePath);
     }
     throw new Error('Not in Tauri environment');
   },
@@ -204,8 +205,8 @@ export const ipcRenderer = {
         return fileOperations.selectFile();
       case 'read-file':
         return fileOperations.readFile(args[0]);
-      case 'read-file-base64':
-        return fileOperations.readFileBase64(args[0]);
+      case 'convert-file-src':
+        return fileOperations.convertFileSrc(args[0]);
       case 'write-file':
         return fileOperations.writeFile(args[0], args[1]);
       case 'delete-file':

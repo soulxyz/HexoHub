@@ -65,33 +65,6 @@ async fn read_file(file_path: String) -> Result<String, String> {
         .map_err(|e| e.to_string())
 }
 
-// 读取文件为 base64 编码（用于图片等二进制文件）
-#[tauri::command]
-async fn read_file_base64(file_path: String) -> Result<String, String> {
-    use base64::{Engine as _, engine::general_purpose};
-    
-    // 读取文件字节
-    let bytes = fs::read(&file_path)
-        .map_err(|e| format!("读取文件失败: {}", e))?;
-    
-    // 根据文件扩展名确定MIME类型
-    let path = std::path::Path::new(&file_path);
-    let mime_type = match path.extension().and_then(|s| s.to_str()) {
-        Some("png") => "image/png",
-        Some("jpg") | Some("jpeg") => "image/jpeg",
-        Some("gif") => "image/gif",
-        Some("bmp") => "image/bmp",
-        Some("svg") => "image/svg+xml",
-        Some("webp") => "image/webp",
-        _ => "application/octet-stream",
-    };
-    
-    // 编码为 base64
-    let base64_string = general_purpose::STANDARD.encode(&bytes);
-    
-    // 返回 data URL 格式
-    Ok(format!("data:{};base64,{}", mime_type, base64_string))
-}
 
 // 写入文件
 #[tauri::command]
@@ -496,7 +469,6 @@ pub fn run() {
     .manage(HexoServer(Mutex::new(None)))
     .invoke_handler(tauri::generate_handler![
         read_file,
-        read_file_base64,
         write_file,
         delete_file,
         list_files,
