@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Manager, State};//get_webview_window 方法需要Manager导入
 use serde::{Deserialize, Serialize};
 
 // 存储 Hexo 服务器进程
