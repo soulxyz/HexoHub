@@ -150,26 +150,36 @@ fn smart_decode(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).to_string()
 }
 
-// 执行命令
+// 执行命令（使用 Tauri Shell 插件，自动处理参数和引号）
 #[tauri::command]
-async fn execute_command(command: String) -> CommandResult {
-    let output = if cfg!(target_os = "windows") {
-        // 在 Windows 上使用 cmd.exe，它在隐藏窗口模式下更可靠
-        // 使用 chcp 65001 切换到 UTF-8 编码，但会产生额外输出
-        // 所以我们还是用 GBK 编码，然后在 Rust 侧转码
-        let mut cmd = Command::new("cmd");
-        cmd.args(&["/C", &command]);
-        #[cfg(target_os = "windows")]
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-        cmd.output()
-    } else {
-        Command::new("sh")
-            .arg("-c")
-            .arg(&command)
+async fn execute_command(command: String, app_handle: tauri::AppHandle) -> CommandResult {
+    use tauri_plugin_shell::ShellExt;
+    
+    // 使用 Tauri Shell 插件执行命令
+    // 优势：
+    // 1. 自动处理引号和转义问题
+    // 2. 跨平台兼容性好
+    // 3. 正确处理带空格的路径
+    let shell = app_handle.shell();
+    
+    let output_result = if cfg!(target_os = "windows") {
+        // Windows: 使用 cmd /C 执行命令
+        // Tauri shell 插件会正确处理参数，不会出现引号被当作路径的问题
+        shell
+            .command("cmd")
+            .args(["/C", &command])
             .output()
+            .await
+    } else {
+        // Unix: 使用 sh -c 执行命令
+        shell
+            .command("sh")
+            .args(["-c", &command])
+            .output()
+            .await
     };
     
-    match output {
+    match output_result {
         Ok(output) => {
             // 使用智能解码（自动检测 UTF-8/GBK）
             let stdout = smart_decode(&output.stdout);
