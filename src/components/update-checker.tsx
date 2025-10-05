@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Download, ExternalLink, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getTexts } from '@/utils/i18n';
-import { isDesktopApp } from '@/lib/desktop-api';
+import { isDesktopApp, getDesktopEnvironment } from '@/lib/desktop-api';
 import { openExternalLink } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -46,6 +46,7 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
   const [lastChecked, setLastChecked] = useState<string | null>(null);
+  const [platform, setPlatform] = useState<string>('browser');
   const { toast } = useToast();
   // 获取当前语言的文本
   const t = getTexts(language);
@@ -53,6 +54,10 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
   // 从localStorage加载上次检查时间和自动更新设置
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // 获取当前平台
+      const env = getDesktopEnvironment();
+      setPlatform(env);
+      
       const savedLastChecked = localStorage.getItem('last-update-check');
       if (savedLastChecked) {
         setLastChecked(savedLastChecked);
@@ -212,7 +217,14 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
         
         <div className="flex items-center justify-between">
           <span>{t.currentVersion}</span>
-          <Badge variant="outline">{currentVersion}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{currentVersion}</Badge>
+            {platform !== 'browser' && (
+              <Badge variant="secondary" className="capitalize">
+                {platform}
+              </Badge>
+            )}
+          </div>
         </div>
 
         {lastChecked && (
