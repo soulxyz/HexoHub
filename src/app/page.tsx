@@ -62,6 +62,7 @@ import { CustomTitlebar } from '@/components/custom-titlebar';
 import { AIInspirationDialog } from '@/components/ai-inspiration-dialog';
 import { AIAnalysisDialog } from '@/components/ai-analysis-dialog';
 import { getIpcRenderer, isDesktopApp } from '@/lib/desktop-api';
+import { normalizePath } from '@/lib/utils';
 
 interface Post {
   name: string;
@@ -413,8 +414,11 @@ export default function Home() {
         // 加载项目路径
         const savedPath = localStorage.getItem('hexo-project-path');
         if (savedPath && isElectron) {
-          setHexoPath(savedPath);
-          await validateHexoProject(savedPath);
+          const normalizedPath = normalizePath(savedPath);
+          setHexoPath(normalizedPath);
+          // 同时更新 localStorage 中的路径
+          localStorage.setItem('hexo-project-path', normalizedPath);
+          await validateHexoProject(normalizedPath);
         }
       }
       
@@ -556,12 +560,13 @@ export default function Home() {
       const selectedPath = await ipcRenderer.invoke('select-directory');
 
       if (selectedPath) {
-        setHexoPath(selectedPath);
-        // 保存路径到localStorage
+        const normalizedPath = normalizePath(selectedPath);
+        setHexoPath(normalizedPath);
+        // 保存规范化后的路径到localStorage
         if (typeof window !== 'undefined') {
-          localStorage.setItem('hexo-project-path', selectedPath);
+          localStorage.setItem('hexo-project-path', normalizedPath);
         }
-        await validateHexoProject(selectedPath);
+        await validateHexoProject(normalizedPath);
       }
     } catch (error) {
       console.error('选择目录失败:', error);
@@ -734,9 +739,32 @@ export default function Home() {
       const ipcRenderer = await getIpcRenderer();
       const files = await ipcRenderer.invoke('list-files', path + '/source/_posts');
 
-      const markdownFiles = files.filter((file: Post) =>
-        !file.isDirectory && (file.name.endsWith('.md') || file.name.endsWith('.markdown'))
-      );
+      const markdownFiles = files
+        .filter((file: any) =>
+          !file.isDirectory && (file.name.endsWith('.md') || file.name.endsWith('.markdown'))
+        )
+        .map((file: any) => {
+          // 兼容 Electron 和 Tauri 两种格式
+          // Electron: modifiedTime 是 Date 对象
+          // Tauri: modifiedTime 是时间戳字符串
+          let modifiedTime: Date;
+          
+          if (file.modifiedTime instanceof Date) {
+            // Electron 格式：直接使用 Date 对象
+            modifiedTime = file.modifiedTime;
+          } else if (typeof file.modifiedTime === 'string') {
+            // Tauri 格式：从时间戳字符串转换
+            modifiedTime = new Date(parseInt(file.modifiedTime, 10));
+          } else {
+            // 备用方案
+            modifiedTime = new Date(0);
+          }
+          
+          return {
+            ...file,
+            modifiedTime
+          };
+        });
 
       setPosts(markdownFiles);
       setFilteredPosts(markdownFiles);
@@ -745,7 +773,7 @@ export default function Home() {
       await extractTagsAndCategories(markdownFiles);
     } catch (error) {
       console.error('加载文章失败:', error);
-      setValidationMessage('加载文章失败: ' + error.message);
+      setValidationMessage('加载文章失败: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsLoading(false);
     }
@@ -1486,10 +1514,45 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                   className="p-0 h-auto text-blue-600 hover:text-blue-800"
                   onClick={async (e) => {
                     e.preventDefault();
-                    if (typeof window !== 'undefined' && ('require' in window || '__TAURI__' in window)) {
-                      const publicPath = `${hexoPath}/public`;
-                      const ipcRenderer = await getIpcRenderer();
-                      await ipcRenderer.invoke('open-url', publicPath);
+                    
+                    // 显示加载提示
+                    const loadingToast = toast({
+                      title: language === 'zh' ? '正在打开...' : 'Opening...',
+                      description: language === 'zh' ? '正在打开文件夹' : 'Opening folder',
+                      duration: 2000,
+                    });
+                    
+                    try {
+                      if (typeof window !== 'undefined' && ('require' in window || '__TAURI__' in window || '__TAURI_INTERNALS__' in window)) {
+                        const publicPath = normalizePath(`${hexoPath}/public`);
+                        console.log('[Open Folder] Attempting to open:', publicPath);
+                        console.log('[Open Folder] Desktop environment:', isDesktopApp());
+                        const ipcRenderer = await getIpcRenderer();
+                        await ipcRenderer.invoke('open-url', publicPath);
+                        console.log('[Open Folder] Successfully opened');
+                        
+                        // 成功提示
+                        toast({
+                          title: t.success,
+                          description: language === 'zh' ? '文件夹已打开' : 'Folder opened',
+                          variant: 'success',
+                          duration: 1500,
+                        });
+                      } else {
+                        console.log('[Open Folder] Not in desktop environment');
+                        toast({
+                          title: t.error,
+                          description: language === 'zh' ? '仅在桌面应用中可用' : 'Only available in desktop app',
+                          variant: 'error',
+                        });
+                      }
+                    } catch (error) {
+                      console.error('[Open Folder] Failed:', error);
+                      toast({
+                        title: t.error,
+                        description: language === 'zh' ? `打开文件夹失败: ${error}` : `Failed to open folder: ${error}`,
+                        variant: 'error',
+                      });
                     }
                   }}
                 >
@@ -2065,11 +2128,12 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
               <div className="flex space-x-2 mt-2">
                 <CreateHexoDialog
                   onCreateSuccess={async (path) => {
-                    setHexoPath(path);
+                    const normalizedPath = normalizePath(path);
+                    setHexoPath(normalizedPath);
                     if (typeof window !== 'undefined') {
-                      localStorage.setItem('hexo-project-path', path);
+                      localStorage.setItem('hexo-project-path', normalizedPath);
                     }
-                    await validateHexoProject(path);
+                    await validateHexoProject(normalizedPath);
                   }}
                   language={language}
                 >

@@ -10,6 +10,7 @@ import { Download, ExternalLink, RefreshCw, CheckCircle, XCircle } from 'lucide-
 import { useToast } from '@/hooks/use-toast';
 import { getTexts } from '@/utils/i18n';
 import { isDesktopApp } from '@/lib/desktop-api';
+import { openExternalLink } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -368,12 +369,7 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
                 className="w-full"
                 onClick={async (e) => {
                   e.preventDefault();
-                  if (isDesktopApp()) {
-                    const shell = (window as any).require ? (window as any).require('electron').shell : null;
-                    if (shell) {
-                      shell.openExternal(latestRelease.html_url);
-                    }
-                  }
+                  await openExternalLink(latestRelease.html_url);
                 }}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />

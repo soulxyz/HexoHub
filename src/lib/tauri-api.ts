@@ -166,8 +166,30 @@ export const commandOperations = {
 export const systemOperations = {
   openUrl: async (url: string): Promise<void> => {
     if (isTauriEnvironment()) {
-      const { open } = await import('@tauri-apps/plugin-shell');
-      await open(url);
+      // 判断是本地路径还是 URL
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:')) {
+        // 打开外部 URL - 使用 shell.open
+        console.log('[Tauri API] Opening URL with shell.open:', url);
+        const { open } = await import('@tauri-apps/plugin-shell');
+        await open(url);
+      } else {
+        // 打开本地文件夹 - 使用自定义的 Rust 命令（基于 showfile crate）
+        // 这个方案更可靠，参考: https://github.com/tauri-apps/plugins-workspace/issues/999
+        console.log('[Tauri API] Opening folder with show_in_folder:', url);
+        const { invoke } = await import('@tauri-apps/api/core');
+        const result = await invoke('show_in_folder', { path: url });
+        console.log('[Tauri API] show_in_folder result:', result);
+      }
+    }
+  },
+  
+  // 在文件管理器中显示文件/文件夹（并选中）
+  showInFolder: async (path: string): Promise<void> => {
+    if (isTauriEnvironment()) {
+      console.log('[Tauri API] showInFolder called with path:', path);
+      const { invoke } = await import('@tauri-apps/api/core');
+      const result = await invoke('show_in_folder', { path });
+      console.log('[Tauri API] showInFolder result:', result);
     }
   },
 };
@@ -202,6 +224,8 @@ export const ipcRenderer = {
         return commandOperations.stopHexoServer();
       case 'open-url':
         return systemOperations.openUrl(args[0]);
+      case 'show-in-folder':
+        return systemOperations.showInFolder(args[0]);
       default:
         throw new Error(`Unknown IPC channel: ${channel}`);
     }

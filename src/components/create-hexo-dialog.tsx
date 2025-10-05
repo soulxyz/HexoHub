@@ -21,6 +21,7 @@ import { FolderOpen, Download, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Language, getTexts } from '@/utils/i18n';
 import { isDesktopApp, getIpcRenderer } from '@/lib/desktop-api';
+import { normalizePath } from '@/lib/utils';
 
 interface CreateHexoDialogProps {
   onCreateSuccess?: (path: string) => void;
@@ -138,7 +139,8 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
       const selectedPath = await ipcRenderer.invoke('select-directory');
 
       if (selectedPath) {
-        setHexoPath(selectedPath);
+        const normalizedPath = normalizePath(selectedPath);
+        setHexoPath(normalizedPath);
       }
     } catch (error) {
       console.error('选择目录失败:', error);

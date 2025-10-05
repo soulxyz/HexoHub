@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
+use std::time::SystemTime;
 use tauri::{Manager, State};//get_webview_window 方法需要Manager导入
 use serde::{Deserialize, Serialize};
 
@@ -30,12 +31,26 @@ struct ValidationResult {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct FileInfo {
     name: String,
     path: String,
     is_directory: bool,
     size: u64,
     modified_time: String,
+}
+
+// 将 SystemTime 转换为 ISO 8601 格式的字符串
+fn format_system_time(time: SystemTime) -> String {
+    match time.duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(duration) => {
+            let timestamp_millis = duration.as_millis();
+            // 返回 ISO 8601 格式的时间字符串
+            // JavaScript 可以直接使用 new Date(timestamp) 解析
+            timestamp_millis.to_string()
+        }
+        Err(_) => "0".to_string(),
+    }
 }
 
 // 读取文件
@@ -117,12 +132,16 @@ async fn list_files(directory_path: String) -> Result<Vec<FileInfo>, String> {
         }
         
         if metadata.is_file() {
+            let modified_time = metadata.modified()
+                .map(|t| format_system_time(t))
+                .unwrap_or_else(|_| "0".to_string());
+            
             files.push(FileInfo {
                 name: file_name,
                 path: entry.path().to_string_lossy().to_string(),
                 is_directory: false,
                 size: metadata.len(),
-                modified_time: format!("{:?}", metadata.modified().ok()),
+                modified_time,
             });
         }
     }
@@ -374,6 +393,92 @@ async fn close_window(window: tauri::Window) {
     let _ = window.close();
 }
 
+#[tauri::command]
+async fn show_in_folder(path: String) -> Result<(), String> {
+    // 依据 https://github.com/tauri-apps/plugins-workspace/issues/999 解决本问题
+    // 直接打开文件夹（而不是选中它）
+    
+    use std::path::Path;
+    use std::process::Command;
+    
+    // 标准化路径（将正斜杠转换为反斜杠，仅在 Windows 上）
+    #[cfg(target_os = "windows")]
+    let normalized_path = path.replace("/", "\\");
+    
+    #[cfg(not(target_os = "windows"))]
+    let normalized_path = path.clone();
+    
+    println!("[Rust] show_in_folder called with path: {}", path);
+    println!("[Rust] Normalized path: {}", normalized_path);
+    
+    // 检查路径是否存在
+    if !Path::new(&normalized_path).exists() {
+        let error_msg = format!("Path does not exist: {}", normalized_path);
+        println!("[Rust] Error: {}", error_msg);
+        return Err(error_msg);
+    }
+    
+    println!("[Rust] Path exists, opening folder...");
+    
+    // 使用系统命令直接打开文件夹
+    #[cfg(target_os = "windows")]
+    {
+        println!("[Rust] Using Windows explorer to open folder...");
+        match Command::new("explorer")
+            .arg(&normalized_path)
+            .spawn()
+        {
+            Ok(_) => {
+                println!("[Rust] Folder opened successfully");
+                Ok(())
+            },
+            Err(e) => {
+                let error_msg = format!("Failed to open folder: {}", e);
+                println!("[Rust] Error: {}", error_msg);
+                Err(error_msg)
+            }
+        }
+    }
+    
+    #[cfg(target_os = "macos")]
+    {
+        println!("[Rust] Using macOS open command...");
+        match Command::new("open")
+            .arg(&normalized_path)
+            .spawn()
+        {
+            Ok(_) => {
+                println!("[Rust] Folder opened successfully");
+                Ok(())
+            },
+            Err(e) => {
+                let error_msg = format!("Failed to open folder: {}", e);
+                println!("[Rust] Error: {}", error_msg);
+                Err(error_msg)
+            }
+        }
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        println!("[Rust] Using Linux xdg-open command...");
+        match Command::new("xdg-open")
+            .arg(&normalized_path)
+            .spawn()
+        {
+            Ok(_) => {
+                println!("[Rust] Folder opened successfully");
+                Ok(())
+            },
+            Err(e) => {
+                let error_msg = format!("Failed to open folder: {}", e);
+                println!("[Rust] Error: {}", error_msg);
+                Err(error_msg)
+            }
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -396,6 +501,7 @@ pub fn run() {
         minimize_window,
         maximize_restore_window,
         close_window,
+        show_in_folder,
     ])
     .setup(|_app| {
       #[cfg(debug_assertions)]

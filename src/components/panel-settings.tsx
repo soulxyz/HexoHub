@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UpdateChecker } from '@/components/update-checker';
 import { getTexts } from '@/utils/i18n';
 import { isDesktopApp, getIpcRenderer } from '@/lib/desktop-api';
+import { openExternalLink } from '@/lib/utils';
 
 interface PanelSettingsProps {
   postsPerPage: number;
@@ -574,15 +575,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                 href="#"
                 onClick={async (e) => {
                   e.preventDefault();
-                  if (isDesktopApp()) {
-                    const ipcRenderer = await getIpcRenderer();
-                    const shell = (window as any).require ? (window as any).require('electron').shell : null;
-                    if (shell) {
-                      shell.openExternal('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD');
-                    }
-                  } else {
-                    window.open('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD', '_blank');
-                  }
+                  await openExternalLink('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD');
                 }}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -692,14 +685,9 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
             <Label>{t.projectAddress}</Label>
             <a 
               href="#"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.preventDefault();
-                if (isDesktopApp()) {
-                  const shell = (window as any).require ? (window as any).require('electron').shell : null;
-                  if (shell) {
-                    shell.openExternal('https://github.com/forever218/HexoHub');
-                  }
-                }
+                await openExternalLink('https://github.com/forever218/HexoHub');
               }} 
               target="_blank" 
               rel="noopener noreferrer"
@@ -713,14 +701,9 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
             <Label>{t.contactMe}</Label>
             <a 
               href="#"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.preventDefault();
-                if (isDesktopApp()) {
-                  const shell = (window as any).require ? (window as any).require('electron').shell : null;
-                  if (shell) {
-                    shell.openExternal('https://github.com/forever218');
-                  }
-                }
+                await openExternalLink('https://github.com/forever218');
               }} 
               target="_blank" 
               rel="noopener noreferrer"
