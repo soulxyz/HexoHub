@@ -245,38 +245,6 @@ ipcMain.handle('read-file', async (event, filePath) => {
   }
 });
 
-// 读取文件为 base64 编码（用于图片等二进制文件）
-ipcMain.handle('read-file-base64', async (event, filePath) => {
-  const fs = require('fs').promises;
-  const path = require('path');
-  try {
-    const buffer = await fs.readFile(filePath);
-    const base64 = buffer.toString('base64');
-    
-    // 根据文件扩展名确定MIME类型
-    const ext = path.extname(filePath).toLowerCase();
-    let mimeType = 'application/octet-stream';
-    
-    const mimeTypes = {
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.bmp': 'image/bmp',
-      '.svg': 'image/svg+xml',
-      '.webp': 'image/webp',
-    };
-    
-    if (mimeTypes[ext]) {
-      mimeType = mimeTypes[ext];
-    }
-    
-    // 返回 data URL 格式
-    return `data:${mimeType};base64,${base64}`;
-  } catch (error) {
-    throw error;
-  }
-});
 
 ipcMain.handle('write-file', async (event, filePath, content) => {
   const fs = require('fs').promises;

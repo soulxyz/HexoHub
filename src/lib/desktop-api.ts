@@ -7,19 +7,10 @@ export function getDesktopEnvironment() {
     return 'browser';
   }
   
-  // 检测 Tauri (支持 Tauri 2.x)
-  // 方法1: 检查 __TAURI__ 或 __TAURI_INTERNALS__
-  if ('__TAURI__' in window || '__TAURI_INTERNALS__' in window) {
-    return 'tauri';
-  }
-  
-  // 方法2: 检查 window.ipc (Tauri 2.x 的新API)
-  if ((window as any).ipc !== undefined) {
-    return 'tauri';
-  }
-  
-  // 方法3: 尝试检测 Tauri 特有的属性
-  if ((window as any).__TAURI_INVOKE__ !== undefined) {
+  // 检测 Tauri - 兼容 Tauri 2.x 的多种检测方法
+  if ((window as any).__TAURI__ || 
+      (window as any).__TAURI_INTERNALS__ || 
+      (window as any).ipc) {
     return 'tauri';
   }
   
