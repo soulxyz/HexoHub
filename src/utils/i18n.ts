@@ -153,7 +153,6 @@ export interface I18nTexts {
   backgroundSettings: string;
   backgroundImageUrl: string;
   selectImage: string;
-  clear: string;
   backgroundImageDescription: string;
   backgroundOpacity: string;
   backgroundOpacityDescription: string;
@@ -249,6 +248,7 @@ export interface I18nTexts {
   // AI设置
   enableAI: string;
   enableAIDescription: string;
+  aboutAILink: string;
   aiProvider: string;
   aiProviderDescription: string;
   apiKey: string;
@@ -284,12 +284,9 @@ export interface I18nTexts {
   installDeployPluginDescription: string;
   installationProgress: string;
   commandOutput: string;
-  cancel: string;
   close: string;
-  creating: string;
   createProject: string;
   hexoAlreadyInstalled: string;
-  hexoNotInstalled: string;
   installNpmAndGitFirst: string;
   settingTaobaoMirror: string;
   taobaoMirrorSetSuccess: string;
@@ -307,8 +304,6 @@ export interface I18nTexts {
   missingDependency: string;
   pleaseInstallNpm: string;
   pleaseInstallGit: string;
-  selectDirectoryFailed: string;
-  unknownError: string;
   checkingNpm: string;
   npmInstalled: string;
   npmNotInstalled: string;
@@ -317,6 +312,7 @@ export interface I18nTexts {
   gitNotInstalled: string;
   checkingHexo: string;
   hexoInstalled: string;
+  hexoCheckNotInstalled: string;
   hexoNotInstalled: string;
   environmentCheckFailed: string;
 }
@@ -509,7 +505,6 @@ console.log('Hello, Hexo!');
     backgroundSettings: '背景设置',
     backgroundImageUrl: '背景图片URL',
     selectImage: '选择图片',
-    clear: '清除',
     backgroundImageDescription: '输入图片URL或从本地选择图片作为背景',
     backgroundOpacity: '背景透明度',
     backgroundOpacityDescription: '调整背景透明度，0为完全透明，1为完全不透明',
@@ -641,9 +636,7 @@ console.log('Hello, Hexo!');
     installDeployPluginDescription: '安装部署插件 (hexo-deployer-git)',
     installationProgress: '安装进度',
     commandOutput: '命令输出将显示在这里...',
-    cancel: '取消',
     close: '关闭',
-    creating: '创建中...',
     createProject: '创建项目',
     hexoAlreadyInstalled: 'Hexo 已安装 (版本: {version})，将跳过 Hexo 安装步骤',
     hexoNotInstalled: 'Hexo 未安装，将自动安装 Hexo',
@@ -664,8 +657,6 @@ console.log('Hello, Hexo!');
     missingDependency: '缺少依赖',
     pleaseInstallNpm: '请先安装 npm',
     pleaseInstallGit: '请先安装 git',
-    selectDirectoryFailed: '选择目录失败',
-    unknownError: '未知错误',
     checkingNpm: '检查 npm...',
     npmInstalled: 'npm 已安装: {version}',
     npmNotInstalled: 'npm 未安装: {error}',
@@ -674,7 +665,7 @@ console.log('Hello, Hexo!');
     gitNotInstalled: 'git 未安装: {error}',
     checkingHexo: '检查 hexo...',
     hexoInstalled: 'hexo 已安装: {version}',
-    hexoNotInstalled: 'hexo 未安装: {error}',
+    hexoCheckNotInstalled: 'hexo 未安装: {error}',
     environmentCheckFailed: '检查环境失败: {error}',
   },
 
@@ -865,7 +856,6 @@ console.log('Hello, Hexo!');
     backgroundSettings: 'Background Settings',
     backgroundImageUrl: 'Background Image URL',
     selectImage: 'Select Image',
-    clear: 'Clear',
     backgroundImageDescription: 'Enter image URL or select an image from local as background',
     backgroundOpacity: 'Background Opacity',
     backgroundOpacityDescription: 'Adjust background opacity, 0 is completely transparent, 1 is completely opaque',
@@ -997,9 +987,7 @@ console.log('Hello, Hexo!');
     installDeployPluginDescription: 'Install deploy plugin (hexo-deployer-git)',
     installationProgress: 'Installation Progress',
     commandOutput: 'Command output will be displayed here...',
-    cancel: 'Cancel',
     close: 'Close',
-    creating: 'Creating...',
     createProject: 'Create Project',
     hexoAlreadyInstalled: 'Hexo is already installed (version: {version}), will skip Hexo installation',
     hexoNotInstalled: 'Hexo is not installed, will install Hexo automatically',
@@ -1020,8 +1008,6 @@ console.log('Hello, Hexo!');
     missingDependency: 'Missing Dependency',
     pleaseInstallNpm: 'Please install npm first',
     pleaseInstallGit: 'Please install git first',
-    selectDirectoryFailed: 'Failed to select directory',
-    unknownError: 'Unknown error',
     checkingNpm: 'Checking npm...',
     npmInstalled: 'npm installed: {version}',
     npmNotInstalled: 'npm not installed: {error}',
@@ -1030,7 +1016,7 @@ console.log('Hello, Hexo!');
     gitNotInstalled: 'git not installed: {error}',
     checkingHexo: 'Checking hexo...',
     hexoInstalled: 'hexo installed: {version}',
-    hexoNotInstalled: 'hexo not installed: {error}',
+    hexoCheckNotInstalled: 'hexo not installed: {error}',
     environmentCheckFailed: 'Environment check failed: {error}',
   }
 };
