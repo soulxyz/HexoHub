@@ -321,12 +321,14 @@ export class WindowsCompat {
       const util = eval('require')('util');
       const execPromise = util.promisify(exec);
       
+      const execOptions = { windowsHide: true }; // 隐藏命令行窗口
+      
       if (this.isWindows()) {
         // Windows使用where命令
-        await execPromise(`where ${command}`);
+        await execPromise(`where ${command}`, execOptions);
       } else {
         // Unix使用which命令
-        await execPromise(`which ${command}`);
+        await execPromise(`which ${command}`, execOptions);
       }
       return true;
     } catch {

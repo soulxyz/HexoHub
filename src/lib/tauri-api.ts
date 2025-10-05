@@ -85,6 +85,15 @@ export const fileOperations = {
     throw new Error('Not in Tauri environment');
   },
   
+  readFileBase64: async (filePath: string): Promise<string> => {
+    if (isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      // 读取文件内容为 base64
+      return await invoke('read_file_base64', { filePath });
+    }
+    throw new Error('Not in Tauri environment');
+  },
+  
   writeFile: async (filePath: string, content: string): Promise<boolean> => {
     if (isTauriEnvironment()) {
       const { invoke } = await import('@tauri-apps/api/core');
@@ -173,6 +182,8 @@ export const ipcRenderer = {
         return fileOperations.selectFile();
       case 'read-file':
         return fileOperations.readFile(args[0]);
+      case 'read-file-base64':
+        return fileOperations.readFileBase64(args[0]);
       case 'write-file':
         return fileOperations.writeFile(args[0], args[1]);
       case 'delete-file':

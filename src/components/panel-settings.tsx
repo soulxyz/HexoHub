@@ -178,7 +178,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
       return;
     }
 
-    if (tempAutoSaveInterval === "" || tempAutoSaveInterval < 1 || tempAutoSaveInterval > 60) {
+    if (tempAutoSaveInterval < 1 || tempAutoSaveInterval > 60) {
       toast({
         title: t.error,
         description: t.autoSaveIntervalRangeError,
@@ -188,7 +188,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     }
 
     onPostsPerPageChange(tempPostsPerPage);
-    onAutoSaveIntervalChange(tempAutoSaveInterval === "" ? 3 : tempAutoSaveInterval);
+    onAutoSaveIntervalChange(tempAutoSaveInterval);
     onEditorModeChange(tempEditorMode);
     if (onBackgroundImageChange) onBackgroundImageChange(tempBackgroundImage);
     if (onBackgroundOpacityChange) onBackgroundOpacityChange(tempBackgroundOpacity);
@@ -211,9 +211,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     // 保存到localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('posts-per-page', tempPostsPerPage.toString());
-      if (tempAutoSaveInterval !== "") {
-        localStorage.setItem('auto-save-interval', tempAutoSaveInterval.toString());
-      }
+      localStorage.setItem('auto-save-interval', tempAutoSaveInterval.toString());
       localStorage.setItem('editor-mode', tempEditorMode);
       localStorage.setItem('background-image', tempBackgroundImage);
       localStorage.setItem('background-opacity', tempBackgroundOpacity.toString());
@@ -276,7 +274,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                 min="1"
                 max="60"
                 value={tempAutoSaveInterval}
-                onChange={(e) => setTempAutoSaveInterval(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => setTempAutoSaveInterval(e.target.value === "" ? 3 : Number(e.target.value))}
                 className="w-32"
               />
               <p className="text-sm text-muted-foreground">
@@ -408,10 +406,9 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                           const ipcRenderer = await getIpcRenderer();
                           ipcRenderer.invoke('select-file').then((filePath: string) => {
                             if (filePath) {
-                              // 将本地文件路径转换为file://协议格式
-                              const normalizedPath = filePath.replace(/\\/g, '/');
-                              const fileUrl = `file:///${normalizedPath}`;
-                              setTempBackgroundImage(fileUrl);
+                              // 直接保存文件路径，不转换为base64
+                              // 转换会在实际使用时自动进行
+                              setTempBackgroundImage(filePath);
                             }
                           });
                         } else {
@@ -672,9 +669,6 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
         currentVersion={currentVersion}
         repoOwner="forever218"
         repoName="HexoHub"
-        updateAvailable={updateAvailable}
-        onCheckUpdates={onUpdateCheck}
-        isLoading={updateCheckInProgress}
         autoCheckUpdates={autoCheckUpdates}
         onAutoCheckUpdatesChange={onAutoCheckUpdatesChange}
         language={language}

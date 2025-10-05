@@ -156,6 +156,7 @@ export interface I18nTexts {
   backgroundImageDescription: string;
   backgroundOpacity: string;
   backgroundOpacityDescription: string;
+  readFileError: string;
   saveSettings: string;
   about: string;
   versionInfo: string;
@@ -508,6 +509,7 @@ console.log('Hello, Hexo!');
     backgroundImageDescription: '输入图片URL或从本地选择图片作为背景',
     backgroundOpacity: '背景透明度',
     backgroundOpacityDescription: '调整背景透明度，0为完全透明，1为完全不透明',
+    readFileError: '读取文件失败，请确保文件路径正确且文件可访问',
     saveSettings: '保存设置',
     about: '关于',
     versionInfo: '版本信息',
@@ -859,6 +861,7 @@ console.log('Hello, Hexo!');
     backgroundImageDescription: 'Enter image URL or select an image from local as background',
     backgroundOpacity: 'Background Opacity',
     backgroundOpacityDescription: 'Adjust background opacity, 0 is completely transparent, 1 is completely opaque',
+    readFileError: 'Failed to read file, please ensure the file path is correct and accessible',
     saveSettings: 'Save Settings',
     about: 'About',
     versionInfo: 'Version Info',

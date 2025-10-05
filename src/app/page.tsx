@@ -223,15 +223,39 @@ export default function Home() {
 
   // 当backgroundImage变化时更新背景
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (backgroundImage) {
-        document.documentElement.style.setProperty('--bg-image', `url(${backgroundImage})`);
-        console.log('设置背景图片:', backgroundImage);
-      } else {
-        document.documentElement.style.setProperty('--bg-image', 'none');
-        console.log('清除背景图片');
+    const updateBackgroundImage = async () => {
+      if (typeof window !== 'undefined') {
+        if (backgroundImage) {
+          // 检测是否是本地文件路径（Windows或Unix路径）
+          const isLocalPath = /^([a-zA-Z]:[\\/]|\/|\.\.?\/)/.test(backgroundImage) && 
+                             !backgroundImage.startsWith('data:') &&
+                             !backgroundImage.startsWith('http://') &&
+                             !backgroundImage.startsWith('https://');
+          
+          if (isLocalPath && isDesktopApp()) {
+            try {
+              // 如果是本地路径且在桌面环境中，转换为base64
+              const ipcRenderer = await getIpcRenderer();
+              const base64Image = await ipcRenderer.invoke('read-file-base64', backgroundImage);
+              document.documentElement.style.setProperty('--bg-image', `url(${base64Image})`);
+              console.log('设置背景图片 (本地文件转base64):', backgroundImage);
+            } catch (error) {
+              console.error('读取本地背景图片失败:', error);
+              document.documentElement.style.setProperty('--bg-image', 'none');
+            }
+          } else {
+            // URL或已经是base64格式，直接使用
+            document.documentElement.style.setProperty('--bg-image', `url(${backgroundImage})`);
+            console.log('设置背景图片:', backgroundImage);
+          }
+        } else {
+          document.documentElement.style.setProperty('--bg-image', 'none');
+          console.log('清除背景图片');
+        }
       }
-    }
+    };
+    
+    updateBackgroundImage();
   }, [backgroundImage]);
 
   // 当backgroundOpacity变化时更新背景透明度

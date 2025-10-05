@@ -93,7 +93,7 @@ const WindowsCompat = {
     return {
       ...options,
       shell: true,
-      windowsHide: false,
+      windowsHide: true, // 隐藏命令行窗口
       encoding: 'utf8',
       env: { ...process.env, ...options.env, FORCE_COLOR: '0' }
     };
@@ -245,6 +245,39 @@ ipcMain.handle('read-file', async (event, filePath) => {
   }
 });
 
+// 读取文件为 base64 编码（用于图片等二进制文件）
+ipcMain.handle('read-file-base64', async (event, filePath) => {
+  const fs = require('fs').promises;
+  const path = require('path');
+  try {
+    const buffer = await fs.readFile(filePath);
+    const base64 = buffer.toString('base64');
+    
+    // 根据文件扩展名确定MIME类型
+    const ext = path.extname(filePath).toLowerCase();
+    let mimeType = 'application/octet-stream';
+    
+    const mimeTypes = {
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.bmp': 'image/bmp',
+      '.svg': 'image/svg+xml',
+      '.webp': 'image/webp',
+    };
+    
+    if (mimeTypes[ext]) {
+      mimeType = mimeTypes[ext];
+    }
+    
+    // 返回 data URL 格式
+    return `data:${mimeType};base64,${base64}`;
+  } catch (error) {
+    throw error;
+  }
+});
+
 ipcMain.handle('write-file', async (event, filePath, content) => {
   const fs = require('fs').promises;
   try {
@@ -311,7 +344,7 @@ ipcMain.handle('execute-command', async (event, command) => {
     
     // 获取执行选项（PowerShell 使用 utf8，CMD 使用 buffer）
     const execOptions = WindowsCompat.getExecOptions({
-      windowsHide: false
+      windowsHide: true // 隐藏命令行窗口
     });
     
     const result = await execPromise(wrappedCommand, execOptions);
@@ -358,7 +391,7 @@ ipcMain.handle('execute-hexo-command', async (event, command, workingDir) => {
     // 获取执行选项（PowerShell 使用 utf8，CMD 使用 buffer）
     const execOptions = WindowsCompat.getExecOptions({
       cwd: workingDir,
-      windowsHide: false
+      windowsHide: true // 隐藏命令行窗口
     });
     
     const result = await execPromise(wrappedCommand, execOptions);

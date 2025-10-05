@@ -68,38 +68,59 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
       const ipcRenderer = await getIpcRenderer();
 
       // 检查npm
-      setCommandOutput(prev => prev + t.checkingNpm);
+      setCommandOutput(prev => prev + '\n' + t.checkingNpm);
       const npmResult = await ipcRenderer.invoke('execute-command', 'npm -v');
-      if (npmResult.success) {
+      if (npmResult.success && npmResult.stdout && npmResult.stdout.trim()) {
         setNpmInstalled(true);
-        setCommandOutput(prev => prev + t.npmInstalled.replace('{version}', npmResult.stdout));
+        // 过滤掉 "Active code page: 65001" 等无关输出
+        const cleanOutput = npmResult.stdout
+          .split('\n')
+          .filter(line => !line.includes('Active code page') && line.trim())
+          .join('\n')
+          .trim();
+        setCommandOutput(prev => prev + '\n' + t.npmInstalled.replace('{version}', cleanOutput));
       } else {
-        setCommandOutput(prev => prev + t.npmNotInstalled.replace('{error}', npmResult.stderr || npmResult.error));
+        const errorMsg = (npmResult.error || npmResult.stderr || '命令执行失败，请确保 npm 已安装并在 PATH 环境变量中').trim();
+        setCommandOutput(prev => prev + '\n' + t.npmNotInstalled.replace('{error}', errorMsg || '未知错误'));
       }
 
       // 检查git
-      setCommandOutput(prev => prev + t.checkingGit);
+      setCommandOutput(prev => prev + '\n' + t.checkingGit);
       const gitResult = await ipcRenderer.invoke('execute-command', 'git --version');
-      if (gitResult.success) {
+      if (gitResult.success && gitResult.stdout && gitResult.stdout.trim()) {
         setGitInstalled(true);
-        setCommandOutput(prev => prev + t.gitInstalled.replace('{version}', gitResult.stdout));
+        // 过滤掉 "Active code page: 65001" 等无关输出
+        const cleanOutput = gitResult.stdout
+          .split('\n')
+          .filter(line => !line.includes('Active code page') && line.trim())
+          .join('\n')
+          .trim();
+        setCommandOutput(prev => prev + '\n' + t.gitInstalled.replace('{version}', cleanOutput));
       } else {
-        setCommandOutput(prev => prev + t.gitNotInstalled.replace('{error}', gitResult.stderr || gitResult.error));
+        const errorMsg = (gitResult.error || gitResult.stderr || '命令执行失败，请确保 git 已安装并在 PATH 环境变量中').trim();
+        setCommandOutput(prev => prev + '\n' + t.gitNotInstalled.replace('{error}', errorMsg || '未知错误'));
       }
 
       // 检查hexo
-      setCommandOutput(prev => prev + t.checkingHexo);
+      setCommandOutput(prev => prev + '\n' + t.checkingHexo);
       const hexoResult = await ipcRenderer.invoke('execute-command', 'hexo -v');
-      if (hexoResult.success) {
+      if (hexoResult.success && hexoResult.stdout && hexoResult.stdout.trim()) {
         setHexoInstalled(true);
+        // 过滤掉 "Active code page: 65001" 等无关输出
+        const cleanOutput = hexoResult.stdout
+          .split('\n')
+          .filter(line => !line.includes('Active code page') && line.trim())
+          .join('\n')
+          .trim();
         // 提取版本号
-        const versionMatch = hexoResult.stdout.match(/hexo-cli?: ([0-9.]+)/);
+        const versionMatch = cleanOutput.match(/hexo-cli?: ([0-9.]+)/);
         if (versionMatch) {
           setHexoVersion(versionMatch[1]);
         }
-        setCommandOutput(prev => prev + t.hexoInstalled.replace('{version}', hexoResult.stdout));
+        setCommandOutput(prev => prev + '\n' + t.hexoInstalled.replace('{version}', cleanOutput));
       } else {
-        setCommandOutput(prev => prev + t.hexoNotInstalled.replace('{error}', hexoResult.stderr || hexoResult.error));
+        const errorMsg = (hexoResult.error || hexoResult.stderr || '命令执行失败，hexo 可能未安装').trim();
+        setCommandOutput(prev => prev + '\n' + t.hexoCheckNotInstalled.replace('{error}', errorMsg || '未知错误'));
       }
     } catch (error) {
       console.error('检查环境失败:', error);
@@ -170,12 +191,12 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
       // 安装 hexo-cli（如果未安装）
       if (!hexoInstalled) {
         setProgress(20);
-        setCommandOutput(prev => prev + t.installingHexoCli);
-        const installHexoResult = await ipcRenderer.invoke('execute-command', 'npm install hexo-cli');
+        setCommandOutput(prev => prev + '\n' + t.installingHexoCli);
+        const installHexoResult = await ipcRenderer.invoke('execute-command', 'npm install -g hexo-cli');
         if (!installHexoResult.success) {
           throw new Error(`${t.installingHexoCli}: ${installHexoResult.stderr || installHexoResult.error}`);
         }
-        setCommandOutput(prev => prev + t.hexoCliInstallSuccess + '\n' + installHexoResult.stdout);
+        setCommandOutput(prev => prev + '\n' + t.hexoCliInstallSuccess + '\n' + installHexoResult.stdout);
       }
 
       // 创建 hexo 项目
