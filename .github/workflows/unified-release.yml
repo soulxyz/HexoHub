@@ -44,6 +44,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     strategy:
+      fail-fast: false  # 某个构建失败时，不停止其他构建
       matrix:
         include:
           # Electron 构建
@@ -249,6 +250,7 @@ jobs:
       - name: 发布 Electron 到 GitHub Releases
         if: matrix.build_type == 'electron'
         uses: softprops/action-gh-release@v1
+        continue-on-error: true
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
           files: |
@@ -258,12 +260,14 @@ jobs:
             dist/*Electron-Linux*.rpm
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.event.inputs.version, 'alpha') || contains(github.event.inputs.version, 'beta') }}
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 发布 Tauri 到 GitHub Releases (Windows)
         if: matrix.build_type == 'tauri' && matrix.os == 'windows-latest'
         uses: softprops/action-gh-release@v1
+        continue-on-error: true
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
           files: |
@@ -271,24 +275,28 @@ jobs:
             src-tauri/target/release/bundle/msi/*Tauri-Windows*.msi
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.event.inputs.version, 'alpha') || contains(github.event.inputs.version, 'beta') }}
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 发布 Tauri 到 GitHub Releases (macOS)
         if: matrix.build_type == 'tauri' && matrix.os == 'macos-latest'
         uses: softprops/action-gh-release@v1
+        continue-on-error: true
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
           files: |
             src-tauri/target/release/bundle/dmg/*Tauri-macOS*.dmg
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.event.inputs.version, 'alpha') || contains(github.event.inputs.version, 'beta') }}
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 发布 Tauri 到 GitHub Releases (Linux)
         if: matrix.build_type == 'tauri' && matrix.os == 'ubuntu-latest'
         uses: softprops/action-gh-release@v1
+        continue-on-error: true
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
           files: |
@@ -296,5 +304,6 @@ jobs:
             src-tauri/target/release/bundle/deb/*Tauri-Linux*.deb
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.event.inputs.version, 'alpha') || contains(github.event.inputs.version, 'beta') }}
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
