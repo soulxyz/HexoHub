@@ -1,6 +1,6 @@
 # HexoHub
 
-[中文文档](https://github.com/forever218/HexoHub/blob/main/README.md)  |  [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)  |  [发布指南](https://github.com/forever218/HexoHub/blob/main/docs/RELEASE_GUIDE.md)  
+[中文文档](https://github.com/forever218/HexoHub/blob/main/README.md)  |  [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)  |  [发布指南](https://github.com/forever218/HexoHub/blob/main/docs/RELEASE_GUIDE.md)  |  [Tauri 开发指南](https://github.com/forever218/HexoHub/blob/main/docs/TAURI_DEVELOPMENT.md)  
 
 
 [![GitHub Stars](https://img.shields.io/github/stars/forever218/Hexohub)](https://github.com/forever218/Hexohub/stargazers)
@@ -83,10 +83,9 @@
   
 ## 开发   
 
-如果您需要“开发”本应用程序，以下是额外的需求：   
+如果您需要"开发"本应用程序，以下是额外的需求：   
 - **Git**：https://git-scm.com/   
 - **nodejs**：`TypeScript>4.5`，`React>19`，`Next.js>15`   
-
 
 ⚠️ 出于速度考虑，我在开发过程中使用的是`cnpm`，并且修改了部分`package.json`内容，请您在使用时酌情考虑，如果要使用`cnpm`，请执行：  
 
@@ -96,11 +95,13 @@ npm install -g cnpm --registry=http://registry.npm.taobao.org
 
 随后即可用`cnpm`代替`npm`
 
+### Electron 版本开发
+
 1. **克隆本仓库**
    ```bash
    git clone https://github.com/forever218/HexoHub.git
    ```
- 
+
 2. **安装依赖**
    ```bash
    npm install
@@ -118,6 +119,32 @@ npm install -g cnpm --registry=http://registry.npm.taobao.org
    ```
 
 > **注意**：本应用程序通过`electron-builder`封装，而不是`electron-forge`，在您修改相关配置文件时，请注意使用`electron-builder`的配置文件格式。[electron-builder](https://www.electron.build/)
+
+### Tauri 版本开发
+
+项目现在支持使用 Tauri 作为桌面应用框架，具有小得多的体积和更好的性能。
+
+1. **切换到 Tauri 分支**
+   ```bash
+   git checkout tauri
+   ```
+
+2. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+3. **开发模式运行**
+   ```bash
+   npm run tauri:dev
+   ```
+
+4. **构建生产版本**
+   ```bash
+   npm run tauri:build
+   ```
+
+> **注意**：Tauri 版本需要安装 Rust 工具链。首次运行时会自动下载安装。详细开发指南请参考 [Tauri 开发指南](./docs/TAURI_DEVELOPMENT.md)。
 
 ### 📦 自动化发布流程
 
@@ -157,8 +184,10 @@ GetVSyncParametersIfAvailable() failed for X times!
 - **React** - 用户界面库
 - **TypeScript** - 类型安全的 JavaScript  
 - **Tailwind CSS** - CSS 框架  
-- **Electron** - 跨平台桌面应用框架
-- **electron-builder** - 应用打包工具
+- **Electron** - 跨平台桌面应用框架 (主分支)
+- **Tauri** - 轻量级桌面应用框架 (tauri 分支)
+- **Rust** - 系统编程语言 (Tauri 后端)
+- **electron-builder** - Electron 应用打包工具
 - **NSIS** - Windows 安装程序制作工具
 - **remark-gfm** - GitHub 风格 Markdown 扩展
 - [Hexo](https://hexo.io/) - 静态博客生成器
