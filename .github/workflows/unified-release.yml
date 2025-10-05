@@ -50,33 +50,29 @@ jobs:
           - build_type: electron
             os: windows-latest
             node_version: '18'
-            should_build: ${{ github.event.inputs.build_types == 'ALL' || github.event.inputs.build_types == 'electron' || github.event.inputs.build_types == 'electron,tauri' || github.event_name == 'push' }}
           - build_type: electron
             os: ubuntu-latest
             node_version: '18'
-            should_build: ${{ github.event.inputs.build_types == 'ALL' || github.event.inputs.build_types == 'electron' || github.event.inputs.build_types == 'electron,tauri' || github.event_name == 'push' }}
           # Tauri 构建
           - build_type: tauri
             os: windows-latest
             node_version: '20'
             rust_target: x86_64-pc-windows-msvc
-            should_build: ${{ github.event.inputs.build_types == 'ALL' || github.event.inputs.build_types == 'tauri' || github.event.inputs.build_types == 'electron,tauri' || github.event_name == 'push' }}
           - build_type: tauri
             os: macos-latest
             node_version: '20'
             rust_target: x86_64-apple-darwin
-            should_build: ${{ github.event.inputs.build_types == 'ALL' || github.event.inputs.build_types == 'tauri' || github.event.inputs.build_types == 'electron,tauri' || github.event_name == 'push' }}
           - build_type: tauri
             os: ubuntu-latest
             node_version: '20'
             rust_target: x86_64-unknown-linux-gnu
-            should_build: ${{ github.event.inputs.build_types == 'ALL' || github.event.inputs.build_types == 'tauri' || github.event.inputs.build_types == 'electron,tauri' || github.event_name == 'push' }}
     
     steps:
       - name: 检查是否应该构建
-        if: matrix.should_build != 'true'
+        if: ${{ github.event.inputs.build_types != 'ALL' && github.event.inputs.build_types != matrix.build_type && github.event.inputs.build_types != 'electron,tauri' && github.event_name != 'push' }}
         run: |
           echo "跳过构建：${{ matrix.build_type }} 不在选定的构建类型中"
+          echo "选定的构建类型：${{ github.event.inputs.build_types }}"
           exit 1
 
       - name: 检出代码
