@@ -20,6 +20,7 @@ import {
 import { FolderOpen, Download, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Language, getTexts } from '@/utils/i18n';
+import { isDesktopApp, getIpcRenderer } from '@/lib/desktop-api';
 
 interface CreateHexoDialogProps {
   onCreateSuccess?: (path: string) => void;
@@ -52,22 +53,19 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
   const { toast } = useToast();
   const t = getTexts(language);
 
-  // 检查是否在Electron环境中
-  const isElectron = typeof window !== 'undefined' && window.require;
-
   // 检查环境
   useEffect(() => {
-    if (open && isElectron) {
+    if (open && isDesktopApp()) {
       checkEnvironment();
     }
-  }, [open, isElectron]);
+  }, [open]);
 
   const checkEnvironment = async () => {
     setIsCheckingEnvironment(true);
     setCommandOutput(t.checkingEnvironment);
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
 
       // 检查npm
       setCommandOutput(prev => prev + t.checkingNpm);
@@ -112,10 +110,10 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
   };
 
   const selectDirectory = async () => {
-    if (!isElectron) return;
+    if (!isDesktopApp()) return;
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const selectedPath = await ipcRenderer.invoke('select-directory');
 
       if (selectedPath) {
@@ -132,7 +130,7 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
   };
 
   const createHexoProject = async () => {
-    if (!isElectron) return;
+    if (!isDesktopApp()) return;
     if (!npmInstalled) {
       toast({
         title: t.missingDependency,
@@ -155,7 +153,7 @@ export function CreateHexoDialog({ onCreateSuccess, children, language }: Create
     setCommandOutput(t.creatingHexoProject.replace('{path}', `${hexoPath}/${folderName}`));
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const projectPath = `${hexoPath}/${folderName}`;
 
       // 设置淘宝镜像源

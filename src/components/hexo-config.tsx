@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Settings, Save, RotateCcw, Download, Upload } from 'lucide-react';
 import { Language, getTexts } from '@/utils/i18n';
+import { isDesktopApp, getIpcRenderer } from '@/lib/desktop-api';
 
 interface HexoConfigProps {
   hexoPath: string;
@@ -41,7 +42,6 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
   // 获取当前语言的文本
   const t = getTexts(language);
 
-  const isElectron = typeof window !== 'undefined' && window.require;
   
   // 组件加载时，尝试从localStorage加载语言设置
   useEffect(() => {
@@ -55,11 +55,11 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
 
   // 加载配置文件
   const loadConfig = async () => {
-    if (!isElectron || !hexoPath) return;
+    if (!isDesktopApp() || !hexoPath) return;
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const configPath = `${hexoPath}/_config.yml`;
       const content = await ipcRenderer.invoke('read-file', configPath);
 
@@ -132,11 +132,11 @@ export function HexoConfig({ hexoPath, onConfigUpdate }: HexoConfigProps) {
 
   // 保存配置
   const saveConfig = async () => {
-    if (!isElectron || !hexoPath) return;
+    if (!isDesktopApp() || !hexoPath) return;
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const configPath = `${hexoPath}/_config.yml`;
       await ipcRenderer.invoke('write-file', configPath, rawConfig);
 

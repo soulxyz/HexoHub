@@ -61,6 +61,7 @@ import { CreateHexoDialog } from '@/components/create-hexo-dialog';
 import { CustomTitlebar } from '@/components/custom-titlebar';
 import { AIInspirationDialog } from '@/components/ai-inspiration-dialog';
 import { AIAnalysisDialog } from '@/components/ai-analysis-dialog';
+import { getIpcRenderer, isDesktopApp } from '@/lib/desktop-api';
 
 interface Post {
   name: string;
@@ -145,8 +146,13 @@ export default function Home() {
   // 初始化 toast hook
   const { toast } = useToast();
 
-  // 检查是否在Electron环境中
-  const isElectron = typeof window !== 'undefined' && window.require;
+  // 检查是否在桌面应用环境中（Electron 或 Tauri）
+  const [isElectron, setIsElectron] = useState(false);
+  
+  useEffect(() => {
+    // 在客户端检测桌面应用环境
+    setIsElectron(isDesktopApp());
+  }, []);
 
   // 处理每页显示文章数量变化
   const handlePostsPerPageChange = (value: number) => {
@@ -458,7 +464,7 @@ export default function Home() {
     }
     
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const result = await ipcRenderer.invoke('check-for-updates');
       
       if (result.success) {
@@ -514,12 +520,15 @@ export default function Home() {
   // 选择Hexo项目目录
   const selectHexoDirectory = async () => {
     if (!isElectron) {
-      alert(t.onlyAvailableInDesktop);
+      toast({
+        title: t.onlyAvailableInDesktop,
+        variant: "destructive",
+      });
       return;
     }
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const selectedPath = await ipcRenderer.invoke('select-directory');
 
       if (selectedPath) {
@@ -541,7 +550,7 @@ export default function Home() {
     if (!isElectron) return;
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const result = await ipcRenderer.invoke('validate-hexo-project', path, language);
 
       setIsValidHexoProject(result.valid);
@@ -565,7 +574,7 @@ export default function Home() {
     const allTagsList: string[] = []; // 收集所有标签（包括重复的）用于标签云
     
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       
       for (const post of posts) {
         try {
@@ -620,7 +629,7 @@ export default function Home() {
     
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const filtered: Post[] = [];
       
       for (const post of posts) {
@@ -698,7 +707,7 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const files = await ipcRenderer.invoke('list-files', path + '/source/_posts');
 
       const markdownFiles = files.filter((file: Post) =>
@@ -736,7 +745,7 @@ export default function Home() {
   }) => {
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
 
       // 构建Hexo new命令
       let command = `new "${postData.title}"`;
@@ -808,7 +817,7 @@ export default function Home() {
     excerpt?: string;
   }) => {
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const postsDir = hexoPath + '/source/_posts';
       const fileName = postData.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-') + '.md';
       const filePath = `${postsDir}/${fileName}`;
@@ -866,7 +875,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const content = await ipcRenderer.invoke('read-file', post.path);
       setPostContent(content);
     } catch (error) {
@@ -892,7 +901,7 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       await ipcRenderer.invoke('write-file', selectedPost.path, postContent);
 
       const saveResult = {
@@ -947,7 +956,7 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       await ipcRenderer.invoke('delete-file', selectedPost.path);
 
       const deleteResult = {
@@ -999,7 +1008,7 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
 
       // 逐个删除文章
       for (const post of postsToDelete) {
@@ -1057,7 +1066,7 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       let successCount = 0;
 
       // 逐个更新文章
@@ -1138,7 +1147,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       let successCount = 0;
 
       // 逐个更新文章
@@ -1219,7 +1228,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       await ipcRenderer.invoke('delete-file', postToDelete.path);
 
       const deleteSingleResult = {
@@ -1273,7 +1282,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       
       // 读取现有文件内容
       let content = await ipcRenderer.invoke('read-file', postToUpdate.path);
@@ -1342,7 +1351,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       
       // 读取现有文件内容
       let content = await ipcRenderer.invoke('read-file', postToUpdate.path);
@@ -1426,7 +1435,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     });
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const result = await ipcRenderer.invoke('execute-hexo-command', command, hexoPath);
 
       // 添加到日志
@@ -1451,13 +1460,12 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 <Button 
                   variant="link" 
                   className="p-0 h-auto text-blue-600 hover:text-blue-800"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault();
-                    if (typeof window !== 'undefined' && window.require) {
-                      const { shell } = window.require('electron');
-                      const path = require('path');
-                      const publicPath = path.join(hexoPath, 'public');
-                      shell.openPath(publicPath);
+                    if (typeof window !== 'undefined' && ('require' in window || '__TAURI__' in window)) {
+                      const publicPath = `${hexoPath}/public`;
+                      const ipcRenderer = await getIpcRenderer();
+                      await ipcRenderer.invoke('open-url', publicPath);
                     }
                   }}
                 >
@@ -1525,7 +1533,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     });
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const result = await ipcRenderer.invoke('start-hexo-server', hexoPath);
 
       if (result.success) {
@@ -1605,7 +1613,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     });
     
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       
       // 配置Git用户信息
       // 使用git -C参数在指定目录下执行git命令
@@ -1745,7 +1753,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     });
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const result = await ipcRenderer.invoke('stop-hexo-server');
 
       if (result.success) {
@@ -1862,7 +1870,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       <CustomTitlebar />
       
       {/* 顶部导航栏 - 添加顶部边距以避免被固定标题栏遮挡 */}
-      <header className="border-b bg-card mt-8">
+      <header className="border-b bg-card mt-10">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold">Hexo Hub</h1>

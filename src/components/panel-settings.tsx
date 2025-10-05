@@ -11,6 +11,7 @@ import { Settings, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UpdateChecker } from '@/components/update-checker';
 import { getTexts } from '@/utils/i18n';
+import { isDesktopApp, getIpcRenderer } from '@/lib/desktop-api';
 
 interface PanelSettingsProps {
   postsPerPage: number;
@@ -402,9 +403,9 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        if (typeof window !== 'undefined' && window.require) {
-                          const { ipcRenderer } = window.require('electron');
+                      onClick={async () => {
+                        if (isDesktopApp()) {
+                          const ipcRenderer = await getIpcRenderer();
                           ipcRenderer.invoke('select-file').then((filePath: string) => {
                             if (filePath) {
                               // 将本地文件路径转换为file://协议格式
@@ -574,11 +575,14 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
               </p>
               <a
                 href="#"
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.preventDefault();
-                  if (typeof window !== 'undefined' && window.require) {
-                    const { shell } = window.require('electron');
-                    shell.openExternal('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD');
+                  if (isDesktopApp()) {
+                    const ipcRenderer = await getIpcRenderer();
+                    const shell = (window as any).require ? (window as any).require('electron').shell : null;
+                    if (shell) {
+                      shell.openExternal('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD');
+                    }
                   } else {
                     window.open('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD', '_blank');
                   }
@@ -696,9 +700,11 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                if (typeof window !== 'undefined' && window.require) {
-                  const { shell } = window.require('electron');
-                  shell.openExternal('https://github.com/forever218/HexoHub');
+                if (isDesktopApp()) {
+                  const shell = (window as any).require ? (window as any).require('electron').shell : null;
+                  if (shell) {
+                    shell.openExternal('https://github.com/forever218/HexoHub');
+                  }
                 }
               }} 
               target="_blank" 
@@ -715,9 +721,11 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
               href="#"
               onClick={(e) => {
                 e.preventDefault();
-                if (typeof window !== 'undefined' && window.require) {
-                  const { shell } = window.require('electron');
-                  shell.openExternal('https://github.com/forever218');
+                if (isDesktopApp()) {
+                  const shell = (window as any).require ? (window as any).require('electron').shell : null;
+                  if (shell) {
+                    shell.openExternal('https://github.com/forever218');
+                  }
                 }
               }} 
               target="_blank" 

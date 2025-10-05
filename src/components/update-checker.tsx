@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Download, ExternalLink, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getTexts } from '@/utils/i18n';
+import { isDesktopApp } from '@/lib/desktop-api';
 
 interface GitHubRelease {
   id: number;
@@ -278,11 +279,13 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.preventDefault();
-                  if (typeof window !== 'undefined' && window.require) {
-                    const { shell } = window.require('electron');
-                    shell.openExternal(latestRelease.html_url);
+                  if (isDesktopApp()) {
+                    const shell = (window as any).require ? (window as any).require('electron').shell : null;
+                    if (shell) {
+                      shell.openExternal(latestRelease.html_url);
+                    }
                   }
                 }}
               >
