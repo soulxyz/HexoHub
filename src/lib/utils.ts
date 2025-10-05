@@ -6,28 +6,46 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// ==================== 路径处理 ====================
+// 
+// 【重要】不要自己写 path.replace()，统一使用这两个函数
+//
+// normalizePath() → 显示给用户、保存到 localStorage
+// normalizePathInternal() → 传给后端 API、拼接路径
+//
+// ===================================================
+
 /**
- * 规范化文件路径
- * Windows: 统一使用反斜杠 \
- * macOS/Linux: 统一使用正斜杠 /
- * @param path 要规范化的路径
- * @returns 规范化后的路径
+ * 规范化路径用于显示
+ * - Windows: D:\Project\HexoHub
+ * - macOS/Linux: /Users/project/hexohub
  */
 export function normalizePath(path: string): string {
   if (!path) return '';
   
-  // 检测操作系统
   const isWindows = typeof navigator !== 'undefined' && 
     (navigator.platform.toLowerCase().includes('win') || 
      navigator.userAgent.toLowerCase().includes('windows'));
   
-  if (isWindows) {
-    // Windows: 统一转换为反斜杠
-    return path.replace(/\//g, '\\');
-  } else {
-    // macOS/Linux: 统一转换为正斜杠
-    return path.replace(/\\/g, '/');
+  return isWindows ? path.replace(/\//g, '\\') : path.replace(/\\/g, '/');
+}
+
+/**
+ * 规范化路径用于内部处理
+ * - 统一使用正斜杠: D:/Project/HexoHub
+ * - 避免混合分隔符: D:\01/blog → D:/01/blog
+ * - 移除重复分隔符: D://blog → D:/blog
+ */
+export function normalizePathInternal(path: string): string {
+  if (!path || typeof path !== 'string') return path || '';
+  
+  let normalized = path.replace(/[\\/]/g, '/').replace(/\/+/g, '/');
+  
+  if (normalized.length > 1 && normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1);
   }
+  
+  return normalized;
 }
 
 /**

@@ -62,7 +62,7 @@ import { CustomTitlebar } from '@/components/custom-titlebar';
 import { AIInspirationDialog } from '@/components/ai-inspiration-dialog';
 import { AIAnalysisDialog } from '@/components/ai-analysis-dialog';
 import { getIpcRenderer, isDesktopApp } from '@/lib/desktop-api';
-import { normalizePath } from '@/lib/utils';
+import { normalizePath, normalizePathInternal } from '@/lib/utils';
 
 interface Post {
   name: string;
@@ -1524,7 +1524,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                     
                     try {
                       if (typeof window !== 'undefined' && ('require' in window || '__TAURI__' in window || '__TAURI_INTERNALS__' in window)) {
-                        const publicPath = normalizePath(`${hexoPath}/public`);
+                        // 使用 normalizePathInternal 拼接路径，避免混合分隔符
+                        const publicPath = normalizePathInternal(`${hexoPath}/public`);
                         console.log('[Open Folder] Attempting to open:', publicPath);
                         console.log('[Open Folder] Desktop environment:', isDesktopApp());
                         const ipcRenderer = await getIpcRenderer();
