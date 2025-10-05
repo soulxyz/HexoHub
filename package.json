@@ -168,7 +168,8 @@
           ]
         }
       ],
-      "icon": "public/icon.ico"
+      "icon": "public/icon.ico",
+      "artifactName": "${productName}-Electron-Windows-Setup-${version}.${ext}"
     },
     "electronLanguages": [
       "zh-CN",
@@ -183,11 +184,16 @@
           ]
         }
       ],
-      "icon": "public/icon.svg"
+      "icon": "public/icon.svg",
+      "artifactName": "${productName}-Electron-Linux-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "${productName}-Electron-Windows-Setup-${version}.${ext}"
     }
   },
   "dependencies": {
