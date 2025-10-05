@@ -252,9 +252,10 @@ export default function Home() {
                 document.documentElement.style.setProperty('--bg-image', `url(${assetUrl})`);
                 console.log('设置背景图片 (Tauri asset URL):', assetUrl);
               } else {
-                // Electron 环境直接使用文件路径
-                document.documentElement.style.setProperty('--bg-image', `url(${backgroundImage})`);
-                console.log('设置背景图片 (Electron 直接路径):', backgroundImage);
+                // Electron 环境使用 file:// 协议
+                const fileUrl = `file://${backgroundImage.replace(/\\/g, '/')}`;
+                document.documentElement.style.setProperty('--bg-image', `url(${fileUrl})`);
+                console.log('设置背景图片 (Electron file://):', fileUrl);
               }
             } catch (error) {
               console.error('读取本地背景图片失败:', error);
