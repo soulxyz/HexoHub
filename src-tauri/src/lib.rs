@@ -5,6 +5,13 @@ use std::sync::Mutex;
 use tauri::{Manager, State};//get_webview_window 方法需要Manager导入
 use serde::{Deserialize, Serialize};
 
+// Windows 平台特定的导入，用于隐藏命令行窗口和处理编码
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+use encoding_rs::GBK;
+
 // 存储 Hexo 服务器进程
 struct HexoServer(Mutex<Option<std::process::Child>>);
 
@@ -36,6 +43,34 @@ struct FileInfo {
 async fn read_file(file_path: String) -> Result<String, String> {
     fs::read_to_string(&file_path)
         .map_err(|e| e.to_string())
+}
+
+// 读取文件为 base64 编码（用于图片等二进制文件）
+#[tauri::command]
+async fn read_file_base64(file_path: String) -> Result<String, String> {
+    use base64::{Engine as _, engine::general_purpose};
+    
+    // 读取文件字节
+    let bytes = fs::read(&file_path)
+        .map_err(|e| format!("读取文件失败: {}", e))?;
+    
+    // 根据文件扩展名确定MIME类型
+    let path = std::path::Path::new(&file_path);
+    let mime_type = match path.extension().and_then(|s| s.to_str()) {
+        Some("png") => "image/png",
+        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("gif") => "image/gif",
+        Some("bmp") => "image/bmp",
+        Some("svg") => "image/svg+xml",
+        Some("webp") => "image/webp",
+        _ => "application/octet-stream",
+    };
+    
+    // 编码为 base64
+    let base64_string = general_purpose::STANDARD.encode(&bytes);
+    
+    // 返回 data URL 格式
+    Ok(format!("data:{};base64,{}", mime_type, base64_string))
 }
 
 // 写入文件
@@ -95,12 +130,39 @@ async fn list_files(directory_path: String) -> Result<Vec<FileInfo>, String> {
     Ok(files)
 }
 
+// 智能解码：优先尝试 UTF-8，失败则尝试 GBK（Windows）
+#[cfg(target_os = "windows")]
+fn smart_decode(bytes: &[u8]) -> String {
+    // 首先尝试 UTF-8 解码
+    if let Ok(utf8_str) = std::str::from_utf8(bytes) {
+        return utf8_str.to_string();
+    }
+    
+    // UTF-8 失败，尝试 GBK 解码（中文 Windows 默认编码）
+    let (decoded, _, had_errors) = GBK.decode(bytes);
+    if !had_errors {
+        return decoded.into_owned();
+    }
+    
+    // 都失败了，使用 lossy 转换
+    String::from_utf8_lossy(bytes).to_string()
+}
+
+#[cfg(not(target_os = "windows"))]
+fn smart_decode(bytes: &[u8]) -> String {
+    String::from_utf8_lossy(bytes).to_string()
+}
+
 // 执行命令
 #[tauri::command]
 async fn execute_command(command: String) -> CommandResult {
     let output = if cfg!(target_os = "windows") {
-        Command::new("powershell")
-            .args(&["-NoProfile", "-Command", &command])
+        // 在 Windows 上使用 cmd.exe，它在隐藏窗口模式下更可靠
+        // 使用 chcp 65001 切换到 UTF-8 编码，但会产生额外输出
+        // 所以我们还是用 GBK 编码，然后在 Rust 侧转码
+        Command::new("cmd")
+            .args(&["/C", &command])
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
             .output()
     } else {
         Command::new("sh")
@@ -110,17 +172,27 @@ async fn execute_command(command: String) -> CommandResult {
     };
     
     match output {
-        Ok(output) => CommandResult {
-            success: output.status.success(),
-            stdout: Some(String::from_utf8_lossy(&output.stdout).to_string()),
-            stderr: Some(String::from_utf8_lossy(&output.stderr).to_string()),
-            error: None,
+        Ok(output) => {
+            // 使用智能解码（自动检测 UTF-8/GBK）
+            let stdout = smart_decode(&output.stdout);
+            let stderr = smart_decode(&output.stderr);
+            
+            CommandResult {
+                success: output.status.success(),
+                stdout: Some(stdout.clone()),
+                stderr: Some(stderr.clone()),
+                error: if !output.status.success() && stdout.is_empty() && stderr.is_empty() {
+                    Some("命令执行失败，未返回输出".to_string())
+                } else {
+                    None
+                },
+            }
         },
         Err(e) => CommandResult {
             success: false,
             stdout: None,
             stderr: None,
-            error: Some(e.to_string()),
+            error: Some(format!("命令执行错误: {}", e)),
         },
     }
 }
@@ -137,9 +209,11 @@ async fn execute_hexo_command(command: String, working_dir: String) -> CommandRe
     let full_command = format!("{} {}", hexo_cmd, command);
     
     let output = if cfg!(target_os = "windows") {
-        Command::new("powershell")
-            .args(&["-NoProfile", "-Command", &full_command])
+        // 还是用回 cmd.exe，据说它在隐藏窗口模式下更可靠
+        Command::new("cmd")
+            .args(&["/C", &full_command])
             .current_dir(&working_dir)
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
             .output()
     } else {
         Command::new("sh")
@@ -150,17 +224,27 @@ async fn execute_hexo_command(command: String, working_dir: String) -> CommandRe
     };
     
     match output {
-        Ok(output) => CommandResult {
-            success: output.status.success(),
-            stdout: Some(String::from_utf8_lossy(&output.stdout).to_string()),
-            stderr: Some(String::from_utf8_lossy(&output.stderr).to_string()),
-            error: None,
+        Ok(output) => {
+            // 使用智能解码（自动检测 UTF-8/GBK）
+            let stdout = smart_decode(&output.stdout);
+            let stderr = smart_decode(&output.stderr);
+            
+            CommandResult {
+                success: output.status.success(),
+                stdout: Some(stdout.clone()),
+                stderr: Some(stderr.clone()),
+                error: if !output.status.success() && stdout.is_empty() && stderr.is_empty() {
+                    Some("命令执行失败，未返回输出".to_string())
+                } else {
+                    None
+                },
+            }
         },
         Err(e) => CommandResult {
             success: false,
             stdout: None,
             stderr: None,
-            error: Some(e.to_string()),
+            error: Some(format!("命令执行错误: {}", e)),
         },
     }
 }
@@ -225,13 +309,17 @@ async fn start_hexo_server(working_dir: String, server_state: State<'_, HexoServ
         "hexo"
     };
     
-    let child = Command::new(hexo_cmd)
-        .arg("server")
+    let mut cmd = Command::new(hexo_cmd);
+    cmd.arg("server")
         .current_dir(&working_dir)
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| e.to_string())?;
+        .stderr(Stdio::piped());
+    
+    // 在 Windows 上隐藏窗口
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    
+    let child = cmd.spawn().map_err(|e| e.to_string())?;
     
     *server = Some(child);
     
@@ -296,6 +384,7 @@ pub fn run() {
     .manage(HexoServer(Mutex::new(None)))
     .invoke_handler(tauri::generate_handler![
         read_file,
+        read_file_base64,
         write_file,
         delete_file,
         list_files,
