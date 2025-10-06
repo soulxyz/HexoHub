@@ -517,11 +517,14 @@ pub fn run() {
         )?;
         
         // 在开发模式下自动打开开发者工具
-        if let Some(window) = _app.get_webview_window("main") {
-          window.open_devtools();
-          window.close_devtools();  // 先关闭
-          window.open_devtools();   // 再打开，确保显示
-        }
+        // 延迟操作以避免事件循环警告
+        let app_handle = _app.handle().clone();
+        std::thread::spawn(move || {
+          std::thread::sleep(std::time::Duration::from_millis(500));
+          if let Some(window) = app_handle.get_webview_window("main") {
+            let _ = window.open_devtools();
+          }
+        });
       }
       Ok(())
     })
