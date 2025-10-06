@@ -58,6 +58,11 @@
           "name": "kill",
           "cmd": "kill",
           "args": true
+        },
+        {
+          "name": "git",
+          "cmd": "git",
+          "args": true
         }
       ]
     },
