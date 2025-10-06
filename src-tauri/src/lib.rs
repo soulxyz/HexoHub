@@ -5,8 +5,7 @@ use std::sync::Mutex;
 use std::time::SystemTime;
 use tauri::State;
 
-// Manager 仅在 debug 模式下使用（用于 get_webview_window 方法）
-#[cfg(debug_assertions)]
+// 导入 Manager trait（用于 state、get_webview_window 等方法）
 use tauri::Manager;
 
 use serde::{Deserialize, Serialize};
@@ -359,8 +358,79 @@ async fn start_hexo_server(working_dir: String, server_state: State<'_, HexoServ
 async fn stop_hexo_server(server_state: State<'_, HexoServer>) -> Result<CommandResult, String> {
     let mut server = server_state.0.lock().unwrap();
     
+    #[allow(unused_mut)]
     if let Some(mut child) = server.take() {
-        child.kill().map_err(|e| e.to_string())?;
+        let pid = child.id();
+        println!("正在停止 Hexo 服务器进程 PID: {}", pid);
+        
+        #[cfg(target_os = "windows")]
+        {
+            // Windows: 使用 taskkill 杀死整个进程树
+            // /T 参数会终止指定进程及其所有子进程
+            // /F 参数强制终止
+            let output = Command::new("taskkill")
+                .args(&["/pid", &pid.to_string(), "/T", "/F"])
+                .output();
+            
+            match output {
+                Ok(result) => {
+                    if result.status.success() {
+                        println!("成功终止进程树 PID: {}", pid);
+                    } else {
+                        eprintln!("taskkill 失败: {}", String::from_utf8_lossy(&result.stderr));
+                        // 尝试直接 kill
+                        let _ = child.kill();
+                    }
+                },
+                Err(e) => {
+                    eprintln!("执行 taskkill 失败: {}", e);
+                    // 回退到直接 kill
+                    let _ = child.kill();
+                }
+            }
+            
+            // 额外保险：杀死所有占用 4000 端口的进程
+            let _ = Command::new("cmd")
+                .args(&["/C", "for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :4000 ^| findstr LISTENING') do @taskkill /F /PID %a"])
+                .output();
+        }
+        
+        #[cfg(not(target_os = "windows"))]
+        {
+            // Linux/Mac: 发送 SIGTERM 信号
+            use std::thread;
+            use std::time::Duration;
+            
+            match child.kill() {
+                Ok(_) => {
+                    println!("发送 SIGTERM 信号到进程 {}", pid);
+                    
+                    // 等待进程退出
+                    thread::sleep(Duration::from_millis(1000));
+                    
+                    // 检查进程是否还在运行，如果是则强制 kill
+                    let check = Command::new("kill")
+                        .args(&["-0", &pid.to_string()])
+                        .output();
+                    
+                    if let Ok(result) = check {
+                        if result.status.success() {
+                            // 进程还在，使用 SIGKILL
+                            println!("进程仍在运行，发送 SIGKILL");
+                            let _ = Command::new("kill")
+                                .args(&["-9", &pid.to_string()])
+                                .output();
+                        } else {
+                            println!("进程已终止");
+                        }
+                    }
+                },
+                Err(e) => {
+                    eprintln!("终止进程失败: {}", e);
+                }
+            }
+        }
+        
         Ok(CommandResult {
             success: true,
             stdout: Some("服务器已停止".to_string()),
@@ -393,7 +463,38 @@ async fn maximize_restore_window(window: tauri::Window) {
 }
 
 #[tauri::command]
-async fn close_window(window: tauri::Window) {
+async fn close_window(window: tauri::Window, app_handle: tauri::AppHandle) {
+    // 在关闭窗口前清理 Hexo 服务器进程
+    if let Some(server_state) = app_handle.try_state::<HexoServer>() {
+        if let Ok(mut server) = server_state.0.try_lock() {
+            #[allow(unused_mut)]
+            if let Some(mut child) = server.take() {
+                let pid = child.id();
+                println!("窗口关闭前清理 Hexo 服务器进程 PID: {}", pid);
+                
+                #[cfg(target_os = "windows")]
+                {
+                    // Windows: 使用 taskkill 杀死整个进程树
+                    let _ = Command::new("taskkill")
+                        .args(&["/pid", &pid.to_string(), "/T", "/F"])
+                        .output();
+                    
+                    // 额外清理 4000 端口
+                    let _ = Command::new("cmd")
+                        .args(&["/C", "for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :4000 ^| findstr LISTENING') do @taskkill /F /PID %a"])
+                        .output();
+                }
+                
+                #[cfg(not(target_os = "windows"))]
+                {
+                    let _ = child.kill();
+                }
+                
+                println!("Hexo 服务器进程已清理");
+            }
+        }
+    }
+    
     let _ = window.close();
 }
 
@@ -526,6 +627,7 @@ pub fn run() {
           }
         });
       }
+
       Ok(())
     })
     .run(tauri::generate_context!())
