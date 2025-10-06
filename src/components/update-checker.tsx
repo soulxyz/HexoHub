@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Download, ExternalLink, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getTexts } from '@/utils/i18n';
-import { isDesktopApp, getDesktopEnvironment } from '@/lib/desktop-api';
+import { isDesktopApp, getDesktopEnvironment, isTauri } from '@/lib/desktop-api';
 import { openExternalLink } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -77,7 +77,20 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
   const checkForUpdates = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
+      // 在 Tauri 环境下使用 Tauri HTTP 插件，在浏览器环境使用原生 fetch
+      let response;
+      if (isTauri()) {
+        const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+        response = await tauriFetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        });
+      } else {
+        response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
+      }
+      
       if (!response.ok) {
         throw new Error(t.checkUpdateFailed);
       }

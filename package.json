@@ -198,6 +198,7 @@
   },
   "dependencies": {
     "@tauri-apps/plugin-dialog": "^2.4.0",
+    "@tauri-apps/plugin-http": "^2.5.2",
     "@tauri-apps/plugin-shell": "^2.3.1"
   }
 }

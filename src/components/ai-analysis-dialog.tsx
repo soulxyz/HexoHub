@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2, BarChart3, X } from 'lucide-react';
 import { getTexts } from '@/utils/i18n';
+import { isTauri } from '@/lib/desktop-api';
 
 interface AIAnalysisDialogProps {
   open: boolean;
@@ -50,25 +51,48 @@ export function AIAnalysisDialog({ open, onOpenChange, apiKey, analysisPrompt, l
       // 替换提示词中的{content}占位符
       const finalPrompt = analysisPrompt.replace('{content}', content);
 
-      // 调用DeepSeek API
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            {
-              role: 'user',
-              content: finalPrompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 500
-        })
-      });
+      // 调用DeepSeek API - 在 Tauri 环境下使用 Tauri HTTP 插件
+      let response;
+      if (isTauri()) {
+        const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+        response = await tauriFetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              {
+                role: 'user',
+                content: finalPrompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 500
+          })
+        });
+      } else {
+        response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              {
+                role: 'user',
+                content: finalPrompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 500
+          })
+        });
+      }
 
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);

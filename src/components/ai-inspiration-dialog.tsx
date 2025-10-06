@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2, Lightbulb, X } from 'lucide-react';
 import { getTexts } from '@/utils/i18n';
+import { isTauri } from '@/lib/desktop-api';
 
 interface AIInspirationDialogProps {
   open: boolean;
@@ -35,25 +36,48 @@ export function AIInspirationDialog({ open, onOpenChange, apiKey, prompt, langua
     setIsTyping(false);
 
     try {
-      // 调用DeepSeek API
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 500
-        })
-      });
+      // 调用DeepSeek API - 在 Tauri 环境下使用 Tauri HTTP 插件
+      let response;
+      if (isTauri()) {
+        const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+        response = await tauriFetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 500
+          })
+        });
+      } else {
+        response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 500
+          })
+        });
+      }
 
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);
