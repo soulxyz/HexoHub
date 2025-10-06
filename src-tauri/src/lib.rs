@@ -355,22 +355,30 @@ async fn start_hexo_server(working_dir: String, server_state: State<'_, HexoServ
 
 // 停止 Hexo 服务器
 #[tauri::command]
-async fn stop_hexo_server(server_state: State<'_, HexoServer>) -> Result<CommandResult, String> {
-    let mut server = server_state.0.lock().unwrap();
+async fn stop_hexo_server(server_state: State<'_, HexoServer>, app_handle: tauri::AppHandle) -> Result<CommandResult, String> {
+    use tauri_plugin_shell::ShellExt;
     
-    #[allow(unused_mut)]
-    if let Some(mut child) = server.take() {
-        let pid = child.id();
+    // 获取进程 ID 和是否有服务器运行（在锁的作用域内完成）
+    let pid_option = {
+        let mut server = server_state.0.lock().unwrap();
+        server.take().map(|child| child.id())
+    }; // MutexGuard 在这里被释放
+    
+    if let Some(pid) = pid_option {
         println!("正在停止 Hexo 服务器进程 PID: {}", pid);
+        
+        let shell = app_handle.shell();
         
         #[cfg(target_os = "windows")]
         {
-            // Windows: 使用 taskkill 杀死整个进程树
+            // Windows: 使用 taskkill 杀死整个进程树（通过 Tauri shell 插件，自动隐藏窗口）
             // /T 参数会终止指定进程及其所有子进程
             // /F 参数强制终止
-            let output = Command::new("taskkill")
+            let output = shell
+                .command("taskkill")
                 .args(&["/pid", &pid.to_string(), "/T", "/F"])
-                .output();
+                .output()
+                .await;
             
             match output {
                 Ok(result) => {
@@ -378,55 +386,54 @@ async fn stop_hexo_server(server_state: State<'_, HexoServer>) -> Result<Command
                         println!("成功终止进程树 PID: {}", pid);
                     } else {
                         eprintln!("taskkill 失败: {}", String::from_utf8_lossy(&result.stderr));
-                        // 尝试直接 kill
-                        let _ = child.kill();
                     }
                 },
                 Err(e) => {
                     eprintln!("执行 taskkill 失败: {}", e);
-                    // 回退到直接 kill
-                    let _ = child.kill();
                 }
             }
             
-            // 额外保险：杀死所有占用 4000 端口的进程
-            let _ = Command::new("cmd")
+            // 额外保险：杀死所有占用 4000 端口的进程（通过 Tauri shell，无弹窗）
+            let _ = shell
+                .command("cmd")
                 .args(&["/C", "for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :4000 ^| findstr LISTENING') do @taskkill /F /PID %a"])
-                .output();
+                .output()
+                .await;
         }
         
         #[cfg(not(target_os = "windows"))]
         {
-            // Linux/Mac: 发送 SIGTERM 信号
-            use std::thread;
-            use std::time::Duration;
+            // Linux/Mac: 使用 kill 命令（通过 Tauri shell，无弹窗）
+            // 先尝试 SIGTERM（优雅终止）
+            let _ = shell
+                .command("kill")
+                .args(&[&pid.to_string()])
+                .output()
+                .await;
             
-            match child.kill() {
-                Ok(_) => {
-                    println!("发送 SIGTERM 信号到进程 {}", pid);
-                    
-                    // 等待进程退出
-                    thread::sleep(Duration::from_millis(1000));
-                    
-                    // 检查进程是否还在运行，如果是则强制 kill
-                    let check = Command::new("kill")
-                        .args(&["-0", &pid.to_string()])
-                        .output();
-                    
-                    if let Ok(result) = check {
-                        if result.status.success() {
-                            // 进程还在，使用 SIGKILL
-                            println!("进程仍在运行，发送 SIGKILL");
-                            let _ = Command::new("kill")
-                                .args(&["-9", &pid.to_string()])
-                                .output();
-                        } else {
-                            println!("进程已终止");
-                        }
-                    }
-                },
-                Err(e) => {
-                    eprintln!("终止进程失败: {}", e);
+            println!("发送 SIGTERM 信号到进程 {}", pid);
+            
+            // 等待进程退出
+            tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
+            
+            // 检查进程是否还在运行（通过 Tauri shell，无弹窗）
+            let check = shell
+                .command("kill")
+                .args(&["-0", &pid.to_string()])
+                .output()
+                .await;
+            
+            if let Ok(result) = check {
+                if result.status.success() {
+                    // 进程还在，使用 SIGKILL（通过 Tauri shell，无弹窗）
+                    println!("进程仍在运行，发送 SIGKILL");
+                    let _ = shell
+                        .command("kill")
+                        .args(&["-9", &pid.to_string()])
+                        .output()
+                        .await;
+                } else {
+                    println!("进程已终止");
                 }
             }
         }

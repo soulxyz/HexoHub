@@ -61,7 +61,8 @@ import { CreateHexoDialog } from '@/components/create-hexo-dialog';
 import { CustomTitlebar } from '@/components/custom-titlebar';
 import { AIInspirationDialog } from '@/components/ai-inspiration-dialog';
 import { AIAnalysisDialog } from '@/components/ai-analysis-dialog';
-import { getIpcRenderer, isDesktopApp } from '@/lib/desktop-api';
+import { getIpcRenderer, isDesktopApp, isTauri } from '@/lib/desktop-api';
+import { commandOperations } from '@/lib/tauri-api';
 import { normalizePath, normalizePathInternal } from '@/lib/utils';
 
 interface Post {
@@ -1859,15 +1860,24 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     });
 
     try {
-      const ipcRenderer = await getIpcRenderer();
-      const result = await ipcRenderer.invoke('stop-hexo-server');
+      let result;
+      
+      // 判断是否在 Tauri 环境，使用对应的 API
+      if (isTauri()) {
+        // Tauri 环境：使用公共的 commandOperations
+        result = await commandOperations.stopHexoServer();
+      } else {
+        // Electron 环境：使用 IPC
+        const ipcRenderer = await getIpcRenderer();
+        result = await ipcRenderer.invoke('stop-hexo-server');
+      }
 
       if (result.success) {
         setIsServerRunning(false);
         setServerProcess(null);
         const serverStopResult = {
           success: true,
-          stdout: 'Hexo服务器已停止',
+          stdout: result.stdout || 'Hexo服务器已停止',
           timestamp: new Date().toLocaleString(),
           command: 'stop server'
         };
@@ -1886,7 +1896,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         // 显示失败通知
         toast({
           title: '失败',
-          description: 'Hexo服务器停止失败',
+          description: result.error || 'Hexo服务器停止失败',
           variant: 'error',
         });
       }
