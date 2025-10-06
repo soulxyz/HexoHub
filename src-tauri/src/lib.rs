@@ -82,6 +82,20 @@ async fn delete_file(file_path: String) -> Result<bool, String> {
         .map_err(|e| e.to_string())
 }
 
+// 复制文件
+#[tauri::command]
+async fn copy_file(source_path: String, destination_path: String) -> Result<String, String> {
+    // 确保目标目录存在
+    if let Some(parent) = PathBuf::from(&destination_path).parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    
+    // 复制文件
+    fs::copy(&source_path, &destination_path)
+        .map(|_| destination_path)
+        .map_err(|e| e.to_string())
+}
+
 // 列出目录中的文件
 #[tauri::command]
 async fn list_files(directory_path: String) -> Result<Vec<FileInfo>, String> {
@@ -481,6 +495,7 @@ pub fn run() {
         read_file,
         write_file,
         delete_file,
+        copy_file,
         list_files,
         execute_command,
         execute_hexo_command,

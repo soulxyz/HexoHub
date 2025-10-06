@@ -58,6 +58,10 @@ export interface I18nTexts {
   supportMarkdownSyntax: string;
   saving: string;
   dragImageHint: string;
+  assetFolderDisabledWarning: string;
+  assetFolderDisabledConfirm: string;
+  assetFolderEnabledSuccess: string;
+  assetFolderEnabledNextSteps: string;
 
   // 占位符文本
   editorPlaceholder: string;
@@ -376,6 +380,10 @@ export const i18nTexts: Record<Language, I18nTexts> = {
     supportMarkdownSyntax: '支持标准 Markdown 语法',
     saving: '保存中...',
     dragImageHint: '拖放图片文件到此处插入 Hexo 图片标签',
+    assetFolderDisabledWarning: '检测到您的 Hexo 配置中 post_asset_folder 为 false，图片可能无法正常显示。',
+    assetFolderDisabledConfirm: '是否自动启用资源文件夹功能？\n（会修改 _config.yml 中的 post_asset_folder 为 true）',
+    assetFolderEnabledSuccess: '已成功启用资源文件夹功能！',
+    assetFolderEnabledNextSteps: '建议点击界面上的【清理】和【生成】按钮使更改生效。',
 
     // 占位符文本
     editorPlaceholder: `# 标题
@@ -728,6 +736,10 @@ console.log('Hello, Hexo!');
     supportMarkdownSyntax: 'Standard Markdown syntax supported',
     saving: 'Saving...',
     dragImageHint: 'Drop image files here to insert Hexo image tags',
+    assetFolderDisabledWarning: 'Detected that post_asset_folder is set to false in your Hexo config. Images may not display correctly.',
+    assetFolderDisabledConfirm: 'Would you like to enable the asset folder feature automatically?\n(This will change post_asset_folder to true in _config.yml)',
+    assetFolderEnabledSuccess: 'Asset folder feature enabled successfully!',
+    assetFolderEnabledNextSteps: 'Please click the [Clean] and [Generate] buttons on the interface to apply changes.',
 
     // 占位符文本
     editorPlaceholder: `# Title

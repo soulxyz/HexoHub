@@ -633,6 +633,28 @@ ipcMain.handle('select-file', async () => {
   return filePaths[0];
 });
 
+// 复制文件
+ipcMain.handle('copy-file', async (event, sourcePath, destinationPath) => {
+  try {
+    const path = require('path');
+    const destinationDir = path.dirname(destinationPath);
+    
+    // 确保目标目录存在
+    if (!fs.existsSync(destinationDir)) {
+      fs.mkdirSync(destinationDir, { recursive: true });
+    }
+    
+    // 复制文件
+    fs.copyFileSync(sourcePath, destinationPath);
+    console.log(`文件已复制: ${sourcePath} -> ${destinationPath}`);
+    
+    return destinationPath;
+  } catch (error) {
+    console.error('复制文件失败:', error);
+    throw error;
+  }
+});
+
 // 应用退出时清理所有子进程
 app.on('before-quit', () => {
   // 清理hexo服务器进程

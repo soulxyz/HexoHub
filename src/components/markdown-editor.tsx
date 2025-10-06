@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { getTexts, Language } from '@/utils/i18n';
+import { isDesktopApp } from '@/lib/desktop-api';
 import {
   Bold,
   Italic,
@@ -21,20 +22,182 @@ import {
   Minus
 } from 'lucide-react';
 
+interface Post {
+  name: string;
+  path: string;
+}
+
 interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
   onSave?: () => void;
   isLoading?: boolean;
   language?: 'zh' | 'en';
+  hexoPath?: string;
+  selectedPost?: Post | null;
 }
 
-export function MarkdownEditor({ value, onChange, onSave, isLoading = false, language = 'zh' }: MarkdownEditorProps) {
+export function MarkdownEditor({ value, onChange, onSave, isLoading = false, language = 'zh', hexoPath, selectedPost }: MarkdownEditorProps) {
   const [lineNumbers, setLineNumbers] = useState<string[]>(['1']);
   const [isDragOver, setIsDragOver] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const dropAreaRef = useRef<HTMLDivElement>(null);
 
   const t = getTexts(language as Language);
+
+  // 检查并提示启用 post_asset_folder
+  const checkAndEnableAssetFolder = async () => {
+    if (!hexoPath) return true;
+
+    try {
+      const { getIpcRenderer } = await import('@/lib/desktop-api');
+      const ipcRenderer = await getIpcRenderer();
+      const configPath = `${hexoPath}/_config.yml`;
+      const content = await ipcRenderer.invoke('read-file', configPath);
+
+      // 检查 post_asset_folder 是否为 false
+      if (/post_asset_folder:\s*false/i.test(content)) {
+        const confirmed = window.confirm(
+          `${t.assetFolderDisabledWarning}\n\n${t.assetFolderDisabledConfirm}`
+        );
+
+        if (confirmed) {
+          // 修改配置
+          const newContent = content.replace(
+            /post_asset_folder:\s*false/i,
+            'post_asset_folder: true'
+          );
+          
+          await ipcRenderer.invoke('write-file', configPath, newContent);
+          
+          alert(
+            `${t.assetFolderEnabledSuccess}\n\n${t.assetFolderEnabledNextSteps}`
+          );
+          
+          return true;
+        }
+        
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('[MarkdownEditor] 检查配置失败:', error);
+      return true; // 检查失败时继续操作
+    }
+  };
+
+  // 使用 Tauri 的拖放事件监听器（可以获取文件绝对路径）
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    const setupTauriDragDrop = async () => {
+      // 检测 Tauri 环境
+      if (typeof window === 'undefined' || typeof (window as any).__TAURI_INTERNALS__ === 'undefined') {
+        console.log('[MarkdownEditor] 不是 Tauri 环境，使用 HTML5 拖放');
+        return;
+      }
+
+      if (!hexoPath || !selectedPost) {
+        console.log('[MarkdownEditor] 缺少 hexoPath 或 selectedPost');
+        return;
+      }
+
+      try {
+        console.log('[MarkdownEditor] 设置 Tauri 拖放监听器...');
+        const { getCurrentWebview } = await import('@tauri-apps/api/webview');
+        const webview = getCurrentWebview();
+
+        unlisten = await webview.onDragDropEvent(async (event) => {
+          const { payload } = event;
+          console.log('[MarkdownEditor] Tauri 拖放事件:', payload);
+
+          if (payload.type === 'over') {
+            // 检查鼠标位置是否在编辑器区域内
+            const { x, y } = payload.position;
+            if (dropAreaRef.current) {
+              const { left, right, top, bottom } = dropAreaRef.current.getBoundingClientRect();
+              const inBoundsX = x >= left && x <= right;
+              const inBoundsY = y >= top && y <= bottom;
+              
+              if (inBoundsX && inBoundsY) {
+                setIsDragOver(true);
+              }
+            }
+          } else if (payload.type === 'drop' && isDragOver) {
+            setIsDragOver(false);
+            
+            const filePaths = payload.paths || [];
+            console.log('[MarkdownEditor] 拖放的文件路径:', filePaths);
+            
+            // 过滤出图片文件
+            const imageFiles = filePaths.filter(filePath => 
+              /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(filePath)
+            );
+            
+            console.log('[MarkdownEditor] 过滤后的图片文件:', imageFiles);
+            
+            if (imageFiles.length > 0) {
+              // 检查并提示启用 post_asset_folder
+              const canProceed = await checkAndEnableAssetFolder();
+              if (!canProceed) {
+                console.log('[MarkdownEditor] 用户取消启用 post_asset_folder');
+                return;
+              }
+
+              const postNameWithoutExt = selectedPost.name.replace(/\.(md|markdown)$/i, '');
+              const assetFolderPath = `${hexoPath}/source/_posts/${postNameWithoutExt}`;
+              
+              console.log('[MarkdownEditor] 资源文件夹路径:', assetFolderPath);
+              
+              // 使用 Tauri 的 invoke 调用后端 copy_file 命令
+              const { invoke } = await import('@tauri-apps/api/core');
+              
+              for (let index = 0; index < imageFiles.length; index++) {
+                const filePath = imageFiles[index];
+                const fileName = filePath.split(/[\\/]/).pop() || filePath;
+                const destinationPath = `${assetFolderPath}/${fileName}`;
+                
+                try {
+                  console.log(`[MarkdownEditor] 复制文件: ${filePath} -> ${destinationPath}`);
+                  await invoke('copy_file', { 
+                    sourcePath: filePath, 
+                    destinationPath: destinationPath 
+                  });
+                  console.log(`[MarkdownEditor] 文件已复制到: ${destinationPath}`);
+                  
+                  // 插入标签
+                  setTimeout(() => {
+                    insertImageAtCursor(fileName);
+                  }, index * 50);
+                  
+                } catch (error) {
+                  console.error('[MarkdownEditor] 复制文件失败:', error);
+                  alert(`复制文件失败: ${error}`);
+                }
+              }
+            }
+          } else {
+            // leave, cancel 或其他情况
+            setIsDragOver(false);
+          }
+        });
+
+        console.log('[MarkdownEditor] Tauri 拖放监听器设置完成');
+      } catch (error) {
+        console.error('[MarkdownEditor] 设置 Tauri 拖放监听器失败:', error);
+      }
+    };
+
+    setupTauriDragDrop();
+
+    return () => {
+      if (unlisten) {
+        console.log('[MarkdownEditor] 清理 Tauri 拖放监听器');
+        unlisten();
+      }
+    };
+  }, [hexoPath, selectedPost, isDragOver, language]);
 
   const insertTextAtCursor = (insertText: string, selectionStart?: number, selectionEnd?: number) => {
     const textarea = textareaRef.current;
@@ -153,21 +316,38 @@ useEffect(() => {
     }
   };
 
+  // 检测是否为 Tauri 环境
+  const isTauriEnv = typeof window !== 'undefined' && typeof (window as any).__TAURI_INTERNALS__ !== 'undefined';
+
   const handleDragEnter = (e: React.DragEvent) => {
+    // 在 Tauri 环境中，不处理 HTML5 拖放事件
+    if (isTauriEnv) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
+    console.log('[MarkdownEditor] dragEnter 事件触发');
   };
 
   const handleDragOver = (e: React.DragEvent) => {
+    // 在 Tauri 环境中，不处理 HTML5 拖放事件
+    if (isTauriEnv) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
+    // 在 Tauri 环境中，不处理 HTML5 拖放事件
+    if (isTauriEnv) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
+    console.log('[MarkdownEditor] dragLeave 事件触发');
   };
 
   const insertImageAtCursor = (fileName: string) => {
@@ -188,22 +368,77 @@ useEffect(() => {
     }, 0);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
+    // 在 Tauri 环境中，由 Tauri 的 onDragDropEvent 处理
+    if (isTauriEnv) {
+      console.log('[MarkdownEditor] Tauri 环境，忽略 HTML5 drop 事件');
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
 
+    console.log('[MarkdownEditor] HTML5 drop 事件触发');
+    console.log('[MarkdownEditor] dataTransfer.files:', e.dataTransfer.files);
+    console.log('[MarkdownEditor] hexoPath:', hexoPath);
+    console.log('[MarkdownEditor] selectedPost:', selectedPost);
+
     const files = Array.from(e.dataTransfer.files);
+    console.log('[MarkdownEditor] 拖入的文件:', files.map(f => ({ name: f.name, path: (f as any).path })));
+    
     const imageFiles = files.filter(file => 
       /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(file.name)
     );
 
+    console.log('[MarkdownEditor] 过滤后的图片文件:', imageFiles);
+
     if (imageFiles.length > 0) {
-      imageFiles.forEach((file, index) => {
-        setTimeout(() => {
-          insertImageAtCursor(file.name);
-        }, index * 50);
-      });
+      // Electron 环境：可以从 File 对象获取路径
+      if (hexoPath && selectedPost) {
+        // 检查并提示启用 post_asset_folder
+        const canProceed = await checkAndEnableAssetFolder();
+        if (!canProceed) {
+          console.log('[MarkdownEditor] 用户取消启用 post_asset_folder');
+          return;
+        }
+
+        const postNameWithoutExt = selectedPost.name.replace(/\.(md|markdown)$/i, '');
+        const assetFolderPath = `${hexoPath}/source/_posts/${postNameWithoutExt}`;
+        
+        console.log('[MarkdownEditor] 资源文件夹路径:', assetFolderPath);
+        
+        for (let index = 0; index < imageFiles.length; index++) {
+          const file = imageFiles[index];
+          const filePath = (file as any).path;
+          
+          if (filePath) {
+            try {
+              const { getIpcRenderer } = await import('@/lib/desktop-api');
+              const ipcRenderer = await getIpcRenderer();
+              const destinationPath = `${assetFolderPath}/${file.name}`;
+              
+              await ipcRenderer.invoke('copy-file', filePath, destinationPath);
+              console.log(`[MarkdownEditor] 文件已复制到: ${destinationPath}`);
+            } catch (error) {
+              console.error('[MarkdownEditor] 复制文件失败:', error);
+              alert(`复制文件失败: ${error}`);
+            }
+          }
+          
+          // 插入标签
+          setTimeout(() => {
+            insertImageAtCursor(file.name);
+          }, index * 50);
+        }
+      } else {
+        // 只插入文件名
+        imageFiles.forEach((file, index) => {
+          setTimeout(() => {
+            insertImageAtCursor(file.name);
+          }, index * 50);
+        });
+      }
     }
   };
 
@@ -230,6 +465,7 @@ useEffect(() => {
         </div>
 
         <div
+          ref={dropAreaRef}
           className={`flex-1 relative min-w-0 overflow-hidden \${isDragOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''}`}
           onDragEnter={handleDragEnter}
           onDragOver={handleDragOver}
@@ -258,7 +494,7 @@ useEffect(() => {
           {isDragOver && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-blue-600 text-lg font-medium">
-                {t.dropImagesHere || '拖放图片到这里'}
+                {t.dragImageHint}
               </div>
             </div>
           )}

@@ -103,6 +103,14 @@ export const fileOperations = {
     throw new Error('Not in Tauri environment');
   },
   
+  copyFile: async (sourcePath: string, destinationPath: string): Promise<string> => {
+    if (isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      return await invoke('copy_file', { sourcePath, destinationPath });
+    }
+    throw new Error('Not in Tauri environment');
+  },
+  
   deleteFile: async (filePath: string): Promise<boolean> => {
     if (isTauriEnvironment()) {
       const { invoke } = await import('@tauri-apps/api/core');
@@ -209,6 +217,8 @@ export const ipcRenderer = {
         return fileOperations.convertFileSrc(args[0]);
       case 'write-file':
         return fileOperations.writeFile(args[0], args[1]);
+      case 'copy-file':
+        return fileOperations.copyFile(args[0], args[1]);
       case 'delete-file':
         return fileOperations.deleteFile(args[0]);
       case 'list-files':

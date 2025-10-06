@@ -2783,6 +2783,8 @@ ${selectedText}
                             onSave={savePost}
                             isLoading={isLoading}
                             language={language}
+                            hexoPath={hexoPath}
+                            selectedPost={selectedPost}
                           />
                         </div>
                       )}
@@ -2813,6 +2815,8 @@ ${selectedText}
                             onSave={savePost}
                             isLoading={isLoading}
                             language={language}
+                            hexoPath={hexoPath}
+                            selectedPost={selectedPost}
                           />
                         </div>
                       </div>
