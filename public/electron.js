@@ -1,6 +1,39 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const isDev = process.env.NODE_ENV === 'development';
+
+// 图片处理相关的 IPC 处理程序
+// 注册从缓冲区写入文件的 IPC 处理程序
+ipcMain.handle('write-file-from-buffer', async (event, destinationPath, buffer) => {
+  try {
+    // 确保目标目录存在
+    const destinationDir = path.dirname(destinationPath);
+    if (!fs.existsSync(destinationDir)) {
+      fs.mkdirSync(destinationDir, { recursive: true });
+    }
+    
+    // 写入文件
+    fs.writeFileSync(destinationPath, Buffer.from(buffer));
+    return { success: true };
+  } catch (error) {
+    console.error('写入文件失败:', error);
+    throw error;
+  }
+});
+
+// 注册确保目录存在的 IPC 处理程序
+ipcMain.handle('ensure-directory-exists', async (event, dirPath) => {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('创建目录失败:', error);
+    throw error;
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Linux VSync / GPU 兼容性处理

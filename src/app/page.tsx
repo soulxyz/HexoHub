@@ -47,7 +47,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { Language, getTexts } from '@/utils/i18n';
-import { MarkdownEditor } from '@/components/markdown-editor';
+import { MarkdownEditorWrapper } from '@/components/markdown-editor-wrapper';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { PostList } from '@/components/post-list';
 import { HexoConfig } from '@/components/hexo-config';
@@ -2777,7 +2777,7 @@ ${selectedText}
                     <>
                       {activeTab === 'editor' && (
                         <div className="h-full overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
-                          <MarkdownEditor
+                          <MarkdownEditorWrapper
                             value={postContent}
                             onChange={setPostContent}
                             onSave={savePost}
@@ -2809,7 +2809,7 @@ ${selectedText}
                     <div className="h-full flex flex-col md:flex-row overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
                       <div className="w-full md:w-1/2 h-1/2 md:h-full border-r overflow-hidden">
                         <div className="h-full overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
-                          <MarkdownEditor
+                          <MarkdownEditorWrapper
                             value={postContent}
                             onChange={setPostContent}
                             onSave={savePost}
