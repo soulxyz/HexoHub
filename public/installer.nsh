@@ -1,62 +1,148 @@
-; NSIS安装程序脚本 - Hexo Desktop
-; 此文件用于自定义Windows安装程序的行为
+; ============================================
+; NSIS 安装程序钩子脚本 - HexoHub (Tauri)
+; ============================================
 
-; 添加卸载时的注册表清理
-Section "Uninstall"
-  ; 删除桌面快捷方式
-  Delete "$DESKTOP\Hexo Desktop.lnk"
-  
-  ; 删除开始菜单快捷方式
-  Delete "$STARTMENU\Programs\Hexo Desktop.lnk"
-  
-  ; 删除安装目录
-  RMDir /r "$INSTDIR"
-  
-  ; 删除注册表项
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Hexo Desktop"
-  DeleteRegKey HKCU "Software\Hexo Desktop"
-SectionEnd
+!include "LogicLib.nsh"
 
-; 添加安装时的注册表写入
-Section "Main" SEC01
-  ; 写入注册表信息
-  WriteRegExpandStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Hexo Desktop" "InstallLocation" "$INSTDIR"
-  WriteRegExpandStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Hexo Desktop" "UninstallString" '"$INSTDIR\uninstall.exe"'
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Hexo Desktop" "NoModify" 1
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Hexo Desktop" "NoRepair" 1
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Hexo Desktop" "DisplayName" "Hexo Desktop"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Hexo Desktop" "Publisher" "Hexo Desktop"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Hexo Desktop" "DisplayVersion" "0.1.0"
-SectionEnd
+; 全局变量
+Var NodeJsDetected
+Var NodeJsPath
 
-; 添加文件关联（可选）
-Section "File Associations"
-  ; 关联 .md 文件（可选，取消注释以启用）
-  ; WriteRegStr HKCR ".md" "" "HexoDesktop.Document"
-  ; WriteRegStr HKCR "HexoDesktop.Document" "" "Markdown Document"
-  ; WriteRegStr HKCR "HexoDesktop.Document\DefaultIcon" "" "$INSTDIR\Hexo Desktop.exe,0"
-  ; WriteRegStr HKCR "HexoDesktop.Document\shell\open\command" "" '"$INSTDIR\Hexo Desktop.exe" "%1"'
-SectionEnd
-
-; 添加环境变量检查（可选）
-Function .onInit
-  ; 检查是否已安装 Node.js
-  ReadRegStr $0 HKLM "SOFTWARE\Node.js" "InstallPath"
-  StrCmp $0 "" 0 NodeJSFound
-  ReadRegStr $0 HKCU "SOFTWARE\Node.js" "InstallPath"
-  StrCmp $0 "" NodeJSNotFound NodeJSFound
+; ============================================
+; 安装前钩子 - 检测 Node.js
+; ============================================
+!macro NSIS_HOOK_PREINSTALL
+  ; 默认展开详细信息面板，让用户看到检测过程
+  SetDetailsView show
   
-NodeJSNotFound:
-  MessageBox MB_YESNO|MB_ICONQUESTION "未检测到 Node.js 安装。$\nHexo 需要 Node.js 才能正常工作。$\n$\n是否继续安装？" IDYES NodeJSFound
-  Abort "请先安装 Node.js 后再运行此安装程序。"
+  DetailPrint "======================================"
+  DetailPrint "正在检查系统环境..."
+  DetailPrint "======================================"
+  DetailPrint ""
   
-NodeJSFound:
-FunctionEnd
+  ; 检测 Node.js
+  StrCpy $NodeJsDetected "0"
+  StrCpy $NodeJsPath ""
+  
+  DetailPrint "[检测] 正在检查 Node.js 安装状态..."
+  
+  ; 检查 HKLM
+  ReadRegStr $NodeJsPath HKLM "SOFTWARE\Node.js" "InstallPath"
+  ${If} $NodeJsPath != ""
+    StrCpy $NodeJsDetected "1"
+    DetailPrint "[成功] ✓ Node.js 已安装"
+    DetailPrint "       路径: $NodeJsPath"
+  ${Else}
+    ; 检查 HKCU
+    ReadRegStr $NodeJsPath HKCU "SOFTWARE\Node.js" "InstallPath"
+    ${If} $NodeJsPath != ""
+      StrCpy $NodeJsDetected "1"
+      DetailPrint "[成功] ✓ Node.js 已安装"
+      DetailPrint "       路径: $NodeJsPath"
+    ${Else}
+      DetailPrint "[警告] ⚠ 未检测到 Node.js"
+      DetailPrint "       HexoHub 需要 Node.js 才能管理 Hexo 博客"
+      DetailPrint "       请访问 https://nodejs.org 下载安装"
+    ${EndIf}
+  ${EndIf}
+  
+  DetailPrint ""
+  DetailPrint "======================================"
+  DetailPrint "环境检查完成，开始安装 HexoHub..."
+  DetailPrint "======================================"
+!macroend
 
-; 添加安装完成后的操作
-Function .onInstSuccess
-  ; 询问是否立即启动应用
-  MessageBox MB_YESNO|MB_ICONQUESTION "安装完成！$\n$\n是否立即启动 Hexo Desktop？" IDNO NoLaunch
-    ExecShell "" "$INSTDIR\Hexo Desktop.exe"
-  NoLaunch:
-FunctionEnd
+; ============================================
+; 安装后钩子
+; ============================================
+!macro NSIS_HOOK_POSTINSTALL
+  DetailPrint ""
+  DetailPrint "======================================"
+  DetailPrint "正在完成安装配置..."
+  DetailPrint "======================================"
+  DetailPrint ""
+  
+  ; 写入版本信息到注册表
+  WriteRegStr SHCTX "Software\HexoHub" "Version" "${VERSION}"
+  WriteRegStr SHCTX "Software\HexoHub" "InstallDate" "$INSTDATE"
+  DetailPrint "[配置] 写入注册表信息"
+  
+  ; 可选：关联 .md 文件（取消注释以启用）
+  ; WriteRegStr SHCTX "Software\Classes\.md" "" "HexoHub.Markdown"
+  ; WriteRegStr SHCTX "Software\Classes\HexoHub.Markdown" "" "Markdown 文档"
+  ; WriteRegStr SHCTX "Software\Classes\HexoHub.Markdown\DefaultIcon" "" "$INSTDIR\${MAINBINARYNAME}.exe,0"
+  ; WriteRegStr SHCTX "Software\Classes\HexoHub.Markdown\shell\open\command" "" '"$INSTDIR\${MAINBINARYNAME}.exe" "%1"'
+  ; DetailPrint "[配置] 设置文件关联"
+  
+  ; 如果没有检测到 Node.js，写入标记并显示重要提示
+  ${If} $NodeJsDetected == "0"
+    WriteRegStr SHCTX "Software\HexoHub" "NodeJsWarning" "1"
+    DetailPrint ""
+    DetailPrint "[警告] ⚠ 系统未安装 Node.js"
+    DetailPrint "       安装完成后将显示重要提示"
+    DetailPrint ""
+    
+    ; 这是重要提示，需要弹窗告知用户
+    MessageBox MB_ICONEXCLAMATION|MB_OK \
+      "⚠️ 重要提示$\n$\n\
+      系统未检测到 Node.js 安装。$\n$\n\
+      HexoHub 需要 Node.js 才能管理 Hexo 博客。$\n$\n\
+      请访问 https://nodejs.org 下载安装 Node.js（建议 v20 或更高版本）。$\n$\n\
+      安装 Node.js 后即可正常使用 HexoHub。"
+  ${Else}
+    DetailPrint "[成功] ✓ 环境检查通过，Node.js 已就绪"
+  ${EndIf}
+  
+  DetailPrint ""
+  DetailPrint "======================================"
+  DetailPrint "🎉 HexoHub 安装成功！Enjoy yourself~"
+  DetailPrint "======================================"
+!macroend
+
+; ============================================
+; 卸载前钩子
+; ============================================
+!macro NSIS_HOOK_PREUNINSTALL
+  ; 默认展开详细信息面板
+  SetDetailsView show
+  
+  DetailPrint "======================================"
+  DetailPrint "正在准备卸载 HexoHub..."
+  DetailPrint "======================================"
+!macroend
+
+; ============================================
+; 卸载后钩子
+; ============================================
+!macro NSIS_HOOK_POSTUNINSTALL
+  DetailPrint ""
+  DetailPrint "======================================"
+  DetailPrint "正在清理系统..."
+  DetailPrint "======================================"
+  DetailPrint ""
+  
+  ; 确保使用当前用户的 AppData 路径
+  SetShellVarContext current
+  
+  ; Tauri 的卸载界面已经有"删除用户数据"的选项
+  ; 这里只需要清理注册表和文件关联
+  DetailPrint "[配置] 清理注册表..."
+  
+  ; 清理注册表
+  DeleteRegKey SHCTX "Software\HexoHub"
+  
+  ; 清理文件关联（前面没启用这里就不用）
+  ; DeleteRegKey SHCTX "Software\Classes\.md"
+  ; DeleteRegKey SHCTX "Software\Classes\HexoHub.Markdown"
+  
+  DetailPrint "[成功] ✓ 注册表已清理"
+  
+  DetailPrint ""
+  DetailPrint "======================================"
+  DetailPrint "✓ 您的 Hexo 博客项目文件已完整保留"
+  DetailPrint "👋 感谢你使用 HexoHub！"
+  DetailPrint ""
+  DetailPrint "💡 有任何建议或问题？欢迎访问："
+  DetailPrint "   https://github.com/forever218/HexoHub/issues"
+  DetailPrint "======================================"
+!macroend

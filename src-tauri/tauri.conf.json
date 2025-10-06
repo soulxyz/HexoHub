@@ -44,7 +44,12 @@
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico",
-        "installMode": "currentUser"
+        "installMode": "currentUser",
+        "languages": ["SimpChinese", "English"],
+        "displayLanguageSelector": true,
+        "compression": "lzma",
+        "startMenuFolder": "HexoHub",
+        "installerHooks": "../public/installer.nsh"
       }
     }
   }
