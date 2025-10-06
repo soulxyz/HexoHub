@@ -72,6 +72,9 @@
     "@tanstack/react-table": "^8.21.3",
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/cli": "^2.8.4",
+    "@tauri-apps/plugin-dialog": "^2.4.0",
+    "@tauri-apps/plugin-http": "^2.5.2",
+    "@tauri-apps/plugin-shell": "^2.3.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -195,10 +198,5 @@
       "createStartMenuShortcut": true,
       "artifactName": "${productName}-Electron-Windows-Setup-${version}.${ext}"
     }
-  },
-  "dependencies": {
-    "@tauri-apps/plugin-dialog": "^2.4.0",
-    "@tauri-apps/plugin-http": "^2.5.2",
-    "@tauri-apps/plugin-shell": "^2.3.1"
   }
 }
