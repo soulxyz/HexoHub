@@ -9,6 +9,7 @@ import remarkBreaks from 'remark-breaks';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import { isTauri, isElectron } from '@/lib/desktop-api';
 
 interface MarkdownPreviewProps {
   content: string;
@@ -52,7 +53,7 @@ export function MarkdownPreview({ content, className = '', previewMode = 'static
       // 如果没有日期前缀，尝试从front matter中提取日期
       // 从文章内容中提取front matter
       const frontMatterMatch = content.match(/^---\s*[\s\S]*?---\s*/);
-      let postDate = null;
+      let postDate: string | null = null;
       
       if (frontMatterMatch) {
         // 尝试从front matter中提取date字段
@@ -92,37 +93,55 @@ export function MarkdownPreview({ content, className = '', previewMode = 'static
     if (forceRefresh && previewMode === 'server' && iframeRef.current) {
       // 强制刷新iframe，模拟Ctrl+F5
       const iframe = iframeRef.current;
+      const isTauriEnv = isTauri();
+      const isElectronEnv = isElectron();
       
-      // 清空src，然后重新设置，强制刷新
-      iframe.src = 'about:blank';
+      // 根据iframeUrlMode决定使用哪种地址
+      const targetUrl = iframeUrlMode === 'root' ? 'http://localhost:4000' : `http://localhost:4000/${postUrl}`;
       
-      // 添加更长的延迟，确保Hexo服务器有足够时间处理更新
-      setTimeout(() => {
-        // 重新设置srcDoc，使用顶层作用域中的postUrl
-        // 根据iframeUrlMode决定使用哪种地址
-        const targetUrl = iframeUrlMode === 'root' ? 'http://localhost:4000' : `http://localhost:4000/${postUrl}`;
-        
-        iframe.srcdoc = `
-          <html>
-            <head>
-              <meta http-equiv="refresh" content="0; url=${targetUrl}" />
-              <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-              <meta http-equiv="Pragma" content="no-cache" />
-              <meta http-equiv="Expires" content="0" />
-            </head>
-            <body>
-              <p>正在加载预览，请稍候...</p>
-            </body>
-          </html>
-        `;
-        
-        // 通知父组件刷新已完成
-        if (onForceRefreshComplete) {
-          onForceRefreshComplete();
-        }
-      }, 1500); // 增加延迟到1.5秒，给Hexo服务器更多时间处理更新
+      if (isTauriEnv) {
+        // Tauri环境：直接使用src切换
+        iframe.src = 'about:blank';
+        setTimeout(() => {
+          // 添加时间戳参数强制刷新
+          iframe.src = `${targetUrl}?t=${Date.now()}`;
+          if (onForceRefreshComplete) {
+            onForceRefreshComplete();
+          }
+        }, 1500);
+      } else if (isElectronEnv) {
+        // Electron环境：使用srcDoc方式刷新
+        iframe.src = 'about:blank';
+        setTimeout(() => {
+          iframe.srcdoc = `
+            <html>
+              <head>
+                <meta http-equiv="refresh" content="0; url=${targetUrl}?t=${Date.now()}" />
+                <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+                <meta http-equiv="Pragma" content="no-cache" />
+                <meta http-equiv="Expires" content="0" />
+              </head>
+              <body>
+                <p>正在刷新预览...</p>
+              </body>
+            </html>
+          `;
+          if (onForceRefreshComplete) {
+            onForceRefreshComplete();
+          }
+        }, 1500);
+      } else {
+        // 浏览器环境：直接刷新
+        iframe.src = 'about:blank';
+        setTimeout(() => {
+          iframe.src = `${targetUrl}?t=${Date.now()}`;
+          if (onForceRefreshComplete) {
+            onForceRefreshComplete();
+          }
+        }, 1500);
+      }
     }
-  }, [forceRefresh, previewMode, postUrl, onForceRefreshComplete]);
+  }, [forceRefresh, previewMode, postUrl, onForceRefreshComplete, iframeUrlMode]);
 
   const components = {
     code({ node, inline, className, children, ...props }: any) {
@@ -323,7 +342,7 @@ export function MarkdownPreview({ content, className = '', previewMode = 'static
       // 如果没有日期前缀，尝试从front matter中提取日期
       // 从文章内容中提取front matter
       const frontMatterMatch = content.match(/^---\s*[\s\S]*?---\s*/);
-      let postDate = null;
+      let postDate: string | null = null;
       
       if (frontMatterMatch) {
         // 尝试从front matter中提取date字段
@@ -359,6 +378,11 @@ export function MarkdownPreview({ content, className = '', previewMode = 'static
       }
     }
     
+    // 获取当前运行环境
+    const isTauriEnv = isTauri();
+    const isElectronEnv = isElectron();
+    const targetUrl = iframeUrlMode === 'root' ? 'http://localhost:4000' : `http://localhost:4000/${postUrl}`;
+    
     return (
       <div className={`${className}`} style={{ minWidth: 0, width: '100%', height: 'calc(100vh - 200px)', overflowY: 'auto' }}>
         {isServerRunning ? (
@@ -367,29 +391,55 @@ export function MarkdownPreview({ content, className = '', previewMode = 'static
               <span>服务器预览模式 - http://localhost:4000</span>
               <span className="text-green-500">● 服务器运行中</span>
             </div>
-            <iframe 
-              ref={iframeRef}
-              srcDoc={`
-                <html>
-                  <head>
-                    <meta http-equiv="refresh" content="0; url=${iframeUrlMode === 'root' ? 'http://localhost:4000' : `http://localhost:4000/${postUrl}`}" />
-                    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-                    <meta http-equiv="Pragma" content="no-cache" />
-                    <meta http-equiv="Expires" content="0" />
-                  </head>
-                  <body>
-                    <p>正在加载预览...</p>
-                  </body>
-                </html>
-              `}
-              className="flex-1 w-full border-0"
-              title="服务器预览"
-              sandbox="allow-same-origin allow-scripts allow-forms"
-              onError={(e) => {
-                console.error('iframe加载失败:', e);
-                // 可以在这里添加错误处理逻辑，例如显示错误消息
-              }}
-            />
+            {isTauriEnv ? (
+              // Tauri环境：直接使用src属性
+              <iframe 
+                ref={iframeRef}
+                src={targetUrl}
+                className="flex-1 w-full border-0"
+                title="服务器预览"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-top-navigation"
+                onError={(e) => {
+                  console.error('[Tauri] iframe加载失败:', e);
+                }}
+              />
+            ) : isElectronEnv ? (
+              // Electron环境：使用srcDoc重定向方式
+              <iframe 
+                ref={iframeRef}
+                srcDoc={`
+                  <html>
+                    <head>
+                      <meta http-equiv="refresh" content="0; url=${targetUrl}" />
+                      <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+                      <meta http-equiv="Pragma" content="no-cache" />
+                      <meta http-equiv="Expires" content="0" />
+                    </head>
+                    <body>
+                      <p>正在加载预览...</p>
+                    </body>
+                  </html>
+                `}
+                className="flex-1 w-full border-0"
+                title="服务器预览"
+                sandbox="allow-same-origin allow-scripts allow-forms"
+                onError={(e) => {
+                  console.error('[Electron] iframe加载失败:', e);
+                }}
+              />
+            ) : (
+              // 浏览器环境：直接使用src
+              <iframe 
+                ref={iframeRef}
+                src={targetUrl}
+                className="flex-1 w-full border-0"
+                title="服务器预览"
+                sandbox="allow-same-origin allow-scripts allow-forms"
+                onError={(e) => {
+                  console.error('[Browser] iframe加载失败:', e);
+                }}
+              />
+            )}
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center p-6 text-center">
