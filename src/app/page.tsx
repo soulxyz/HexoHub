@@ -1598,10 +1598,66 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         else if (command === 'generate') message = t.generate + t.error;
         else if (command === 'deploy') message = t.deploy + t.error;
         
+        // 提取详细错误信息
+        let detailError = '';
+        if (result.stderr) {
+          // 尝试提取关键错误信息
+          const stderr = result.stderr;
+          
+          // 检查是否是 git safe.directory 错误
+          if (stderr.includes('dubious ownership') || stderr.includes('safe.directory')) {
+            const match = stderr.match(/git config --global --add safe\.directory (.+)/);
+            if (match) {
+              detailError = `Git 安全错误：需要添加信任目录\n建议执行：${match[0]}`;
+            } else {
+              detailError = 'Git 安全错误：检测到可疑的目录所有权';
+            }
+          } 
+          // 检查是否是 git 认证错误
+          else if (stderr.includes('Permission denied') || stderr.includes('authentication failed')) {
+            detailError = 'Git 认证失败：请检查仓库访问权限';
+          }
+          // 检查是否是网络错误
+          else if (stderr.includes('Could not resolve host') || stderr.includes('network')) {
+            detailError = '网络错误：无法连接到远程仓库';
+          }
+          // 其他错误，提取 FATAL 或 fatal 后的内容
+          else if (stderr.includes('FATAL') || stderr.includes('fatal:')) {
+            const fatalMatch = stderr.match(/fatal:\s*(.+?)(?:\n|$)/i);
+            if (fatalMatch) {
+              detailError = fatalMatch[1].trim();
+            }
+          }
+          
+          // 如果没有提取到特定错误，显示 stderr 的前 200 个字符
+          if (!detailError && stderr.trim()) {
+            // 移除 ANSI 颜色代码
+            const cleanStderr = stderr.replace(/\u001b\[[0-9;]*m/g, '');
+            detailError = cleanStderr.substring(0, 200).trim();
+            if (cleanStderr.length > 200) detailError += '...';
+          }
+        }
+        
+        // 如果有详细错误，显示在描述中
+        const errorMessage = detailError ? `${message}\n\n${detailError}` : message;
+        
         toast({
           title: '失败',
-          description: message,
+          description: (
+            <div className="max-w-md">
+              <div className="font-medium mb-2">{message}</div>
+              {detailError && (
+                <div className="text-xs text-gray-600 dark:text-gray-400 mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded whitespace-pre-wrap font-mono">
+                  {detailError}
+                </div>
+              )}
+              <div className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                查看面板设置-操作日志了解详情
+              </div>
+            </div>
+          ),
           variant: 'error',
+          duration: 10000, // 错误提示显示 10 秒，给用户足够时间阅读
         });
       }
     } catch (error) {
@@ -2398,12 +2454,38 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                             {log.success ? (
                               <div>
                                 <div className="font-semibold">{t.commandExecutedSuccess}</div>
-                                {log.stdout && <div className="mt-1">{log.stdout}</div>}
+                                {log.stdout && (
+                                  <div className="mt-1 max-h-48 overflow-y-auto bg-white dark:bg-gray-900 p-2 rounded border font-mono text-xs whitespace-pre-wrap">
+                                    {log.stdout}
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <div>
                                 <div className="font-semibold">{t.commandExecutedFailed}</div>
-                                {log.error && <div className="mt-1">{log.error}</div>}
+                                {log.error && (
+                                  <div className="mt-1 text-red-800 dark:text-red-200 font-medium">
+                                    {log.error}
+                                  </div>
+                                )}
+                                {log.stderr && (
+                                  <div className="mt-2">
+                                    <div className="text-xs text-gray-700 dark:text-gray-300 mb-1">错误详情：</div>
+                                    <div className="max-h-48 overflow-y-auto bg-red-100 dark:bg-red-900/20 p-2 rounded border border-red-300 dark:border-red-700 font-mono text-xs whitespace-pre-wrap">
+                                      {/* 移除 ANSI 颜色代码 */}
+                                      {log.stderr.replace(/\u001b\[[0-9;]*m/g, '')}
+                                    </div>
+                                  </div>
+                                )}
+                                {log.stdout && (
+                                  <div className="mt-2">
+                                    <div className="text-xs text-gray-700 dark:text-gray-300 mb-1">标准输出：</div>
+                                    <div className="max-h-48 overflow-y-auto bg-gray-100 dark:bg-gray-800 p-2 rounded border font-mono text-xs whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+                                      {/* 移除 ANSI 颜色代码 */}
+                                      {log.stdout.replace(/\u001b\[[0-9;]*m/g, '')}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
