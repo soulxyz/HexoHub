@@ -42,22 +42,30 @@
         {
           "name": "cmd",
           "cmd": "cmd",
-          "args": true,
-          "sidecar": false
+          "args": true
         },
         {
           "name": "sh",
           "cmd": "sh",
-          "args": true,
-          "sidecar": false
+          "args": true
+        },
+        {
+          "name": "taskkill",
+          "cmd": "taskkill",
+          "args": true
+        },
+        {
+          "name": "kill",
+          "cmd": "kill",
+          "args": true
         }
       ]
     },
     {
       "identifier": "http:default",
       "allow": [
-        { "url": "https://api.github.com/**" },
-        { "url": "https://api.deepseek.com/**" }
+        { "url": "http://**" },
+        { "url": "https://**" }
       ]
     }
   ]
