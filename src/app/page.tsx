@@ -1600,6 +1600,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         
         // 提取详细错误信息
         let detailError = '';
+        let fixCommand = ''; // 用于存储修复命令
         if (result.stderr) {
           // 尝试提取关键错误信息
           const stderr = result.stderr;
@@ -1609,6 +1610,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
             const match = stderr.match(/git config --global --add safe\.directory (.+)/);
             if (match) {
               detailError = `${t.gitSecurityError}：${t.gitSecurityErrorTrustDir}\n${t.gitSecurityErrorSuggest}：${match[0]}`;
+              fixCommand = match[0]; // 保存修复命令
             } else {
               detailError = `${t.gitSecurityError}：${t.gitSecurityErrorOwnership}`;
             }
@@ -1651,13 +1653,73 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                   {detailError}
                 </div>
               )}
-              <div 
-                className="text-xs text-blue-600 dark:text-blue-400 mt-2 cursor-pointer hover:underline"
-                onClick={() => {
-                  setMainView('logs');
-                }}
-              >
-                {t.viewLogsDetail}
+              <div className="flex items-center gap-3 mt-2">
+                {fixCommand && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7 px-3"
+                    onClick={async () => {
+                      try {
+                        toast({
+                          title: t.fixing,
+                          description: fixCommand,
+                          variant: 'default',
+                        });
+                        
+                        const ipcRenderer = await getIpcRenderer();
+                        const fixResult = await ipcRenderer.invoke('execute-command', fixCommand);
+                        
+                        // 添加到日志
+                        const fixLog = {
+                          ...fixResult,
+                          timestamp: new Date().toLocaleString(),
+                          command: `${t.autoFix}: ${fixCommand}`
+                        };
+                        setCommandLogs(prev => [...prev, fixLog]);
+                        
+                        if (fixResult.success) {
+                          toast({
+                            title: t.fixSuccess,
+                            description: t.fixSuccessRetry,
+                            variant: 'success',
+                          });
+                        } else {
+                          toast({
+                            title: t.fixFailed,
+                            description: fixResult.error || fixResult.stderr,
+                            variant: 'error',
+                          });
+                        }
+                      } catch (error) {
+                        // 添加错误日志
+                        const fixErrorLog = {
+                          success: false,
+                          error: error instanceof Error ? error.message : String(error),
+                          timestamp: new Date().toLocaleString(),
+                          command: `${t.autoFix}: ${fixCommand}`
+                        };
+                        setCommandLogs(prev => [...prev, fixErrorLog]);
+                        
+                        toast({
+                          title: t.fixFailed,
+                          description: error instanceof Error ? error.message : String(error),
+                          variant: 'error',
+                        });
+                      }
+                    }}
+                  >
+                    {t.tryFix}
+                  </Button>
+                )}
+                <div 
+                  className="text-xs text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
+                  onClick={() => {
+                    setMainView('logs');
+                  }}
+                >
+                  {t.viewLogsDetail}
+                </div>
               </div>
             </div>
           ),

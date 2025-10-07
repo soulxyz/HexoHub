@@ -120,6 +120,12 @@ export interface I18nTexts {
   hexoServerStartFailedMsg: string;
   startServerFailedMsg: string;
   stopServerFailedMsg: string;
+  autoFix: string;
+  tryFix: string;
+  fixing: string;
+  fixSuccess: string;
+  fixFailed: string;
+  fixSuccessRetry: string;
 
   // 状态
   serverRunning: string;
@@ -497,6 +503,12 @@ console.log('Hello, Hexo!');
     hexoServerStartFailedMsg: 'Hexo服务器启动失败',
     startServerFailedMsg: '启动服务器失败',
     stopServerFailedMsg: '停止服务器失败',
+    autoFix: '自动修复',
+    tryFix: '尝试修复',
+    fixing: '修复中...',
+    fixSuccess: '修复成功',
+    fixFailed: '修复失败',
+    fixSuccessRetry: '问题已修复，请重试之前的操作',
 
     // 状态
     serverRunning: '服务器运行中',
@@ -873,6 +885,12 @@ console.log('Hello, Hexo!');
     hexoServerStartFailedMsg: 'Failed to start Hexo server',
     startServerFailedMsg: 'Failed to start server',
     stopServerFailedMsg: 'Failed to stop server',
+    autoFix: 'Auto Fix',
+    tryFix: 'Try Fix',
+    fixing: 'Fixing...',
+    fixSuccess: 'Fix successful',
+    fixFailed: 'Fix failed',
+    fixSuccessRetry: 'Issue fixed, please retry the previous operation',
 
     // 状态
     serverRunning: 'Server Running',
