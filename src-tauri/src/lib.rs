@@ -227,17 +227,23 @@ async fn execute_hexo_command(command: String, working_dir: String) -> CommandRe
         "hexo"
     };
     
-    let full_command = format!("{} {}", hexo_cmd, command);
+    // 解析命令参数，避免引号嵌套问题
+    // 例如: command = "new \"测试\"" -> ["new", "测试"]
+    let args: Vec<String> = shell_words::split(&command)
+        .unwrap_or_else(|_| vec![command.clone()]);
     
     let output = if cfg!(target_os = "windows") {
-        // 还是用回 cmd.exe，据说它在隐藏窗口模式下更可靠
-        let mut cmd = Command::new("cmd");
-        cmd.args(&["/C", &full_command])
+        // 直接调用 hexo.cmd，传递解析后的参数
+        // 这样可以避免 cmd /C 的引号转义问题
+        let mut cmd = Command::new(hexo_cmd);
+        cmd.args(&args)
            .current_dir(&working_dir);
         #[cfg(target_os = "windows")]
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         cmd.output()
     } else {
+        // Unix 系统保持原有方式
+        let full_command = format!("{} {}", hexo_cmd, command);
         Command::new("sh")
             .arg("-c")
             .arg(&full_command)
