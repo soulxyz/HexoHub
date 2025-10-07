@@ -852,8 +852,8 @@ export default function Home() {
       } else {
         // 显示失败通知
         toast({
-          title: '失败',
-          description: '文章创建失败',
+          title: t.failed,
+          description: t.createArticleFailedMsg,
           variant: 'error',
         });
       }
@@ -870,8 +870,8 @@ export default function Home() {
       
       // 显示错误通知
       toast({
-        title: '失败',
-        description: '文章创建失败',
+        title: t.failed,
+        description: t.createArticleFailedMsg,
         variant: 'error',
       });
     } finally {
@@ -1008,8 +1008,8 @@ export default function Home() {
       
       // 显示错误通知
       toast({
-        title: '失败',
-        description: '文章保存失败',
+        title: t.failed,
+        description: t.saveArticleFailedMsg,
         variant: 'error',
       });
     } finally {
@@ -1062,7 +1062,7 @@ export default function Home() {
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '文章删除失败',
         variant: 'error',
       });
@@ -1122,7 +1122,7 @@ export default function Home() {
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '批量删除文章失败',
         variant: 'error',
       });
@@ -1338,7 +1338,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '删除文章失败',
         variant: 'error',
       });
@@ -1608,18 +1608,18 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           if (stderr.includes('dubious ownership') || stderr.includes('safe.directory')) {
             const match = stderr.match(/git config --global --add safe\.directory (.+)/);
             if (match) {
-              detailError = `Git 安全错误：需要添加信任目录\n建议执行：${match[0]}`;
+              detailError = `${t.gitSecurityError}：${t.gitSecurityErrorTrustDir}\n${t.gitSecurityErrorSuggest}：${match[0]}`;
             } else {
-              detailError = 'Git 安全错误：检测到可疑的目录所有权';
+              detailError = `${t.gitSecurityError}：${t.gitSecurityErrorOwnership}`;
             }
           } 
           // 检查是否是 git 认证错误
           else if (stderr.includes('Permission denied') || stderr.includes('authentication failed')) {
-            detailError = 'Git 认证失败：请检查仓库访问权限';
+            detailError = t.gitAuthError;
           }
           // 检查是否是网络错误
           else if (stderr.includes('Could not resolve host') || stderr.includes('network')) {
-            detailError = '网络错误：无法连接到远程仓库';
+            detailError = t.networkError;
           }
           // 其他错误，提取 FATAL 或 fatal 后的内容
           else if (stderr.includes('FATAL') || stderr.includes('fatal:')) {
@@ -1642,7 +1642,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         const errorMessage = detailError ? `${message}\n\n${detailError}` : message;
         
         toast({
-          title: '失败',
+          title: t.failed,
           description: (
             <div className="max-w-md">
               <div className="font-medium mb-2">{message}</div>
@@ -1651,8 +1651,13 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                   {detailError}
                 </div>
               )}
-              <div className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                查看面板设置-操作日志了解详情
+              <div 
+                className="text-xs text-blue-600 dark:text-blue-400 mt-2 cursor-pointer hover:underline"
+                onClick={() => {
+                  setMainView('logs');
+                }}
+              >
+                {t.viewLogsDetail}
               </div>
             </div>
           ),
@@ -1673,7 +1678,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '执行命令失败',
         variant: 'error',
       });
@@ -1729,7 +1734,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         
         // 显示错误通知
         toast({
-          title: '失败',
+          title: t.failed,
           description: 'Hexo服务器启动失败',
           variant: 'error',
         });
@@ -1743,7 +1748,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '启动服务器失败',
         variant: 'error',
       });
@@ -1897,7 +1902,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: t.pushFailed,
         variant: 'error',
       });
@@ -1955,7 +1960,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         
         // 显示失败通知
         toast({
-          title: '失败',
+          title: t.failed,
           description: result.error || 'Hexo服务器停止失败',
           variant: 'error',
         });
@@ -1973,7 +1978,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '停止服务器失败',
         variant: 'error',
       });

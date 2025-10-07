@@ -14,6 +14,7 @@ export interface I18nTexts {
   select: string;
   error: string;
   success: string;
+  failed: string;
   cleanCacheSuccess: string;
   generateStaticFilesSuccess: string;
   deploySuccess: string;
@@ -101,6 +102,24 @@ export interface I18nTexts {
   commandExecuteFailed: string;
   startingServer: string;
   stoppingServer: string;
+  starting: string;
+  stopping: string;
+  
+  // 错误提示
+  gitSecurityError: string;
+  gitSecurityErrorTrustDir: string;
+  gitSecurityErrorSuggest: string;
+  gitSecurityErrorOwnership: string;
+  gitAuthError: string;
+  networkError: string;
+  createArticleFailedMsg: string;
+  saveArticleFailedMsg: string;
+  deleteArticleFailedMsg: string;
+  batchDeleteArticlesFailedMsg: string;
+  executeCommandFailedMsg: string;
+  hexoServerStartFailedMsg: string;
+  startServerFailedMsg: string;
+  stopServerFailedMsg: string;
 
   // 状态
   serverRunning: string;
@@ -218,6 +237,7 @@ export interface I18nTexts {
   clearLogs: string;
   commandExecutedSuccess: string;
   commandExecutedFailed: string;
+  viewLogsDetail: string;
 
   // 对话框
   confirmDelete: string;
@@ -336,6 +356,7 @@ export const i18nTexts: Record<Language, I18nTexts> = {
     select: '选择',
     error: '错误',
     success: '成功',
+    failed: '失败',
     cleanCacheSuccess: '清理缓存成功',
     generateStaticFilesSuccess: '生成静态文件成功',
     deploySuccess: '部署成功',
@@ -458,6 +479,24 @@ console.log('Hello, Hexo!');
     commandExecuteFailed: '命令执行失败',
     startingServer: '正在启动Hexo服务器...',
     stoppingServer: '正在停止Hexo服务器...',
+    starting: '启动中',
+    stopping: '停止中',
+    
+    // 错误提示
+    gitSecurityError: 'Git 安全错误',
+    gitSecurityErrorTrustDir: '需要添加信任目录',
+    gitSecurityErrorSuggest: '建议执行',
+    gitSecurityErrorOwnership: '检测到可疑的目录所有权',
+    gitAuthError: 'Git 认证失败：请检查仓库访问权限',
+    networkError: '网络错误：无法连接到远程仓库',
+    createArticleFailedMsg: '文章创建失败',
+    saveArticleFailedMsg: '文章保存失败',
+    deleteArticleFailedMsg: '文章删除失败',
+    batchDeleteArticlesFailedMsg: '批量删除文章失败',
+    executeCommandFailedMsg: '执行命令失败',
+    hexoServerStartFailedMsg: 'Hexo服务器启动失败',
+    startServerFailedMsg: '启动服务器失败',
+    stopServerFailedMsg: '停止服务器失败',
 
     // 状态
     serverRunning: '服务器运行中',
@@ -575,6 +614,7 @@ console.log('Hello, Hexo!');
     clearLogs: '清空日志',
     commandExecutedSuccess: '✓ 命令执行成功',
     commandExecutedFailed: '✗ 命令执行失败',
+    viewLogsDetail: '查看日志了解详情',
 
     // 对话框
     confirmDelete: '确认删除',
@@ -692,6 +732,7 @@ console.log('Hello, Hexo!');
     select: 'Select',
     error: 'Error',
     success: 'Success',
+    failed: 'Failed',
     cleanCacheSuccess: 'Cache cleaned successfully',
     generateStaticFilesSuccess: 'Static files generated successfully',
     deploySuccess: 'Deployed successfully',
@@ -814,6 +855,24 @@ console.log('Hello, Hexo!');
     commandExecuteFailed: 'Command execution failed',
     startingServer: 'Starting Hexo server...',
     stoppingServer: 'Stopping Hexo server...',
+    starting: 'Starting',
+    stopping: 'Stopping',
+    
+    // 错误提示
+    gitSecurityError: 'Git Security Error',
+    gitSecurityErrorTrustDir: 'Need to add trusted directory',
+    gitSecurityErrorSuggest: 'Suggested command',
+    gitSecurityErrorOwnership: 'Detected suspicious directory ownership',
+    gitAuthError: 'Git authentication failed: Please check repository access permissions',
+    networkError: 'Network error: Unable to connect to remote repository',
+    createArticleFailedMsg: 'Failed to create article',
+    saveArticleFailedMsg: 'Failed to save article',
+    deleteArticleFailedMsg: 'Failed to delete article',
+    batchDeleteArticlesFailedMsg: 'Failed to batch delete articles',
+    executeCommandFailedMsg: 'Failed to execute command',
+    hexoServerStartFailedMsg: 'Failed to start Hexo server',
+    startServerFailedMsg: 'Failed to start server',
+    stopServerFailedMsg: 'Failed to stop server',
 
     // 状态
     serverRunning: 'Server Running',
@@ -931,6 +990,7 @@ console.log('Hello, Hexo!');
     clearLogs: 'Clear Logs',
     commandExecutedSuccess: '✓ Command executed successfully',
     commandExecutedFailed: '✗ Command execution failed',
+    viewLogsDetail: 'View logs for details',
 
     // 对话框
     confirmDelete: 'Confirm Delete',
