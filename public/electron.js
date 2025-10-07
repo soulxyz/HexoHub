@@ -139,7 +139,8 @@ const WindowsCompat = {
     if (!WindowsCompat.isWindows()) {
       return command;
     }
-    const escaped = command.replace(/"/g, '`"');
+    // 使用更安全的转义方式，避免影响标题内容
+    const escaped = command.replace(/"/g, '""');
     return `powershell -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; ${escaped}"`;
   }
 };

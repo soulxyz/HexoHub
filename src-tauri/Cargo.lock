@@ -1570,6 +1570,7 @@ dependencies = [
  "tauri-plugin-log",
  "tauri-plugin-shell",
  "tauri-plugin-window-state",
+ "tokio",
 ]
 
 [[package]]
