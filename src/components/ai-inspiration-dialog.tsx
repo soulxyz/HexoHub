@@ -13,12 +13,15 @@ import { isTauri } from '@/lib/desktop-api';
 interface AIInspirationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  aiProvider: 'deepseek' | 'openai';
   apiKey: string;
   prompt: string;
   language: 'zh' | 'en';
+  openaiModel?: string;
+  openaiApiEndpoint?: string;
 }
 
-export function AIInspirationDialog({ open, onOpenChange, apiKey, prompt, language }: AIInspirationDialogProps) {
+export function AIInspirationDialog({ open, onOpenChange, aiProvider, apiKey, prompt, language, openaiModel = 'gpt-3.5-turbo', openaiApiEndpoint = 'https://api.openai.com/v1' }: AIInspirationDialogProps) {
   const [inspiration, setInspiration] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [displayedText, setDisplayedText] = useState<string>('');
@@ -36,18 +39,25 @@ export function AIInspirationDialog({ open, onOpenChange, apiKey, prompt, langua
     setIsTyping(false);
 
     try {
-      // 调用DeepSeek API - 在 Tauri 环境下使用 Tauri HTTP 插件
+      // 根据提供商选择API端点和模型
+      const apiUrl = aiProvider === 'deepseek' 
+        ? 'https://api.deepseek.com/v1/chat/completions'
+        : `${openaiApiEndpoint}/chat/completions`;
+      
+      const model = aiProvider === 'deepseek' ? 'deepseek-chat' : openaiModel;
+
+      // 调用AI API - 在 Tauri 环境下使用 Tauri HTTP 插件
       let response;
       if (isTauri()) {
         const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
-        response = await tauriFetch('https://api.deepseek.com/v1/chat/completions', {
+        response = await tauriFetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: 'deepseek-chat',
+            model: model,
             messages: [
               {
                 role: 'user',
@@ -59,14 +69,14 @@ export function AIInspirationDialog({ open, onOpenChange, apiKey, prompt, langua
           })
         });
       } else {
-        response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: 'deepseek-chat',
+            model: model,
             messages: [
               {
                 role: 'user',

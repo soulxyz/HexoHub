@@ -7,11 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Settings, Save } from 'lucide-react';
+import { Settings, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UpdateChecker } from '@/components/update-checker';
 import { getTexts } from '@/utils/i18n';
-import { isDesktopApp, getIpcRenderer } from '@/lib/desktop-api';
+import { isDesktopApp, getIpcRenderer, isTauri } from '@/lib/desktop-api';
 import { openExternalLink } from '@/lib/utils';
 
 interface PanelSettingsProps {
@@ -45,12 +45,18 @@ interface PanelSettingsProps {
   // AI设置
   enableAI?: boolean;
   onEnableAIChange?: (value: boolean) => void;
+  aiProvider?: 'deepseek' | 'openai';
+  onAIProviderChange?: (value: 'deepseek' | 'openai') => void;
   apiKey?: string;
   onApiKeyChange?: (value: string) => void;
   prompt?: string;
   onPromptChange?: (value: string) => void;
   analysisPrompt?: string;
   onAnalysisPromptChange?: (value: string) => void;
+  openaiModel?: string;
+  onOpenaiModelChange?: (value: string) => void;
+  openaiApiEndpoint?: string;
+  onOpenaiApiEndpointChange?: (value: string) => void;
   // 预览模式设置
   previewMode?: 'static' | 'server';
   onPreviewModeChange?: (value: 'static' | 'server') => void;
@@ -59,7 +65,7 @@ interface PanelSettingsProps {
   onIframeUrlModeChange?: (value: 'hexo' | 'root') => void;
 }
 
-export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange, previewMode = 'static', onPreviewModeChange, iframeUrlMode = 'hexo', onIframeUrlModeChange }: PanelSettingsProps) {
+export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, aiProvider = 'deepseek', onAIProviderChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange, openaiModel = 'gpt-3.5-turbo', onOpenaiModelChange, openaiApiEndpoint = 'https://api.openai.com/v1', onOpenaiApiEndpointChange, previewMode = 'static', onPreviewModeChange, iframeUrlMode = 'hexo', onIframeUrlModeChange }: PanelSettingsProps) {
   // 当前应用版本，从package.json中获取
   const currentVersion = '2.6.0';
   // 获取当前语言的文本
@@ -78,12 +84,17 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
   const [tempPushEmail, setTempPushEmail] = useState<string>(pushEmail);
   // AI设置相关状态
   const [tempEnableAI, setTempEnableAI] = useState<boolean>(enableAI);
+  const [tempAIProvider, setTempAIProvider] = useState<'deepseek' | 'openai'>(aiProvider);
   const [tempApiKey, setTempApiKey] = useState<string>(apiKey);
   const [tempPrompt, setTempPrompt] = useState<string>(prompt);
   const [tempAnalysisPrompt, setTempAnalysisPrompt] = useState<string>('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段');
+  const [tempOpenaiModel, setTempOpenaiModel] = useState<string>(openaiModel);
+  const [tempOpenaiApiEndpoint, setTempOpenaiApiEndpoint] = useState<string>(openaiApiEndpoint);
   // 预览模式相关状态
   const [tempPreviewMode, setTempPreviewMode] = useState<'static' | 'server'>(previewMode);
   const [tempIframeUrlMode, setTempIframeUrlMode] = useState<'hexo' | 'root'>(iframeUrlMode);
+  // API测试相关状态
+  const [isTesting, setIsTesting] = useState<boolean>(false);
   const { toast } = useToast();
 
   // 当传入的postsPerPage变化时，更新临时值
@@ -146,6 +157,11 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     setTempEnableAI(enableAI);
   }, [enableAI]);
 
+  // 当传入的aiProvider变化时，更新临时值
+  useEffect(() => {
+    setTempAIProvider(aiProvider);
+  }, [aiProvider]);
+
   // 当传入的apiKey变化时，更新临时值
   useEffect(() => {
     setTempApiKey(apiKey);
@@ -163,10 +179,108 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     }
   }, [analysisPrompt]);
 
+  // 当传入的openaiModel变化时，更新临时值
+  useEffect(() => {
+    setTempOpenaiModel(openaiModel);
+  }, [openaiModel]);
+
+  // 当传入的openaiApiEndpoint变化时，更新临时值
+  useEffect(() => {
+    setTempOpenaiApiEndpoint(openaiApiEndpoint);
+  }, [openaiApiEndpoint]);
+
   // 当传入的previewMode变化时，更新临时值
   useEffect(() => {
     setTempPreviewMode(previewMode);
   }, [previewMode]);
+
+  // 测试API连接
+  const testAPIConnection = async () => {
+    if (!tempApiKey) {
+      toast({
+        title: t.error,
+        description: language === 'zh' ? '请先输入API密钥' : 'Please enter API key first',
+        variant: 'error',
+      });
+      return;
+    }
+
+    setIsTesting(true);
+    try {
+      // 根据提供商选择API端点和模型
+      const apiUrl = tempAIProvider === 'deepseek' 
+        ? 'https://api.deepseek.com/v1/chat/completions'
+        : `${tempOpenaiApiEndpoint || 'https://api.openai.com/v1'}/chat/completions`;
+      
+      const model = tempAIProvider === 'deepseek' ? 'deepseek-chat' : (tempOpenaiModel || 'gpt-3.5-turbo');
+
+      // 调用AI API测试连接
+      let response;
+      if (isTauri()) {
+        const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+        response = await tauriFetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tempApiKey}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: 'user',
+                content: 'Hello'
+              }
+            ],
+            max_tokens: 5
+          })
+        });
+      } else {
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tempApiKey}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: 'user',
+                content: 'Hello'
+              }
+            ],
+            max_tokens: 5
+          })
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.choices && data.choices.length > 0) {
+        toast({
+          title: t.success,
+          description: t.testSuccess,
+          variant: 'success',
+        });
+      } else {
+        throw new Error('Invalid API response');
+      }
+    } catch (error: any) {
+      console.error('API connection test failed:', error);
+      toast({
+        title: t.testFailed,
+        description: error.message || (language === 'zh' ? '请检查API密钥和配置是否正确' : 'Please check if API key and configuration are correct'),
+        variant: 'error',
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   // 保存设置
   const saveSettings = () => {
@@ -201,9 +315,12 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     if (onPushEmailChange) onPushEmailChange(tempPushEmail);
     // 保存AI设置
     if (onEnableAIChange) onEnableAIChange(tempEnableAI);
+    if (onAIProviderChange) onAIProviderChange(tempAIProvider);
     if (onApiKeyChange) onApiKeyChange(tempApiKey);
     if (onPromptChange) onPromptChange(tempPrompt);
     if (onAnalysisPromptChange) onAnalysisPromptChange(tempAnalysisPrompt);
+    if (onOpenaiModelChange) onOpenaiModelChange(tempOpenaiModel);
+    if (onOpenaiApiEndpointChange) onOpenaiApiEndpointChange(tempOpenaiApiEndpoint);
     // 保存预览模式设置
     if (onPreviewModeChange) onPreviewModeChange(tempPreviewMode);
     // 保存iframe地址获取方式设置
@@ -224,9 +341,12 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
       localStorage.setItem('push-email', tempPushEmail);
       // 保存AI设置
       localStorage.setItem('enable-ai', tempEnableAI.toString());
+      localStorage.setItem('ai-provider', tempAIProvider);
       localStorage.setItem('api-key', tempApiKey);
       localStorage.setItem('prompt', tempPrompt);
       localStorage.setItem('analysis-prompt', tempAnalysisPrompt);
+      localStorage.setItem('openai-model', tempOpenaiModel);
+      localStorage.setItem('openai-api-endpoint', tempOpenaiApiEndpoint);
       // 保存预览模式设置
       localStorage.setItem('preview-mode', tempPreviewMode);
       // 保存iframe地址获取方式设置
@@ -589,13 +709,32 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
               <div className="mt-4 space-y-4 pl-6 border-l-2 border-gray-200">
                 <div className="space-y-2">
                   <Label htmlFor="aiProvider">{t.aiProvider}</Label>
-                  <Input
-                    id="aiProvider"
-                    type="text"
-                    value="DeepSeek"
-                    disabled
-                    className="w-full"
-                  />
+                  <div className="flex space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="deepseek"
+                        name="aiProvider"
+                        value="deepseek"
+                        checked={tempAIProvider === 'deepseek'}
+                        onChange={() => setTempAIProvider('deepseek')}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="deepseek">DeepSeek</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="openai"
+                        name="aiProvider"
+                        value="openai"
+                        checked={tempAIProvider === 'openai'}
+                        onChange={() => setTempAIProvider('openai')}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="openai">OpenAI</Label>
+                    </div>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {t.aiProviderDescription}
                   </p>
@@ -603,15 +742,72 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
 
                 <div className="space-y-2">
                   <Label htmlFor="apiKey">{t.apiKey}</Label>
-                  <Input
-                    id="apiKey"
-                    type="password"
-                    value={tempApiKey}
-                    onChange={(e) => setTempApiKey(e.target.value)}
-                    placeholder={t.apiKeyPlaceholder}
-                    className="w-full"
-                  />
+                  <div className="flex space-x-2">
+                    <Input
+                      id="apiKey"
+                      type="password"
+                      value={tempApiKey}
+                      onChange={(e) => setTempApiKey(e.target.value)}
+                      placeholder={t.apiKeyPlaceholder}
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={testAPIConnection}
+                      disabled={isTesting || !tempApiKey}
+                    >
+                      {isTesting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          {t.testing}
+                        </>
+                      ) : (
+                        t.testConnection
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'zh' 
+                      ? '点击"测试连接"按钮验证API配置是否正确'
+                      : 'Click "Test Connection" button to verify API configuration'
+                    }
+                  </p>
                 </div>
+
+                {tempAIProvider === 'openai' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="openaiModel">{t.openaiModel}</Label>
+                      <Input
+                        id="openaiModel"
+                        type="text"
+                        value={tempOpenaiModel}
+                        onChange={(e) => setTempOpenaiModel(e.target.value)}
+                        placeholder={t.openaiModelPlaceholder}
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="openaiApiEndpoint">{t.openaiApiEndpoint}</Label>
+                      <Input
+                        id="openaiApiEndpoint"
+                        type="text"
+                        value={tempOpenaiApiEndpoint}
+                        onChange={(e) => setTempOpenaiApiEndpoint(e.target.value)}
+                        placeholder={t.openaiApiEndpointPlaceholder}
+                        className="w-full"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'zh' 
+                          ? '支持OpenAI兼容的API端点，留空使用默认值'
+                          : 'Supports OpenAI-compatible API endpoints, leave blank to use default'
+                        }
+                      </p>
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="prompt">{t.prompt}</Label>

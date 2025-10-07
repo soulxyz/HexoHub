@@ -322,7 +322,127 @@ async fn validate_hexo_project(directory_path: String, language: String) -> Vali
     ValidationResult { valid: false, message }
 }
 
-// 启动 Hexo 服务器
+// 清理占用指定端口的进程（作为独立命令供前端调用）
+#[tauri::command]
+async fn fix_port_conflict(port: u16) -> Result<CommandResult, String> {
+    println!("[端口修复] 开始清理端口 {}...", port);
+    
+    #[cfg(target_os = "windows")]
+    {
+        // Windows: 使用 netstat 查找占用端口的进程，然后杀死它
+        let netstat_output = Command::new("cmd")
+            .args(&["/C", &format!("netstat -ano | findstr :{}", port)])
+            .output();
+        
+        if let Ok(output) = netstat_output {
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            let mut killed_count = 0;
+            
+            // 解析 netstat 输出，提取 PID
+            for line in output_str.lines() {
+                if line.contains("LISTENING") {
+                    // netstat 输出格式: TCP    0.0.0.0:4000    0.0.0.0:0    LISTENING    12345
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if let Some(pid_str) = parts.last() {
+                        if let Ok(pid) = pid_str.parse::<u32>() {
+                            println!("[端口修复] 发现进程 PID {} 占用端口 {}，尝试终止...", pid, port);
+                            
+                            // 使用 taskkill 终止进程
+                            let kill_result = Command::new("taskkill")
+                                .args(&["/F", "/PID", &pid.to_string()])
+                                .output();
+                            
+                            match kill_result {
+                                Ok(result) => {
+                                    if result.status.success() {
+                                        println!("[端口修复] 成功终止进程 PID {}", pid);
+                                        killed_count += 1;
+                                    } else {
+                                        println!("[端口修复] 终止进程失败: {}", String::from_utf8_lossy(&result.stderr));
+                                    }
+                                }
+                                Err(e) => {
+                                    println!("[端口修复] 执行 taskkill 失败: {}", e);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if killed_count > 0 {
+                // 等待一下确保端口释放
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                
+                return Ok(CommandResult {
+                    success: true,
+                    stdout: Some(format!("已成功终止 {} 个占用端口 {} 的进程", killed_count, port)),
+                    stderr: None,
+                    error: None,
+                });
+            } else {
+                return Ok(CommandResult {
+                    success: true,
+                    stdout: Some(format!("端口 {} 未被占用", port)),
+                    stderr: None,
+                    error: None,
+                });
+            }
+        }
+    }
+    
+    #[cfg(not(target_os = "windows"))]
+    {
+        // Unix/Linux/Mac: 使用 lsof 查找并杀死占用端口的进程
+        let lsof_output = Command::new("lsof")
+            .args(&["-ti", &format!(":{}", port)])
+            .output();
+        
+        if let Ok(output) = lsof_output {
+            let pid_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            
+            if !pid_str.is_empty() {
+                if let Ok(pid) = pid_str.parse::<u32>() {
+                    println!("[端口修复] 发现进程 PID {} 占用端口 {}，尝试终止...", pid, port);
+                    
+                    let kill_result = Command::new("kill")
+                        .args(&["-9", &pid.to_string()])
+                        .output();
+                    
+                    match kill_result {
+                        Ok(result) => {
+                            if result.status.success() {
+                                println!("[端口修复] 成功终止进程 PID {}", pid);
+                                std::thread::sleep(std::time::Duration::from_millis(500));
+                                
+                                return Ok(CommandResult {
+                                    success: true,
+                                    stdout: Some(format!("已成功终止占用端口 {} 的进程 (PID: {})", port, pid)),
+                                    stderr: None,
+                                    error: None,
+                                });
+                            }
+                        }
+                        Err(e) => {
+                            return Err(format!("执行 kill 失败: {}", e));
+                        }
+                    }
+                }
+            } else {
+                return Ok(CommandResult {
+                    success: true,
+                    stdout: Some(format!("端口 {} 未被占用", port)),
+                    stderr: None,
+                    error: None,
+                });
+            }
+        }
+    }
+    
+    Err("无法检查或清理端口".to_string())
+}
+
+// 启动 Hexo 服务器（异步，监听输出判断启动状态）
 #[tauri::command]
 async fn start_hexo_server(working_dir: String, server_state: State<'_, HexoServer>) -> Result<CommandResult, String> {
     // 停止现有服务器
@@ -330,6 +450,7 @@ async fn start_hexo_server(working_dir: String, server_state: State<'_, HexoServ
     if let Some(mut child) = server.take() {
         let _ = child.kill();
     }
+    drop(server); // 释放锁，避免后续阻塞
     
     let hexo_cmd = if cfg!(target_os = "windows") {
         "hexo.cmd"
@@ -347,13 +468,148 @@ async fn start_hexo_server(working_dir: String, server_state: State<'_, HexoServ
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     
-    let child = cmd.spawn().map_err(|e| e.to_string())?;
+    let mut child = cmd.spawn().map_err(|e| e.to_string())?;
     
+    // 尝试读取输出，判断服务器是否启动成功
+    let stdout = child.stdout.take();
+    let stderr = child.stderr.take();
+    
+    // 在后台线程监听输出，判断服务器是否启动成功
+    use std::io::{BufRead, BufReader};
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    
+    let server_ready = Arc::new(AtomicBool::new(false));
+    let server_ready_clone = server_ready.clone();
+    
+    // 用于存储错误信息
+    let error_message = Arc::new(Mutex::new(None::<String>));
+    let error_message_clone = error_message.clone();
+    
+    // 监听 stdout
+    if let Some(stdout) = stdout {
+        std::thread::spawn(move || {
+            let reader = BufReader::new(stdout);
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    println!("[Hexo stdout] {}", line);
+                    // 检查是否包含启动成功的标志
+                    if line.contains("Hexo is running at") || 
+                       line.contains("INFO  Start processing") ||
+                       line.contains("localhost:4000") {
+                        server_ready_clone.store(true, Ordering::SeqCst);
+                        println!("[Hexo] 检测到服务器启动成功标志");
+                    }
+                }
+            }
+        });
+    }
+    
+    // 监听 stderr（Hexo 的错误输出）
+    if let Some(stderr) = stderr {
+        std::thread::spawn(move || {
+            let reader = BufReader::new(stderr);
+            for line in reader.lines() {
+                if let Ok(line) = line {
+                    println!("[Hexo stderr] {}", line);
+                    
+                    // 检测常见错误
+                    if line.contains("FATAL") {
+                        let mut err_msg = error_message_clone.lock().unwrap();
+                        if err_msg.is_none() {
+                            // 提取错误信息
+                            if line.contains("Port 4000 has been used") || line.contains("EADDRINUSE") {
+                                *err_msg = Some("端口 4000 已被占用，请先停止其他 Hexo 服务器或占用该端口的程序".to_string());
+                            } else if line.contains("FATAL") {
+                                // 提取 FATAL 后的错误信息
+                                let error_text = line.split("FATAL").nth(1)
+                                    .unwrap_or("启动失败")
+                                    .trim()
+                                    .to_string();
+                                *err_msg = Some(error_text);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // 等待服务器启动（最多等待 15 秒）
+    let start_time = std::time::Instant::now();
+    let timeout = std::time::Duration::from_secs(15);
+    
+    while start_time.elapsed() < timeout {
+        // 优先检查是否有错误信息
+        {
+            let err_msg = error_message.lock().unwrap();
+            if let Some(ref msg) = *err_msg {
+                // 检测到错误，尝试终止进程
+                let _ = child.kill();
+                
+                return Ok(CommandResult {
+                    success: false,
+                    stdout: None,
+                    stderr: None,
+                    error: Some(msg.clone()),
+                });
+            }
+        }
+        
+        // 检查服务器是否就绪
+        if server_ready.load(Ordering::SeqCst) {
+            // 服务器启动成功
+            let mut server = server_state.0.lock().unwrap();
+            *server = Some(child);
+            
+            return Ok(CommandResult {
+                success: true,
+                stdout: Some("Hexo服务器已启动并就绪 http://localhost:4000".to_string()),
+                stderr: None,
+                error: None,
+            });
+        }
+        
+        // 检查子进程是否还在运行
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                // 进程已退出
+                // 检查是否有捕获到的错误信息
+                let err_msg = error_message.lock().unwrap();
+                let error_text = if let Some(ref msg) = *err_msg {
+                    msg.clone()
+                } else {
+                    format!("Hexo服务器启动失败，进程异常退出（状态码: {}）", 
+                        status.code().map_or("未知".to_string(), |c| c.to_string()))
+                };
+                
+                return Ok(CommandResult {
+                    success: false,
+                    stdout: None,
+                    stderr: None,
+                    error: Some(error_text),
+                });
+            }
+            Ok(None) => {
+                // 进程仍在运行，继续等待
+            }
+            Err(e) => {
+                return Err(format!("检查进程状态失败: {}", e));
+            }
+        }
+        
+        // 短暂休眠后重试
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    
+    // 超时：虽然没检测到启动成功的标志，但进程仍在运行
+    // 保存进程，让前端可以继续使用
+    let mut server = server_state.0.lock().unwrap();
     *server = Some(child);
     
     Ok(CommandResult {
         success: true,
-        stdout: Some("Hexo服务器已启动在 http://localhost:4000".to_string()),
+        stdout: Some("Hexo服务器进程已启动（未检测到就绪标志，可能需要更长时间）".to_string()),
         stderr: None,
         error: None,
     })
@@ -617,6 +873,7 @@ pub fn run() {
         validate_hexo_project,
         start_hexo_server,
         stop_hexo_server,
+        fix_port_conflict,
         minimize_window,
         maximize_restore_window,
         close_window,

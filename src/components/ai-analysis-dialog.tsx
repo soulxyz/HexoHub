@@ -12,14 +12,17 @@ import { isTauri } from '@/lib/desktop-api';
 interface AIAnalysisDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  aiProvider: 'deepseek' | 'openai';
   apiKey: string;
   analysisPrompt: string;
   language: 'zh' | 'en';
   tagsData: string[];
   publishStatsData: any[];
+  openaiModel?: string;
+  openaiApiEndpoint?: string;
 }
 
-export function AIAnalysisDialog({ open, onOpenChange, apiKey, analysisPrompt, language, tagsData, publishStatsData }: AIAnalysisDialogProps) {
+export function AIAnalysisDialog({ open, onOpenChange, aiProvider, apiKey, analysisPrompt, language, tagsData, publishStatsData, openaiModel = 'gpt-3.5-turbo', openaiApiEndpoint = 'https://api.openai.com/v1' }: AIAnalysisDialogProps) {
   const [analysis, setAnalysis] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [displayedText, setDisplayedText] = useState<string>('');
@@ -51,18 +54,25 @@ export function AIAnalysisDialog({ open, onOpenChange, apiKey, analysisPrompt, l
       // 替换提示词中的{content}占位符
       const finalPrompt = analysisPrompt.replace('{content}', content);
 
-      // 调用DeepSeek API - 在 Tauri 环境下使用 Tauri HTTP 插件
+      // 根据提供商选择API端点和模型
+      const apiUrl = aiProvider === 'deepseek' 
+        ? 'https://api.deepseek.com/v1/chat/completions'
+        : `${openaiApiEndpoint}/chat/completions`;
+      
+      const model = aiProvider === 'deepseek' ? 'deepseek-chat' : openaiModel;
+
+      // 调用AI API - 在 Tauri 环境下使用 Tauri HTTP 插件
       let response;
       if (isTauri()) {
         const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
-        response = await tauriFetch('https://api.deepseek.com/v1/chat/completions', {
+        response = await tauriFetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: 'deepseek-chat',
+            model: model,
             messages: [
               {
                 role: 'user',
@@ -74,14 +84,14 @@ export function AIAnalysisDialog({ open, onOpenChange, apiKey, analysisPrompt, l
           })
         });
       } else {
-        response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
-            model: 'deepseek-chat',
+            model: model,
             messages: [
               {
                 role: 'user',

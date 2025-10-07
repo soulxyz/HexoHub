@@ -57,6 +57,7 @@ import { PublishStats } from '@/components/publish-stats';
 import { PanelSettings } from '@/components/panel-settings';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { ToastAction } from '@/components/ui/toast';
 import { CreateHexoDialog } from '@/components/create-hexo-dialog';
 import { CustomTitlebar } from '@/components/custom-titlebar';
 import { AIInspirationDialog } from '@/components/ai-inspiration-dialog';
@@ -133,9 +134,12 @@ export default function Home() {
 
   // AI设置相关状态
   const [enableAI, setEnableAI] = useState<boolean>(false); // 是否启用AI
+  const [aiProvider, setAIProvider] = useState<'deepseek' | 'openai'>('deepseek'); // AI提供商
   const [apiKey, setApiKey] = useState<string>(''); // API密钥
   const [prompt, setPrompt] = useState<string>('你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段'); // 提示词
   const [analysisPrompt, setAnalysisPrompt] = useState<string>('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段'); // 分析提示词
+  const [openaiModel, setOpenaiModel] = useState<string>('gpt-3.5-turbo'); // OpenAI模型
+  const [openaiApiEndpoint, setOpenaiApiEndpoint] = useState<string>('https://api.openai.com/v1'); // OpenAI API端点
   const [showInspirationDialog, setShowInspirationDialog] = useState<boolean>(false); // 是否显示灵感对话框
   const [showAnalysisDialog, setShowAnalysisDialog] = useState<boolean>(false); // 是否显示分析对话框
   // 预览模式相关状态
@@ -400,6 +404,11 @@ export default function Home() {
           setEnableAI(savedEnableAI === 'true');
         }
 
+        const savedAIProvider = localStorage.getItem('ai-provider');
+        if (savedAIProvider === 'deepseek' || savedAIProvider === 'openai') {
+          setAIProvider(savedAIProvider);
+        }
+
         const savedApiKey = localStorage.getItem('api-key');
         if (savedApiKey !== null) {
           setApiKey(savedApiKey);
@@ -419,6 +428,16 @@ export default function Home() {
         } else {
           // 设置默认分析提示词
           setAnalysisPrompt('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段');
+        }
+
+        const savedOpenaiModel = localStorage.getItem('openai-model');
+        if (savedOpenaiModel !== null) {
+          setOpenaiModel(savedOpenaiModel);
+        }
+
+        const savedOpenaiApiEndpoint = localStorage.getItem('openai-api-endpoint');
+        if (savedOpenaiApiEndpoint !== null) {
+          setOpenaiApiEndpoint(savedOpenaiApiEndpoint);
         }
 
         // 加载预览模式设置
@@ -1750,6 +1769,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
   };
 
   // 启动Hexo服务器
+  // 注意：Tauri 后端已经通过监听 Hexo 输出判断启动状态
+  // 后端会在检测到 "Hexo is running at" 等标志后才返回成功
   const startHexoServer = async () => {
     if (!isElectron || !hexoPath || isServerRunning) return;
 
@@ -1764,14 +1785,18 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
     try {
       const ipcRenderer = await getIpcRenderer();
+      
+      // Tauri 后端会等待服务器就绪后才返回
+      // 这个调用可能需要几秒到十几秒（取决于 Hexo 启动速度）
       const result = await ipcRenderer.invoke('start-hexo-server', hexoPath);
 
       if (result.success) {
-        setIsServerRunning(true);
         setServerProcess(result.process);
+        setIsServerRunning(true);
+        
         const serverStartResult = {
           success: true,
-          stdout: 'Hexo服务器已启动，访问 http://localhost:4000 预览网站',
+          stdout: result.stdout || 'Hexo服务器已启动，访问 http://localhost:4000 预览网站',
           timestamp: new Date().toLocaleString(),
           command: 'start server'
         };
@@ -1789,17 +1814,69 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         if (previewMode !== 'server') {
           setTimeout(() => {
             ipcRenderer.invoke('open-url', 'http://localhost:4000');
-          }, 2000);
+          }, 1000);
         }
       } else {
         setCommandResult(result);
         
-        // 显示错误通知
-        toast({
-          title: t.failed,
-          description: 'Hexo服务器启动失败',
-          variant: 'error',
-        });
+        // 检查是否是端口占用错误
+        const isPortConflict = result.error && (
+          result.error.includes('端口 4000 已被占用') ||
+          result.error.includes('Port 4000 has been used') ||
+          result.error.includes('EADDRINUSE')
+        );
+        
+        if (isPortConflict) {
+          // 端口占用错误 - 显示带修复按钮的提示
+          toast({
+            title: t.failed,
+            description: result.error || '端口 4000 已被占用',
+            variant: 'error',
+            action: (
+              <ToastAction 
+                altText="立即修复" 
+                onClick={async () => {
+                  try {
+                    setIsLoading(true);
+                    const ipcRenderer = await getIpcRenderer();
+                    const fixResult = await ipcRenderer.invoke('fix-port-conflict', 4000);
+                    
+                    if (fixResult.success) {
+                      toast({
+                        title: '✅ 修复成功',
+                        description: fixResult.stdout || '端口已释放，请重新启动服务器',
+                        variant: 'success',
+                      });
+                    } else {
+                      toast({
+                        title: '修复失败',
+                        description: fixResult.error || '无法自动修复端口占用',
+                        variant: 'error',
+                      });
+                    }
+                  } catch (error) {
+                    toast({
+                      title: '修复失败',
+                      description: error instanceof Error ? error.message : '发生错误',
+                      variant: 'error',
+                    });
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              >
+                立即修复
+              </ToastAction>
+            ),
+          });
+        } else {
+          // 其他错误 - 普通提示
+          toast({
+            title: t.failed,
+            description: result.error || 'Hexo服务器启动失败',
+            variant: 'error',
+          });
+        }
       }
     } catch (error) {
       console.error('启动服务器失败:', error);
@@ -2483,12 +2560,18 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 // AI设置
                 enableAI={enableAI}
                 onEnableAIChange={setEnableAI}
+                aiProvider={aiProvider}
+                onAIProviderChange={setAIProvider}
                 apiKey={apiKey}
                 onApiKeyChange={setApiKey}
                 prompt={prompt}
                 onPromptChange={setPrompt}
                 analysisPrompt={analysisPrompt}
                 onAnalysisPromptChange={setAnalysisPrompt}
+                openaiModel={openaiModel}
+                onOpenaiModelChange={setOpenaiModel}
+                openaiApiEndpoint={openaiApiEndpoint}
+                onOpenaiApiEndpointChange={setOpenaiApiEndpoint}
                 previewMode={previewMode}
                 onPreviewModeChange={setPreviewMode}
                 iframeUrlMode={iframeUrlMode}
@@ -3099,20 +3182,26 @@ ${selectedText}
       <AIInspirationDialog
         open={showInspirationDialog}
         onOpenChange={setShowInspirationDialog}
+        aiProvider={aiProvider}
         apiKey={apiKey}
         prompt={prompt}
         language={language}
+        openaiModel={openaiModel}
+        openaiApiEndpoint={openaiApiEndpoint}
       />
 
       {/* AI分析对话框 */}
       <AIAnalysisDialog
         open={showAnalysisDialog}
         onOpenChange={setShowAnalysisDialog}
+        aiProvider={aiProvider}
         apiKey={apiKey}
         analysisPrompt={analysisPrompt}
         language={language}
         tagsData={allTagsForCloud}
         publishStatsData={publishStatsData}
+        openaiModel={openaiModel}
+        openaiApiEndpoint={openaiApiEndpoint}
       />
       
     </div>

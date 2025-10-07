@@ -169,6 +169,14 @@ export const commandOperations = {
     }
     throw new Error('Not in Tauri environment');
   },
+  
+  fixPortConflict: async (port: number): Promise<any> => {
+    if (isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      return await invoke('fix_port_conflict', { port });
+    }
+    throw new Error('Not in Tauri environment');
+  },
 };
 
 // 系统操作
@@ -233,6 +241,8 @@ export const ipcRenderer = {
         return commandOperations.startHexoServer(args[0]);
       case 'stop-hexo-server':
         return commandOperations.stopHexoServer();
+      case 'fix-port-conflict':
+        return commandOperations.fixPortConflict(args[0]);
       case 'open-url':
         return systemOperations.openUrl(args[0]);
       case 'show-in-folder':

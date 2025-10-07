@@ -288,6 +288,15 @@ export interface I18nTexts {
   promptPlaceholder: string;
   analysisPrompt: string;
   analysisPromptPlaceholder: string;
+  openaiModel: string;
+  openaiModelPlaceholder: string;
+  openaiApiEndpoint: string;
+  openaiApiEndpointPlaceholder: string;
+  testConnection: string;
+  testing: string;
+  testSuccess: string;
+  testFailed: string;
+  apiConnectionTest: string;
   
   // 预览模式设置
   previewMode: string;
@@ -664,13 +673,22 @@ console.log('Hello, Hexo!');
     enableAIDescription: '启用后获得AI支持',
     aboutAILink: '[关于]',
     aiProvider: 'AI提供商',
-    aiProviderDescription: '目前仅支持DeepSeek',
+    aiProviderDescription: '选择您要使用的AI服务提供商',
     apiKey: 'API密钥',
     apiKeyPlaceholder: '请输入您的API密钥',
     prompt: '灵感提示词',
     promptPlaceholder: '请输入灵感提示词',
     analysisPrompt: '分析提示词',
     analysisPromptPlaceholder: '请输入分析提示词',
+    openaiModel: 'OpenAI模型',
+    openaiModelPlaceholder: '例如：gpt-3.5-turbo 或 gpt-4',
+    openaiApiEndpoint: 'API端点',
+    openaiApiEndpointPlaceholder: '默认：https://api.openai.com/v1',
+    testConnection: '测试连接',
+    testing: '测试中...',
+    testSuccess: '连接测试成功！',
+    testFailed: '连接测试失败',
+    apiConnectionTest: 'API连接测试',
     inspiration: '灵感',
     generatingInspiration: '生成灵感中...',
     getInspiration: '来点灵感',
@@ -1046,13 +1064,22 @@ console.log('Hello, Hexo!');
     enableAIDescription: 'Enable to get AI support',
     aboutAILink: '[About]',
     aiProvider: 'AI Provider',
-    aiProviderDescription: 'Currently only supports DeepSeek',
+    aiProviderDescription: 'Choose your AI service provider',
     apiKey: 'API Key',
     apiKeyPlaceholder: 'Please enter your API key',
     prompt: 'Inspiration Prompt',
     promptPlaceholder: 'Please enter an inspiration prompt',
     analysisPrompt: 'Analysis Prompt',
     analysisPromptPlaceholder: 'Please enter an analysis prompt',
+    openaiModel: 'OpenAI Model',
+    openaiModelPlaceholder: 'e.g. gpt-3.5-turbo or gpt-4',
+    openaiApiEndpoint: 'API Endpoint',
+    openaiApiEndpointPlaceholder: 'Default: https://api.openai.com/v1',
+    testConnection: 'Test Connection',
+    testing: 'Testing...',
+    testSuccess: 'Connection test successful!',
+    testFailed: 'Connection test failed',
+    apiConnectionTest: 'API Connection Test',
     inspiration: 'Inspiration',
     generatingInspiration: 'Generating inspiration...',
     getInspiration: 'Get Inspiration',
