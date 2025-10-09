@@ -134,7 +134,7 @@ export default function Home() {
 
   // AI设置相关状态
   const [enableAI, setEnableAI] = useState<boolean>(false); // 是否启用AI
-  const [aiProvider, setAIProvider] = useState<'deepseek' | 'openai'>('deepseek'); // AI提供商
+  const [aiProvider, setAIProvider] = useState<'deepseek' | 'openai' | 'siliconflow'>('deepseek'); // AI提供商
   const [apiKey, setApiKey] = useState<string>(''); // API密钥
   const [prompt, setPrompt] = useState<string>('你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段'); // 提示词
   const [analysisPrompt, setAnalysisPrompt] = useState<string>('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段'); // 分析提示词
@@ -405,7 +405,7 @@ export default function Home() {
         }
 
         const savedAIProvider = localStorage.getItem('ai-provider');
-        if (savedAIProvider === 'deepseek' || savedAIProvider === 'openai') {
+        if (savedAIProvider === 'deepseek' || savedAIProvider === 'openai' || savedAIProvider === 'siliconflow') {
           setAIProvider(savedAIProvider);
         }
 

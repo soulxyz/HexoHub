@@ -12,7 +12,7 @@ import { isTauri } from '@/lib/desktop-api';
 interface AIAnalysisDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  aiProvider: 'deepseek' | 'openai';
+  aiProvider: 'deepseek' | 'openai' | 'siliconflow';
   apiKey: string;
   analysisPrompt: string;
   language: 'zh' | 'en';
@@ -55,11 +55,19 @@ export function AIAnalysisDialog({ open, onOpenChange, aiProvider, apiKey, analy
       const finalPrompt = analysisPrompt.replace('{content}', content);
 
       // 根据提供商选择API端点和模型
-      const apiUrl = aiProvider === 'deepseek' 
-        ? 'https://api.deepseek.com/v1/chat/completions'
-        : `${openaiApiEndpoint}/chat/completions`;
+      let apiUrl: string;
+      let model: string;
       
-      const model = aiProvider === 'deepseek' ? 'deepseek-chat' : openaiModel;
+      if (aiProvider === 'deepseek') {
+        apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+        model = 'deepseek-chat';
+      } else if (aiProvider === 'siliconflow') {
+        apiUrl = 'https://api.siliconflow.cn/v1/chat/completions';
+        model = openaiModel || 'Qwen/Qwen2.5-7B-Instruct';
+      } else {
+        apiUrl = `${openaiApiEndpoint}/chat/completions`;
+        model = openaiModel || 'gpt-3.5-turbo';
+      }
 
       // 调用AI API - 在 Tauri 环境下使用 Tauri HTTP 插件
       let response;

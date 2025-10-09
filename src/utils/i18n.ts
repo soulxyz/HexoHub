@@ -292,6 +292,15 @@ export interface I18nTexts {
   openaiModelPlaceholder: string;
   openaiApiEndpoint: string;
   openaiApiEndpointPlaceholder: string;
+  siliconflow: string;
+  siliconflowTooltip: string;
+  siliconflowModel: string;
+  siliconflowModelPlaceholder: string;
+  loadModels: string;
+  loadingModels: string;
+  modelsLoaded: string;
+  modelsLoadFailed: string;
+  loadModelsDescription: string;
   testConnection: string;
   testing: string;
   testSuccess: string;
@@ -684,6 +693,15 @@ console.log('Hello, Hexo!');
     openaiModelPlaceholder: '例如：gpt-3.5-turbo 或 gpt-4',
     openaiApiEndpoint: 'API端点',
     openaiApiEndpointPlaceholder: '默认：https://api.openai.com/v1',
+    siliconflow: '硅基流动',
+    siliconflowTooltip: '硅基流动是一个高性价比的 AI 推理平台，提供 Qwen、GLM、DeepSeek 等多种开源大模型服务。支持按需付费，性能稳定可靠。点击跳转至硅基流动官网了解更多',
+    siliconflowModel: '模型',
+    siliconflowModelPlaceholder: '例如：Qwen/Qwen2.5-7B-Instruct',
+    loadModels: '加载模型列表',
+    loadingModels: '加载中...',
+    modelsLoaded: '成功加载',
+    modelsLoadFailed: '加载模型列表失败',
+    loadModelsDescription: '填写API密钥后点击"加载模型列表"自动获取最新模型',
     testConnection: '测试连接',
     testing: '测试中...',
     testSuccess: '连接测试成功！',
@@ -1075,6 +1093,15 @@ console.log('Hello, Hexo!');
     openaiModelPlaceholder: 'e.g. gpt-3.5-turbo or gpt-4',
     openaiApiEndpoint: 'API Endpoint',
     openaiApiEndpointPlaceholder: 'Default: https://api.openai.com/v1',
+    siliconflow: 'SiliconFlow',
+    siliconflowTooltip: 'SiliconFlow is a cost-effective AI inference platform offering various open-source LLM services including Qwen, GLM, DeepSeek, etc. Pay-as-you-go pricing with stable and reliable performance. Click to learn more.',
+    siliconflowModel: 'Model',
+    siliconflowModelPlaceholder: 'e.g. Qwen/Qwen2.5-7B-Instruct',
+    loadModels: 'Load Models',
+    loadingModels: 'Loading...',
+    modelsLoaded: 'Successfully loaded',
+    modelsLoadFailed: 'Failed to load model list',
+    loadModelsDescription: 'Click "Load Models" after entering API key to get the latest models',
     testConnection: 'Test Connection',
     testing: 'Testing...',
     testSuccess: 'Connection test successful!',
