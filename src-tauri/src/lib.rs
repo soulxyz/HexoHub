@@ -882,9 +882,16 @@ pub fn run() {
     .setup(|_app| {
       #[cfg(debug_assertions)]
       {
+        // 配置日志插件
+        // 将 tao 模块的日志级别设置为 Error，过滤掉 WARN 级别的事件循环警告
+        // 这些警告在 Windows 上很常见且通常无害
         _app.handle().plugin(
           tauri_plugin_log::Builder::default()
             .level(log::LevelFilter::Info)
+            .target(tauri_plugin_log::Target::new(
+              tauri_plugin_log::TargetKind::Stdout
+            ))
+            .level_for("tao", log::LevelFilter::Error)
             .build(),
         )?;
       }
