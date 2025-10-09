@@ -887,16 +887,6 @@ pub fn run() {
             .level(log::LevelFilter::Info)
             .build(),
         )?;
-        
-        // 在开发模式下自动打开开发者工具
-        // 延迟操作以避免事件循环警告
-        let app_handle = _app.handle().clone();
-        std::thread::spawn(move || {
-          std::thread::sleep(std::time::Duration::from_millis(500));
-          if let Some(window) = app_handle.get_webview_window("main") {
-            let _ = window.open_devtools();
-          }
-        });
       }
 
       Ok(())
