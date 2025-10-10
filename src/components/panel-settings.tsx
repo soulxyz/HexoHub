@@ -13,7 +13,7 @@ import { UpdateChecker } from '@/components/update-checker';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { getTexts } from '@/utils/i18n';
 import { isDesktopApp, getIpcRenderer, isTauri } from '@/lib/desktop-api';
-import { openExternalLink } from '@/lib/utils';
+import { openExternalLink, getAppVersion } from '@/lib/utils';
 
 interface PanelSettingsProps {
   postsPerPage: number;
@@ -67,8 +67,8 @@ interface PanelSettingsProps {
 }
 
 export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, aiProvider = 'deepseek', onAIProviderChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange, openaiModel = 'gpt-3.5-turbo', onOpenaiModelChange, openaiApiEndpoint = 'https://api.openai.com/v1', onOpenaiApiEndpointChange, previewMode = 'static', onPreviewModeChange, iframeUrlMode = 'hexo', onIframeUrlModeChange }: PanelSettingsProps) {
-  // 当前应用版本，从package.json中获取
-  const currentVersion = '3.0.0';
+  // 当前应用版本，从package.json动态获取
+  const [currentVersion, setCurrentVersion] = useState<string>('Unknown');
   // 获取当前语言的文本
   const t = getTexts(language);
   const [tempPostsPerPage, setTempPostsPerPage] = useState<number>(postsPerPage);
@@ -100,6 +100,13 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
   // API测试相关状态
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const { toast } = useToast();
+
+  // 获取应用版本号
+  useEffect(() => {
+    getAppVersion().then(version => {
+      setCurrentVersion(version);
+    });
+  }, []);
 
   // 当传入的postsPerPage变化时，更新临时值
   useEffect(() => {
