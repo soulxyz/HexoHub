@@ -732,38 +732,9 @@ async fn maximize_restore_window(window: tauri::Window) {
 }
 
 #[tauri::command]
-async fn close_window(window: tauri::Window, app_handle: tauri::AppHandle) {
-    // 在关闭窗口前清理 Hexo 服务器进程
-    if let Some(server_state) = app_handle.try_state::<HexoServer>() {
-        if let Ok(mut server) = server_state.0.try_lock() {
-            #[allow(unused_mut)]
-            if let Some(mut child) = server.take() {
-                let pid = child.id();
-                println!("窗口关闭前清理 Hexo 服务器进程 PID: {}", pid);
-                
-                #[cfg(target_os = "windows")]
-                {
-                    // Windows: 使用 taskkill 杀死整个进程树
-                    let _ = Command::new("taskkill")
-                        .args(&["/pid", &pid.to_string(), "/T", "/F"])
-                        .output();
-                    
-                    // 额外清理 4000 端口
-                    let _ = Command::new("cmd")
-                        .args(&["/C", "for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :4000 ^| findstr LISTENING') do @taskkill /F /PID %a"])
-                        .output();
-                }
-                
-                #[cfg(not(target_os = "windows"))]
-                {
-                    let _ = child.kill();
-                }
-                
-                println!("Hexo 服务器进程已清理");
-            }
-        }
-    }
-    
+async fn close_window(window: tauri::Window) {
+    // 清理逻辑已由窗口事件监听器自动处理 (setup 中的 on_window_event)
+    // 直接关闭窗口即可
     let _ = window.close();
 }
 
@@ -879,13 +850,13 @@ pub fn run() {
         close_window,
         show_in_folder,
     ])
-    .setup(|_app| {
+    .setup(|app| {
       #[cfg(debug_assertions)]
       {
         // 配置日志插件
         // 将 tao 模块的日志级别设置为 Error，过滤掉 WARN 级别的事件循环警告
         // 这些警告在 Windows 上很常见且通常无害
-        _app.handle().plugin(
+        app.handle().plugin(
           tauri_plugin_log::Builder::default()
             .level(log::LevelFilter::Info)
             .target(tauri_plugin_log::Target::new(
@@ -894,6 +865,59 @@ pub fn run() {
             .level_for("tao", log::LevelFilter::Error)
             .build(),
         )?;
+      }
+
+      // 获取主窗口并监听关闭事件，确保清理 Hexo 服务器
+      if let Some(window) = app.get_webview_window("main") {
+        let app_handle = app.handle().clone();
+        
+        window.on_window_event(move |event| {
+          if let tauri::WindowEvent::CloseRequested { .. } = event {
+            println!("检测到窗口关闭请求，开始清理 Hexo 服务器...");
+            
+            // 获取 HexoServer 状态并清理进程
+            if let Some(server_state) = app_handle.try_state::<HexoServer>() {
+              if let Ok(mut server) = server_state.0.try_lock() {
+                if let Some(child) = server.take() {
+                  let pid = child.id();
+                  println!("清理 Hexo 服务器进程 PID: {}", pid);
+                  
+                  #[cfg(target_os = "windows")]
+                  {
+                    // Windows: 使用 taskkill 杀死整个进程树（同步方式）
+                    let _ = Command::new("taskkill")
+                      .args(&["/pid", &pid.to_string(), "/T", "/F"])
+                      .output();
+                    
+                    // 额外清理 4000 端口
+                    let _ = Command::new("cmd")
+                      .args(&["/C", "for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :4000 ^| findstr LISTENING') do @taskkill /F /PID %a"])
+                      .output();
+                    
+                    println!("Hexo 服务器进程已清理完成");
+                  }
+                  
+                  #[cfg(not(target_os = "windows"))]
+                  {
+                    // Linux/Mac: 直接 kill 进程
+                    // 先尝试 SIGTERM（优雅终止）
+                    let _ = Command::new("kill")
+                      .arg(pid.to_string())
+                      .output();
+                    
+                    // 等待一下，然后使用 SIGKILL 强制终止
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    let _ = Command::new("kill")
+                      .args(&["-9", &pid.to_string()])
+                      .output();
+                    
+                    println!("Hexo 服务器进程已终止");
+                  }
+                }
+              }
+            }
+          }
+        });
       }
 
       Ok(())
