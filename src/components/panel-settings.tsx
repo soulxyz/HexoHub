@@ -46,6 +46,8 @@ interface PanelSettingsProps {
   // AI设置
   enableAI?: boolean;
   onEnableAIChange?: (value: boolean) => void;
+  enableEditorAI?: boolean;
+  onEnableEditorAIChange?: (value: boolean) => void;
   aiProvider?: 'deepseek' | 'openai' | 'siliconflow';
   onAIProviderChange?: (value: 'deepseek' | 'openai' | 'siliconflow') => void;
   apiKey?: string;
@@ -54,6 +56,14 @@ interface PanelSettingsProps {
   onPromptChange?: (value: string) => void;
   analysisPrompt?: string;
   onAnalysisPromptChange?: (value: string) => void;
+  aiRewritePrompt?: string;
+  onAiRewritePromptChange?: (value: string) => void;
+  aiImprovePrompt?: string;
+  onAiImprovePromptChange?: (value: string) => void;
+  aiExpandPrompt?: string;
+  onAiExpandPromptChange?: (value: string) => void;
+  aiTranslatePrompt?: string;
+  onAiTranslatePromptChange?: (value: string) => void;
   openaiModel?: string;
   onOpenaiModelChange?: (value: string) => void;
   openaiApiEndpoint?: string;
@@ -66,7 +76,7 @@ interface PanelSettingsProps {
   onIframeUrlModeChange?: (value: 'hexo' | 'root') => void;
 }
 
-export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, aiProvider = 'deepseek', onAIProviderChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange, openaiModel = 'gpt-3.5-turbo', onOpenaiModelChange, openaiApiEndpoint = 'https://api.openai.com/v1', onOpenaiApiEndpointChange, previewMode = 'static', onPreviewModeChange, iframeUrlMode = 'hexo', onIframeUrlModeChange }: PanelSettingsProps) {
+export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, enableEditorAI = false, onEnableEditorAIChange, aiProvider = 'deepseek', onAIProviderChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange, aiRewritePrompt = '请直接重写以下文本，使其更清晰流畅，保持原意。只输出改写后的文本，不要添加任何解释或说明', onAiRewritePromptChange, aiImprovePrompt = '请直接改进以下文本，使其更专业、生动。只输出改进后的文本，不要添加任何解释或说明', onAiImprovePromptChange, aiExpandPrompt = '请扩展以下文本，适当添加细节。只输出扩展后的文本，不要添加解释或标注', onAiExpandPromptChange, aiTranslatePrompt = '请直接将以下文本翻译成英文。只输出翻译结果，不要添加任何解释或说明', onAiTranslatePromptChange, openaiModel = 'gpt-3.5-turbo', onOpenaiModelChange, openaiApiEndpoint = 'https://api.openai.com/v1', onOpenaiApiEndpointChange, previewMode = 'static', onPreviewModeChange, iframeUrlMode = 'hexo', onIframeUrlModeChange }: PanelSettingsProps) {
   // 当前应用版本，从package.json动态获取
   const [currentVersion, setCurrentVersion] = useState<string>('Unknown');
   // 获取当前语言的文本
@@ -85,6 +95,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
   const [tempPushEmail, setTempPushEmail] = useState<string>(pushEmail);
   // AI设置相关状态
   const [tempEnableAI, setTempEnableAI] = useState<boolean>(enableAI);
+  const [tempEnableEditorAI, setTempEnableEditorAI] = useState<boolean>(enableEditorAI);
   const [tempAIProvider, setTempAIProvider] = useState<'deepseek' | 'openai' | 'siliconflow'>(aiProvider);
   const [tempApiKey, setTempApiKey] = useState<string>(apiKey);
   const [tempPrompt, setTempPrompt] = useState<string>(prompt);
@@ -400,6 +411,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     if (onPushEmailChange) onPushEmailChange(tempPushEmail);
     // 保存AI设置
     if (onEnableAIChange) onEnableAIChange(tempEnableAI);
+    if (onEnableEditorAIChange) onEnableEditorAIChange(tempEnableEditorAI);
     if (onAIProviderChange) onAIProviderChange(tempAIProvider);
     if (onApiKeyChange) onApiKeyChange(tempApiKey);
     if (onPromptChange) onPromptChange(tempPrompt);
@@ -426,6 +438,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
       localStorage.setItem('push-email', tempPushEmail);
       // 保存AI设置
       localStorage.setItem('enable-ai', tempEnableAI.toString());
+      localStorage.setItem('enable-editor-ai', tempEnableEditorAI.toString());
       localStorage.setItem('ai-provider', tempAIProvider);
       localStorage.setItem('api-key', tempApiKey);
       localStorage.setItem('prompt', tempPrompt);
@@ -789,6 +802,24 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                 {t.aboutAILink}
               </a>
             </div>
+
+            {/* 编辑器AI增强 */}
+            <div className="flex items-center space-x-2 mt-4">
+              <input
+                type="checkbox"
+                id="enableEditorAI"
+                checked={tempEnableEditorAI}
+                onChange={(e) => setTempEnableEditorAI(e.target.checked)}
+                className="w-4 h-4"
+                disabled={!tempEnableAI}
+              />
+              <Label htmlFor="enableEditorAI" className={!tempEnableAI ? 'text-muted-foreground' : ''}>
+                {t.enableEditorAI}
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {t.enableEditorAIDescription}
+            </p>
 
             {tempEnableAI && (
               <div className="mt-4 space-y-4 pl-6 border-l-2 border-gray-200">
