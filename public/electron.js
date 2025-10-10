@@ -3,6 +3,18 @@ const path = require('path');
 const fs = require('fs');
 const isDev = process.env.NODE_ENV === 'development';
 
+// 获取应用版本号
+ipcMain.handle('get-app-version', async () => {
+  try {
+    const packageJsonPath = path.join(__dirname, '..', 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    return packageJson.version;
+  } catch (error) {
+    console.error('Failed to read version from package.json:', error);
+    return app.getVersion(); // fallback 到 electron 的版本
+  }
+});
+
 // 图片处理相关的 IPC 处理程序
 // 注册从缓冲区写入文件的 IPC 处理程序
 ipcMain.handle('write-file-from-buffer', async (event, destinationPath, buffer) => {

@@ -51,9 +51,22 @@ npm version prerelease --preid=beta
 
 这个命令会自动：
 - ✅ 修改 package.json 中的版本号
-- ✅ 创建一个 git commit
+- ✅ 同步更新 src-tauri/tauri.conf.json 的版本号
+- ✅ 同步更新 src-tauri/Cargo.toml 的版本号
+- ✅ 创建一个 git commit（包含所有版本文件的更改）
 - ✅ 创建一个 git tag（例如 v2.7.0）
 
+> **注意**：版本号会自动同步到所有配置文件，无需手动修改！
+
+如果你只想同步版本号而不创建 commit 和 tag：
+
+1. 手动修改 `package.json` 中的 `version` 字段
+2. 运行同步脚本：
+   ```bash
+   npm run sync-version
+   ```
+
+   
 ### 2. 推送 tag（触发构建）
 
 ```bash

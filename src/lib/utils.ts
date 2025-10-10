@@ -89,3 +89,44 @@ export async function openExternalLink(url: string): Promise<void> {
     window.open(url, '_blank');
   }
 }
+
+/**
+ * 获取应用版本号
+ * 根据运行环境自动选择获取方式：
+ * - Tauri: 使用 Tauri API
+ * - Electron: 通过 IPC 从 package.json 读取
+ * - Browser: 返回构建时的版本号
+ * @returns Promise<string> 版本号，如果获取失败返回 'Unknown'
+ */
+export async function getAppVersion(): Promise<string> {
+  const env = getDesktopEnvironment();
+  
+  // Tauri 环境
+  if (env === 'tauri') {
+    try {
+      const { getAppVersion: getTauriVersion } = await import('@/lib/tauri-api');
+      return await getTauriVersion();
+    } catch (error) {
+      console.error('Failed to get Tauri version:', error);
+      return 'Unknown';
+    }
+  }
+  
+  // Electron 环境
+  if (env === 'electron') {
+    try {
+      const ipcRenderer = (window as any).require('electron').ipcRenderer;
+      const version = await ipcRenderer.invoke('get-app-version');
+      if (version) return version;
+      return 'Unknown';
+    } catch (error) {
+      console.error('Failed to get Electron version:', error);
+      return 'Unknown';
+    }
+  }
+  
+  // Browser 环境 - 开发模式或未知环境
+  // 注意：由于使用静态导出，无法使用 API 路由
+  // 如果需要在浏览器中显示版本号，可以在构建时注入环境变量
+  return process.env.NEXT_PUBLIC_APP_VERSION || 'Unknown';
+}

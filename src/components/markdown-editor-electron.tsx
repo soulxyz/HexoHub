@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { getTexts, Language } from '@/utils/i18n';
 import { isDesktopApp } from '@/lib/desktop-api';
 import { copyFileInElectron, writeFileFromBufferInElectron, ensureDirectoryExistsInElectron } from '@/lib/electron-image-api';
+import { EditorContextMenu } from '@/components/editor-context-menu';
 import {
   Bold,
   Italic,
@@ -35,11 +36,31 @@ interface MarkdownEditorProps {
   language?: 'zh' | 'en';
   hexoPath?: string;
   selectedPost?: Post | null;
+  // AI 配置
+  enableAI?: boolean;
+  aiProvider?: 'deepseek' | 'openai' | 'siliconflow';
+  apiKey?: string;
+  openaiModel?: string;
+  openaiApiEndpoint?: string;
 }
 
-export function MarkdownEditorElectron({ value, onChange, onSave, isLoading = false, language = 'zh', hexoPath, selectedPost }: MarkdownEditorProps) {
+export function MarkdownEditorElectron({ 
+  value, 
+  onChange, 
+  onSave, 
+  isLoading = false, 
+  language = 'zh', 
+  hexoPath, 
+  selectedPost,
+  enableAI = false,
+  aiProvider = 'deepseek',
+  apiKey = '',
+  openaiModel = 'gpt-3.5-turbo',
+  openaiApiEndpoint = 'https://api.openai.com/v1'
+}: MarkdownEditorProps) {
   const [lineNumbers, setLineNumbers] = useState<string[]>(['1']);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [selectedText, setSelectedText] = useState<string>('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropAreaRef = useRef<HTMLDivElement>(null);
 
@@ -201,6 +222,149 @@ ${selectedText}
     if (lineNumbersElement) {
       lineNumbersElement.scrollTop = (e.target as HTMLTextAreaElement).scrollTop;
     }
+  };
+
+  // 处理文本选择
+  const handleTextareaSelect = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = value.substring(start, end);
+    setSelectedText(selected);
+  };
+
+  // 处理 AI 重写后的文本替换
+  const handleRewrite = (rewrittenText: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newValue = value.substring(0, start) + rewrittenText + value.substring(end);
+    onChange(newValue);
+
+    // 设置光标位置到重写文本的末尾
+    setTimeout(() => {
+      const newCursorPos = start + rewrittenText.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+      textarea.focus();
+    }, 0);
+  };
+
+  // 复制功能
+  const handleCopy = async () => {
+    if (selectedText) {
+      try {
+        await navigator.clipboard.writeText(selectedText);
+      } catch (error) {
+        console.error('Failed to copy:', error);
+      }
+    }
+  };
+
+  // 剪切功能
+  const handleCut = async () => {
+    if (selectedText) {
+      try {
+        await navigator.clipboard.writeText(selectedText);
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+        
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const newValue = value.substring(0, start) + value.substring(end);
+        onChange(newValue);
+        
+        setTimeout(() => {
+          textarea.setSelectionRange(start, start);
+          textarea.focus();
+        }, 0);
+      } catch (error) {
+        console.error('Failed to cut:', error);
+      }
+    }
+  };
+
+  // 粘贴功能
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newValue = value.substring(0, start) + text + value.substring(end);
+      onChange(newValue);
+      
+      setTimeout(() => {
+        const newPos = start + text.length;
+        textarea.setSelectionRange(newPos, newPos);
+        textarea.focus();
+      }, 0);
+    } catch (error) {
+      console.error('Failed to paste:', error);
+    }
+  };
+
+  // 全选功能
+  const handleSelectAll = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(0, value.length);
+  };
+
+  // Markdown 格式化功能
+  const handleFormat = (format: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = value.substring(start, end);
+    let newText = '';
+    let cursorOffset = 0;
+
+    switch (format) {
+      case 'bold':
+        newText = `**${selectedText}**`;
+        cursorOffset = selectedText ? newText.length : 2;
+        break;
+      case 'italic':
+        newText = `*${selectedText}*`;
+        cursorOffset = selectedText ? newText.length : 1;
+        break;
+      case 'code':
+        newText = `\`${selectedText}\``;
+        cursorOffset = selectedText ? newText.length : 1;
+        break;
+      case 'link':
+        newText = `[${selectedText}](url)`;
+        cursorOffset = selectedText ? newText.length - 4 : 1;
+        break;
+      case 'ul':
+        newText = `\n- ${selectedText}`;
+        cursorOffset = newText.length;
+        break;
+      case 'ol':
+        newText = `\n1. ${selectedText}`;
+        cursorOffset = newText.length;
+        break;
+      default:
+        return;
+    }
+
+    const newValue = value.substring(0, start) + newText + value.substring(end);
+    onChange(newValue);
+
+    setTimeout(() => {
+      const newPos = start + cursorOffset;
+      textarea.setSelectionRange(newPos, newPos);
+      textarea.focus();
+    }, 0);
   };
 
   // 检测是否为 Electron 环境
@@ -371,25 +535,42 @@ ${selectedText}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <Textarea
-            ref={textareaRef}
-            value={value}
-            onChange={handleTextareaChange}
-            onScroll={handleTextareaScroll}
-            placeholder={t.editorPlaceholder}
-            className="w-full h-full p-2 font-mono text-sm resize-none border-0 rounded-none focus:ring-0 overflow-x-auto"
-            disabled={isLoading}
-            style={{
-              minHeight: '400px',
-              lineHeight: '1.5',
-              outline: 'none',
-              width: '100%',
-              minWidth: 0,
-              overflow: 'auto',
-              wordBreak: 'break-all',
-              height: 'calc(100vh - 240px)'
-            }}
-          />
+          <EditorContextMenu
+            selectedText={selectedText}
+            onRewrite={handleRewrite}
+            onCopy={handleCopy}
+            onCut={handleCut}
+            onPaste={handlePaste}
+            onSelectAll={handleSelectAll}
+            onFormat={handleFormat}
+            aiProvider={aiProvider}
+            apiKey={apiKey}
+            language={language}
+            openaiModel={openaiModel}
+            openaiApiEndpoint={openaiApiEndpoint}
+            enableAI={enableAI}
+          >
+            <Textarea
+              ref={textareaRef}
+              value={value}
+              onChange={handleTextareaChange}
+              onScroll={handleTextareaScroll}
+              onSelect={handleTextareaSelect}
+              placeholder={t.editorPlaceholder}
+              className="w-full h-full p-2 font-mono text-sm resize-none border-0 rounded-none focus:ring-0 overflow-x-auto"
+              disabled={isLoading}
+              style={{
+                minHeight: '400px',
+                lineHeight: '1.5',
+                outline: 'none',
+                width: '100%',
+                minWidth: 0,
+                overflow: 'auto',
+                wordBreak: 'break-all',
+                height: 'calc(100vh - 240px)'
+              }}
+            />
+          </EditorContextMenu>
           {isDragOver && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-blue-600 text-lg font-medium">

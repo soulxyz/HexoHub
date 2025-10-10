@@ -270,6 +270,20 @@ export const ipcRenderer = {
   },
 };
 
+// 获取应用版本号
+export const getAppVersion = async (): Promise<string> => {
+  if (isTauriEnvironment()) {
+    try {
+      const { getVersion } = await import('@tauri-apps/api/app');
+      return await getVersion();
+    } catch (error) {
+      console.error('Failed to get Tauri version:', error);
+      return 'Unknown';
+    }
+  }
+  return 'Unknown';
+};
+
 // 检测运行环境
 export const isTauri = isTauriEnvironment();
 export const isElectron = typeof window !== 'undefined' && 'require' in window;

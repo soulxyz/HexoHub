@@ -15,6 +15,12 @@ interface MarkdownEditorWrapperProps {
   language?: 'zh' | 'en';
   hexoPath?: string;
   selectedPost?: Post | null;
+  // AI 配置
+  enableAI?: boolean;
+  aiProvider?: 'deepseek' | 'openai' | 'siliconflow';
+  apiKey?: string;
+  openaiModel?: string;
+  openaiApiEndpoint?: string;
 }
 
 // 根据环境自动选择合适的编辑器组件

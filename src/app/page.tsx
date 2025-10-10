@@ -134,10 +134,15 @@ export default function Home() {
 
   // AI设置相关状态
   const [enableAI, setEnableAI] = useState<boolean>(false); // 是否启用AI
-  const [aiProvider, setAIProvider] = useState<'deepseek' | 'openai'>('deepseek'); // AI提供商
+  const [enableEditorAI, setEnableEditorAI] = useState<boolean>(false); // 是否启用编辑器AI增强
+  const [aiProvider, setAIProvider] = useState<'deepseek' | 'openai' | 'siliconflow'>('deepseek'); // AI提供商
   const [apiKey, setApiKey] = useState<string>(''); // API密钥
   const [prompt, setPrompt] = useState<string>('你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段'); // 提示词
   const [analysisPrompt, setAnalysisPrompt] = useState<string>('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段'); // 分析提示词
+  const [aiRewritePrompt, setAiRewritePrompt] = useState<string>('请直接重写以下文本，使其更清晰流畅，保持原意。只输出改写后的文本，不要添加任何解释或说明'); // AI重写提示词
+  const [aiImprovePrompt, setAiImprovePrompt] = useState<string>('请直接改进以下文本，使其更专业、生动。只输出改进后的文本，不要添加任何解释或说明'); // AI改进提示词
+  const [aiExpandPrompt, setAiExpandPrompt] = useState<string>('请扩展以下文本，适当添加细节。只输出扩展后的文本，不要添加解释或标注'); // AI扩展提示词
+  const [aiTranslatePrompt, setAiTranslatePrompt] = useState<string>('请直接将以下文本翻译成英文。只输出翻译结果，不要添加任何解释或说明'); // AI翻译提示词
   const [openaiModel, setOpenaiModel] = useState<string>('gpt-3.5-turbo'); // OpenAI模型
   const [openaiApiEndpoint, setOpenaiApiEndpoint] = useState<string>('https://api.openai.com/v1'); // OpenAI API端点
   const [showInspirationDialog, setShowInspirationDialog] = useState<boolean>(false); // 是否显示灵感对话框
@@ -404,8 +409,13 @@ export default function Home() {
           setEnableAI(savedEnableAI === 'true');
         }
 
+        const savedEnableEditorAI = localStorage.getItem('enable-editor-ai');
+        if (savedEnableEditorAI !== null) {
+          setEnableEditorAI(savedEnableEditorAI === 'true');
+        }
+
         const savedAIProvider = localStorage.getItem('ai-provider');
-        if (savedAIProvider === 'deepseek' || savedAIProvider === 'openai') {
+        if (savedAIProvider === 'deepseek' || savedAIProvider === 'openai' || savedAIProvider === 'siliconflow') {
           setAIProvider(savedAIProvider);
         }
 
@@ -428,6 +438,26 @@ export default function Home() {
         } else {
           // 设置默认分析提示词
           setAnalysisPrompt('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段');
+        }
+
+        const savedAiRewritePrompt = localStorage.getItem('ai-rewrite-prompt');
+        if (savedAiRewritePrompt !== null) {
+          setAiRewritePrompt(savedAiRewritePrompt);
+        }
+
+        const savedAiImprovePrompt = localStorage.getItem('ai-improve-prompt');
+        if (savedAiImprovePrompt !== null) {
+          setAiImprovePrompt(savedAiImprovePrompt);
+        }
+
+        const savedAiExpandPrompt = localStorage.getItem('ai-expand-prompt');
+        if (savedAiExpandPrompt !== null) {
+          setAiExpandPrompt(savedAiExpandPrompt);
+        }
+
+        const savedAiTranslatePrompt = localStorage.getItem('ai-translate-prompt');
+        if (savedAiTranslatePrompt !== null) {
+          setAiTranslatePrompt(savedAiTranslatePrompt);
         }
 
         const savedOpenaiModel = localStorage.getItem('openai-model');
@@ -2560,6 +2590,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 // AI设置
                 enableAI={enableAI}
                 onEnableAIChange={setEnableAI}
+                enableEditorAI={enableEditorAI}
+                onEnableEditorAIChange={setEnableEditorAI}
                 aiProvider={aiProvider}
                 onAIProviderChange={setAIProvider}
                 apiKey={apiKey}
@@ -3031,6 +3063,11 @@ ${selectedText}
                             language={language}
                             hexoPath={hexoPath}
                             selectedPost={selectedPost}
+                            enableAI={enableEditorAI}
+                            aiProvider={aiProvider}
+                            apiKey={apiKey}
+                            openaiModel={openaiModel}
+                            openaiApiEndpoint={openaiApiEndpoint}
                           />
                         </div>
                       )}
@@ -3063,6 +3100,11 @@ ${selectedText}
                             language={language}
                             hexoPath={hexoPath}
                             selectedPost={selectedPost}
+                            enableAI={enableEditorAI}
+                            aiProvider={aiProvider}
+                            apiKey={apiKey}
+                            openaiModel={openaiModel}
+                            openaiApiEndpoint={openaiApiEndpoint}
                           />
                         </div>
                       </div>
