@@ -234,7 +234,7 @@ export function AIRewriteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[75vw] max-w-[1300px] sm:max-w-[1300px] md:max-w-[1300px] lg:max-w-[1300px] max-h-[85vh]">
+      <DialogContent className="w-[75vw] max-w-[1300px] sm:max-w-[1300px] md:max-w-[1300px] lg:max-w-[1300px] max-h-[85vh] bg-white dark:bg-gray-800" style={{backgroundColor: "var(--background)", opacity: 1}}>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>{getRewriteTitle()}</span>
@@ -308,7 +308,7 @@ export function AIRewriteDialog({
                 }
               />
               {isRewriting && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+                <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800" style={{backgroundColor: "var(--background)", opacity: 1}}>
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span className="text-sm">
