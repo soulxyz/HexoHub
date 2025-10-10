@@ -388,7 +388,17 @@ useEffect(() => {
   const handleCopy = async () => {
     if (selectedText) {
       try {
-        await navigator.clipboard.writeText(selectedText);
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+        
+        // 使用 setTimeout 确保在菜单关闭后执行
+        setTimeout(() => {
+          // 恢复焦点到 textarea
+          textarea.focus();
+          
+          // 使用浏览器的原生复制命令
+          document.execCommand('copy');
+        }, 0);
       } catch (error) {
         console.error('Failed to copy:', error);
       }
@@ -399,18 +409,16 @@ useEffect(() => {
   const handleCut = async () => {
     if (selectedText) {
       try {
-        await navigator.clipboard.writeText(selectedText);
         const textarea = textareaRef.current;
         if (!textarea) return;
         
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const newValue = value.substring(0, start) + value.substring(end);
-        onChange(newValue);
-        
+        // 使用 setTimeout 确保在菜单关闭后执行
         setTimeout(() => {
-          textarea.setSelectionRange(start, start);
+          // 恢复焦点到 textarea
           textarea.focus();
+          
+          // 使用浏览器的原生剪切命令，这样可以支持撤销
+          document.execCommand('cut');
         }, 0);
       } catch (error) {
         console.error('Failed to cut:', error);
@@ -421,19 +429,16 @@ useEffect(() => {
   // 粘贴功能
   const handlePaste = async () => {
     try {
-      const text = await navigator.clipboard.readText();
       const textarea = textareaRef.current;
       if (!textarea) return;
       
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const newValue = value.substring(0, start) + text + value.substring(end);
-      onChange(newValue);
-      
+      // 使用 setTimeout 确保在菜单关闭后执行
       setTimeout(() => {
-        const newPos = start + text.length;
-        textarea.setSelectionRange(newPos, newPos);
+        // 恢复焦点到 textarea
         textarea.focus();
+        
+        // 使用浏览器的原生粘贴命令，这样可以支持撤销
+        document.execCommand('paste');
       }, 0);
     } catch (error) {
       console.error('Failed to paste:', error);
