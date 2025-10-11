@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+  Menu,
+  Item,
+  useContextMenu,
+} from 'react-contexify';
+import 'react-contexify/dist/ReactContexify.css';
 import { Wand2, Languages, FileText, Sparkles } from 'lucide-react';
 import { getTexts } from '@/utils/i18n';
 import { AIRewriteDialog } from '@/components/ai-rewrite-dialog';
@@ -23,6 +23,8 @@ interface AIRewriteMenuProps {
   enabled?: boolean;
 }
 
+const MENU_ID = 'ai-rewrite-menu';
+
 export function AIRewriteMenu({
   children,
   selectedText,
@@ -37,6 +39,7 @@ export function AIRewriteMenu({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rewriteType, setRewriteType] = useState<'rewrite' | 'improve' | 'translate' | 'expand' | null>(null);
   const t = getTexts(language);
+  const { show } = useContextMenu({ id: MENU_ID });
 
   // 打开 AI 改写对话框
   const openRewriteDialog = (type: 'rewrite' | 'improve' | 'translate' | 'expand') => {
@@ -48,56 +51,63 @@ export function AIRewriteMenu({
   const hasSelection = selectedText && selectedText.trim().length > 0;
   const canUseAI = enabled && apiKey && hasSelection;
 
+  const handleContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    show({
+      event,
+      props: {
+        selectedText,
+        hasSelection,
+        canUseAI
+      }
+    });
+  };
+
   return (
-    <>
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          {children}
-        </ContextMenuTrigger>
-        <ContextMenuContent className="w-64">
-          {canUseAI ? (
-            <>
-              <ContextMenuItem
-                onClick={() => openRewriteDialog('rewrite')}
-                className="flex items-center gap-2"
-              >
+    <div>
+      <div onContextMenu={handleContextMenu}>
+        {children}
+      </div>
+
+      <Menu id={MENU_ID} className="context-menu">
+        {canUseAI ? (
+          <React.Fragment key="ai-items">
+            <Item onClick={() => openRewriteDialog('rewrite')}>
+              <div className="flex items-center gap-2">
                 <Wand2 className="w-4 h-4" />
                 {t.aiRewrite}
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() => openRewriteDialog('improve')}
-                className="flex items-center gap-2"
-              >
+              </div>
+            </Item>
+            <Item onClick={() => openRewriteDialog('improve')}>
+              <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
                 {t.aiImprove}
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() => openRewriteDialog('expand')}
-                className="flex items-center gap-2"
-              >
+              </div>
+            </Item>
+            <Item onClick={() => openRewriteDialog('expand')}>
+              <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 {t.aiExpand}
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() => openRewriteDialog('translate')}
-                className="flex items-center gap-2"
-              >
+              </div>
+            </Item>
+            <Item onClick={() => openRewriteDialog('translate')}>
+              <div className="flex items-center gap-2">
                 <Languages className="w-4 h-4" />
                 {t.aiTranslate}
-              </ContextMenuItem>
-            </>
-          ) : (
-            <ContextMenuItem disabled>
-              {!enabled 
-                ? t.aiFeatureNotEnabled
-                : !apiKey
-                ? t.pleaseConfigureApiKey
-                : t.pleaseSelectText
-              }
-            </ContextMenuItem>
-          )}
-        </ContextMenuContent>
-      </ContextMenu>
+              </div>
+            </Item>
+          </React.Fragment>
+        ) : (
+          <Item disabled>
+            {!enabled 
+              ? t.aiFeatureNotEnabled
+              : !apiKey
+              ? t.pleaseConfigureApiKey
+              : t.pleaseSelectText
+            }
+          </Item>
+        )}
+      </Menu>
 
       {/* AI 改写预览对话框 */}
       <AIRewriteDialog
@@ -112,7 +122,6 @@ export function AIRewriteMenu({
         openaiModel={openaiModel}
         openaiApiEndpoint={openaiApiEndpoint}
       />
-    </>
+    </div>
   );
 }
-

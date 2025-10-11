@@ -179,6 +179,26 @@ export const commandOperations = {
   },
 };
 
+// 剪贴板操作
+export const clipboardOperations = {
+  writeText: async (text: string): Promise<void> => {
+    if (isTauriEnvironment()) {
+      const { writeText } = await import('@tauri-apps/plugin-clipboard-manager');
+      await writeText(text);
+    } else {
+      throw new Error('Not in Tauri environment');
+    }
+  },
+  
+  readText: async (): Promise<string> => {
+    if (isTauriEnvironment()) {
+      const { readText } = await import('@tauri-apps/plugin-clipboard-manager');
+      return await readText() || '';
+    }
+    throw new Error('Not in Tauri environment');
+  },
+};
+
 // 系统操作
 export const systemOperations = {
   openUrl: async (url: string): Promise<void> => {

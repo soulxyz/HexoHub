@@ -7,6 +7,7 @@ import { getTexts, Language } from '@/utils/i18n';
 import { isDesktopApp } from '@/lib/desktop-api';
 import { copyFileInElectron, writeFileFromBufferInElectron, ensureDirectoryExistsInElectron } from '@/lib/electron-image-api';
 import { EditorContextMenu } from '@/components/editor-context-menu';
+import { writeClipboardText, readClipboardText } from '@/lib/clipboard';
 import {
   Bold,
   Italic,
@@ -255,42 +256,53 @@ ${selectedText}
 
   // 复制功能
   const handleCopy = async () => {
-    if (selectedText) {
-      try {
-        await navigator.clipboard.writeText(selectedText);
-      } catch (error) {
-        console.error('Failed to copy:', error);
+    if (!selectedText) return;
+    
+    try {
+      // 使用统一的剪贴板工具（自动选择最优 API）
+      await writeClipboardText(selectedText);
+      // 恢复焦点
+      const textarea = textareaRef.current;
+      if (textarea) {
+        setTimeout(() => textarea.focus(), 0);
       }
+    } catch (error) {
+      console.error('Failed to copy:', error);
     }
   };
 
   // 剪切功能
   const handleCut = async () => {
-    if (selectedText) {
-      try {
-        await navigator.clipboard.writeText(selectedText);
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-        
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const newValue = value.substring(0, start) + value.substring(end);
-        onChange(newValue);
-        
-        setTimeout(() => {
-          textarea.setSelectionRange(start, start);
-          textarea.focus();
-        }, 0);
-      } catch (error) {
-        console.error('Failed to cut:', error);
-      }
+    if (!selectedText) return;
+    
+    try {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      
+      // 写入剪贴板
+      await writeClipboardText(selectedText);
+      
+      // 删除选中的文本
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newValue = value.substring(0, start) + value.substring(end);
+      onChange(newValue);
+      
+      // 设置光标位置
+      setTimeout(() => {
+        textarea.setSelectionRange(start, start);
+        textarea.focus();
+      }, 0);
+    } catch (error) {
+      console.error('Failed to cut:', error);
     }
   };
 
   // 粘贴功能
   const handlePaste = async () => {
     try {
-      const text = await navigator.clipboard.readText();
+      // 使用统一的剪贴板工具读取内容
+      const text = await readClipboardText();
       const textarea = textareaRef.current;
       if (!textarea) return;
       

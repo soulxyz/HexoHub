@@ -229,3 +229,61 @@
     background: transparent;
   }
 }
+
+/* React Contexify 自定义样式 */
+.react-contexify {
+  background-color: hsl(var(--popover));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  min-width: 14rem;
+  padding: 0.25rem;
+  z-index: 9999;
+}
+
+.react-contexify__item {
+  color: hsl(var(--popover-foreground));
+  padding: 0.375rem 0.5rem;
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 0.875rem;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.react-contexify__item:not(.react-contexify__item--disabled):hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.react-contexify__item:focus {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.react-contexify__item--disabled {
+  color: hsl(var(--muted-foreground));
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.react-contexify__separator {
+  height: 1px;
+  background-color: hsl(var(--border));
+  margin: 0.25rem 0;
+}
+
+.react-contexify__submenu {
+  position: relative;
+}
+
+.react-contexify__submenu-arrow {
+  margin-left: auto;
+  padding-left: 0.5rem;
+}
+
+.react-contexify__submenu > .react-contexify {
+  left: 100%;
+  top: 0;
+  margin-left: 0.25rem;
+}

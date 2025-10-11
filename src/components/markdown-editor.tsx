@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { getTexts, Language } from '@/utils/i18n';
 import { isDesktopApp } from '@/lib/desktop-api';
 import { EditorContextMenu } from '@/components/editor-context-menu';
+import { writeClipboardText, readClipboardText } from '@/lib/clipboard';
 import {
   Bold,
   Italic,
@@ -386,43 +387,49 @@ useEffect(() => {
 
   // 复制功能
   const handleCopy = async () => {
-    if (selectedText) {
-      try {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-        
-        // 使用 setTimeout 确保在菜单关闭后执行
-        setTimeout(() => {
-          // 恢复焦点到 textarea
-          textarea.focus();
-          
-          // 使用浏览器的原生复制命令
-          document.execCommand('copy');
-        }, 0);
-      } catch (error) {
-        console.error('Failed to copy:', error);
+    if (!selectedText) return;
+    
+    try {
+      // 使用统一的剪贴板工具（自动选择最优 API）
+      await writeClipboardText(selectedText);
+      
+      // 恢复焦点
+      const textarea = textareaRef.current;
+      if (textarea) {
+        setTimeout(() => textarea.focus(), 0);
       }
+    } catch (error) {
+      console.error('Failed to copy:', error);
     }
   };
 
   // 剪切功能
   const handleCut = async () => {
-    if (selectedText) {
-      try {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
+    if (!selectedText) return;
+    
+    try {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      
+      // 写入剪贴板
+      await writeClipboardText(selectedText);
+      
+      // 删除选中的文本
+      setTimeout(() => {
+        textarea.focus();
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const newText = text.substring(0, start) + text.substring(end);
+        onChange(newText);
         
-        // 使用 setTimeout 确保在菜单关闭后执行
+        // 设置光标位置
         setTimeout(() => {
-          // 恢复焦点到 textarea
-          textarea.focus();
-          
-          // 使用浏览器的原生剪切命令，这样可以支持撤销
-          document.execCommand('cut');
+          textarea.selectionStart = textarea.selectionEnd = start;
         }, 0);
-      } catch (error) {
-        console.error('Failed to cut:', error);
-      }
+      }, 0);
+    } catch (error) {
+      console.error('Failed to cut:', error);
     }
   };
 
@@ -432,13 +439,26 @@ useEffect(() => {
       const textarea = textareaRef.current;
       if (!textarea) return;
       
+      // 使用统一的剪贴板工具读取内容
+      const clipboardText = await readClipboardText();
+      
       // 使用 setTimeout 确保在菜单关闭后执行
       setTimeout(() => {
         // 恢复焦点到 textarea
         textarea.focus();
         
-        // 使用浏览器的原生粘贴命令，这样可以支持撤销
-        document.execCommand('paste');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        
+        // 在当前光标位置插入剪贴板内容
+        const newText = text.substring(0, start) + clipboardText + text.substring(end);
+        onChange(newText);
+        
+        // 设置光标位置到插入内容之后
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + clipboardText.length;
+        }, 0);
       }, 0);
     } catch (error) {
       console.error('Failed to paste:', error);
