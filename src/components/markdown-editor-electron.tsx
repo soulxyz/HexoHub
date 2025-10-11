@@ -7,6 +7,7 @@ import { getTexts, Language } from '@/utils/i18n';
 import { isDesktopApp } from '@/lib/desktop-api';
 import { copyFileInElectron, writeFileFromBufferInElectron, ensureDirectoryExistsInElectron } from '@/lib/electron-image-api';
 import { EditorContextMenu } from '@/components/editor-context-menu';
+import { writeClipboardText, readClipboardText } from '@/lib/clipboard';
 import {
   Bold,
   Italic,
@@ -258,7 +259,8 @@ ${selectedText}
     if (!selectedText) return;
     
     try {
-      await navigator.clipboard.writeText(selectedText);
+      // 使用统一的剪贴板工具（自动选择最优 API）
+      await writeClipboardText(selectedText);
       // 恢复焦点
       const textarea = textareaRef.current;
       if (textarea) {
@@ -278,7 +280,7 @@ ${selectedText}
       if (!textarea) return;
       
       // 写入剪贴板
-      await navigator.clipboard.writeText(selectedText);
+      await writeClipboardText(selectedText);
       
       // 删除选中的文本
       const start = textarea.selectionStart;
@@ -299,7 +301,8 @@ ${selectedText}
   // 粘贴功能
   const handlePaste = async () => {
     try {
-      const text = await navigator.clipboard.readText();
+      // 使用统一的剪贴板工具读取内容
+      const text = await readClipboardText();
       const textarea = textareaRef.current;
       if (!textarea) return;
       

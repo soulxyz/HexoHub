@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { getTexts, Language } from '@/utils/i18n';
 import { isDesktopApp } from '@/lib/desktop-api';
 import { EditorContextMenu } from '@/components/editor-context-menu';
+import { writeClipboardText, readClipboardText } from '@/lib/clipboard';
 import {
   Bold,
   Italic,
@@ -389,8 +390,8 @@ useEffect(() => {
     if (!selectedText) return;
     
     try {
-      // 使用现代 Clipboard API
-      await navigator.clipboard.writeText(selectedText);
+      // 使用统一的剪贴板工具（自动选择最优 API）
+      await writeClipboardText(selectedText);
       
       // 恢复焦点
       const textarea = textareaRef.current;
@@ -411,7 +412,7 @@ useEffect(() => {
       if (!textarea) return;
       
       // 写入剪贴板
-      await navigator.clipboard.writeText(selectedText);
+      await writeClipboardText(selectedText);
       
       // 删除选中的文本
       setTimeout(() => {
@@ -438,8 +439,8 @@ useEffect(() => {
       const textarea = textareaRef.current;
       if (!textarea) return;
       
-      // 使用 Clipboard API 读取剪贴板内容
-      const clipboardText = await navigator.clipboard.readText();
+      // 使用统一的剪贴板工具读取内容
+      const clipboardText = await readClipboardText();
       
       // 使用 setTimeout 确保在菜单关闭后执行
       setTimeout(() => {
@@ -461,14 +462,6 @@ useEffect(() => {
       }, 0);
     } catch (error) {
       console.error('Failed to paste:', error);
-      // 如果 Clipboard API 失败，尝试使用 execCommand 作为后备方案
-      const textarea = textareaRef.current;
-      if (textarea) {
-        setTimeout(() => {
-          textarea.focus();
-          document.execCommand('paste');
-        }, 0);
-      }
     }
   };
 
