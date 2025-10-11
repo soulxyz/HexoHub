@@ -386,43 +386,49 @@ useEffect(() => {
 
   // 复制功能
   const handleCopy = async () => {
-    if (selectedText) {
-      try {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-        
-        // 使用 setTimeout 确保在菜单关闭后执行
-        setTimeout(() => {
-          // 恢复焦点到 textarea
-          textarea.focus();
-          
-          // 使用浏览器的原生复制命令
-          document.execCommand('copy');
-        }, 0);
-      } catch (error) {
-        console.error('Failed to copy:', error);
+    if (!selectedText) return;
+    
+    try {
+      // 使用现代 Clipboard API
+      await navigator.clipboard.writeText(selectedText);
+      
+      // 恢复焦点
+      const textarea = textareaRef.current;
+      if (textarea) {
+        setTimeout(() => textarea.focus(), 0);
       }
+    } catch (error) {
+      console.error('Failed to copy:', error);
     }
   };
 
   // 剪切功能
   const handleCut = async () => {
-    if (selectedText) {
-      try {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
+    if (!selectedText) return;
+    
+    try {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      
+      // 写入剪贴板
+      await navigator.clipboard.writeText(selectedText);
+      
+      // 删除选中的文本
+      setTimeout(() => {
+        textarea.focus();
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const newText = text.substring(0, start) + text.substring(end);
+        onChange(newText);
         
-        // 使用 setTimeout 确保在菜单关闭后执行
+        // 设置光标位置
         setTimeout(() => {
-          // 恢复焦点到 textarea
-          textarea.focus();
-          
-          // 使用浏览器的原生剪切命令，这样可以支持撤销
-          document.execCommand('cut');
+          textarea.selectionStart = textarea.selectionEnd = start;
         }, 0);
-      } catch (error) {
-        console.error('Failed to cut:', error);
-      }
+      }, 0);
+    } catch (error) {
+      console.error('Failed to cut:', error);
     }
   };
 
@@ -432,16 +438,37 @@ useEffect(() => {
       const textarea = textareaRef.current;
       if (!textarea) return;
       
+      // 使用 Clipboard API 读取剪贴板内容
+      const clipboardText = await navigator.clipboard.readText();
+      
       // 使用 setTimeout 确保在菜单关闭后执行
       setTimeout(() => {
         // 恢复焦点到 textarea
         textarea.focus();
         
-        // 使用浏览器的原生粘贴命令，这样可以支持撤销
-        document.execCommand('paste');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        
+        // 在当前光标位置插入剪贴板内容
+        const newText = text.substring(0, start) + clipboardText + text.substring(end);
+        onChange(newText);
+        
+        // 设置光标位置到插入内容之后
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + clipboardText.length;
+        }, 0);
       }, 0);
     } catch (error) {
       console.error('Failed to paste:', error);
+      // 如果 Clipboard API 失败，尝试使用 execCommand 作为后备方案
+      const textarea = textareaRef.current;
+      if (textarea) {
+        setTimeout(() => {
+          textarea.focus();
+          document.execCommand('paste');
+        }, 0);
+      }
     }
   };
 

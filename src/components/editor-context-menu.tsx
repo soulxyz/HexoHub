@@ -2,15 +2,13 @@
 
 import { useState } from 'react';
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-} from '@/components/ui/context-menu';
+  Menu,
+  Item,
+  Separator,
+  Submenu,
+  useContextMenu
+} from 'react-contexify';
+import 'react-contexify/dist/ReactContexify.css';
 import { 
   Wand2, Languages, FileText, Sparkles,
   Copy, Scissors, Clipboard, SquareStack,
@@ -36,6 +34,8 @@ interface EditorContextMenuProps {
   enableAI?: boolean;
 }
 
+const MENU_ID = 'editor-context-menu';
+
 export function EditorContextMenu({
   children,
   selectedText,
@@ -55,6 +55,7 @@ export function EditorContextMenu({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rewriteType, setRewriteType] = useState<'rewrite' | 'improve' | 'translate' | 'expand' | null>(null);
   const t = getTexts(language);
+  const { show } = useContextMenu({ id: MENU_ID });
 
   const hasSelection = selectedText && selectedText.trim().length > 0;
   const canUseAI = enableAI && apiKey && hasSelection;
@@ -64,136 +65,152 @@ export function EditorContextMenu({
     setDialogOpen(true);
   };
 
+  const handleContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    show({
+      event,
+      props: {
+        selectedText,
+        hasSelection,
+        canUseAI
+      }
+    });
+  };
+
   return (
     <>
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          {children}
-        </ContextMenuTrigger>
-        <ContextMenuContent className="w-64">
-          {/* AI功能区 */}
-          {enableAI && (
-            <>
-              <ContextMenuSub>
-                <ContextMenuSubTrigger className="flex items-center gap-2">
+      <div onContextMenu={handleContextMenu}>
+        {children}
+      </div>
+
+      <Menu id={MENU_ID} className="context-menu">
+        {/* AI功能区 */}
+        {enableAI && (
+          <>
+            <Submenu
+              label={
+                <div className="flex items-center gap-2">
                   <Wand2 className="w-4 h-4" />
                   {language === 'zh' ? 'AI 工具' : 'AI Tools'}
-                </ContextMenuSubTrigger>
-                <ContextMenuSubContent className="w-56">
-                  {canUseAI ? (
-                    <>
-                      <ContextMenuItem
-                        onClick={() => openRewriteDialog('rewrite')}
-                        className="flex items-center gap-2"
-                      >
-                        <Wand2 className="w-4 h-4" />
-                        {t.aiRewrite}
-                      </ContextMenuItem>
-                      <ContextMenuItem
-                        onClick={() => openRewriteDialog('improve')}
-                        className="flex items-center gap-2"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        {t.aiImprove}
-                      </ContextMenuItem>
-                      <ContextMenuItem
-                        onClick={() => openRewriteDialog('expand')}
-                        className="flex items-center gap-2"
-                      >
-                        <FileText className="w-4 h-4" />
-                        {t.aiExpand}
-                      </ContextMenuItem>
-                      <ContextMenuItem
-                        onClick={() => openRewriteDialog('translate')}
-                        className="flex items-center gap-2"
-                      >
-                        <Languages className="w-4 h-4" />
-                        {t.aiTranslate}
-                      </ContextMenuItem>
-                    </>
-                  ) : (
-                    <ContextMenuItem disabled>
-                      {!apiKey
-                        ? t.pleaseConfigureApiKey
-                        : t.pleaseSelectText}
-                    </ContextMenuItem>
-                  )}
-                </ContextMenuSubContent>
-              </ContextMenuSub>
-              <ContextMenuSeparator />
-            </>
-          )}
+                </div>
+              }
+            >
+              {canUseAI ? (
+                <>
+                  <Item onClick={() => openRewriteDialog('rewrite')}>
+                    <div className="flex items-center gap-2">
+                      <Wand2 className="w-4 h-4" />
+                      {t.aiRewrite}
+                    </div>
+                  </Item>
+                  <Item onClick={() => openRewriteDialog('improve')}>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      {t.aiImprove}
+                    </div>
+                  </Item>
+                  <Item onClick={() => openRewriteDialog('expand')}>
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      {t.aiExpand}
+                    </div>
+                  </Item>
+                  <Item onClick={() => openRewriteDialog('translate')}>
+                    <div className="flex items-center gap-2">
+                      <Languages className="w-4 h-4" />
+                      {t.aiTranslate}
+                    </div>
+                  </Item>
+                </>
+              ) : (
+                <Item disabled>
+                  {!apiKey
+                    ? t.pleaseConfigureApiKey
+                    : t.pleaseSelectText}
+                </Item>
+              )}
+            </Submenu>
+            <Separator />
+          </>
+        )}
 
-          {/* 编辑功能区 */}
-          <ContextMenuItem
-            onClick={onCopy}
-            disabled={!hasSelection}
-            className="flex items-center gap-2"
-          >
+        {/* 编辑功能区 */}
+        <Item onClick={onCopy} disabled={!hasSelection}>
+          <div className="flex items-center gap-2">
             <Copy className="w-4 h-4" />
             {language === 'zh' ? '复制' : 'Copy'}
-          </ContextMenuItem>
-          <ContextMenuItem
-            onClick={onCut}
-            disabled={!hasSelection}
-            className="flex items-center gap-2"
-          >
+          </div>
+        </Item>
+        <Item onClick={onCut} disabled={!hasSelection}>
+          <div className="flex items-center gap-2">
             <Scissors className="w-4 h-4" />
             {language === 'zh' ? '剪切' : 'Cut'}
-          </ContextMenuItem>
-          <ContextMenuItem
-            onClick={onPaste}
-            className="flex items-center gap-2"
-          >
+          </div>
+        </Item>
+        <Item onClick={onPaste}>
+          <div className="flex items-center gap-2">
             <Clipboard className="w-4 h-4" />
             {language === 'zh' ? '粘贴' : 'Paste'}
-          </ContextMenuItem>
-          <ContextMenuItem
-            onClick={onSelectAll}
-            className="flex items-center gap-2"
-          >
+          </div>
+        </Item>
+        <Item onClick={onSelectAll}>
+          <div className="flex items-center gap-2">
             <SquareStack className="w-4 h-4" />
             {language === 'zh' ? '全选' : 'Select All'}
-          </ContextMenuItem>
+          </div>
+        </Item>
 
-          <ContextMenuSeparator />
+        <Separator />
 
-          {/* Markdown 格式化 */}
-          <ContextMenuSub>
-            <ContextMenuSubTrigger disabled={!hasSelection} className="flex items-center gap-2">
+        {/* Markdown 格式化 */}
+        <Submenu
+          label={
+            <div className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               {language === 'zh' ? 'Markdown 格式' : 'Markdown Format'}
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-56">
-              <ContextMenuItem onClick={() => onFormat('bold')} className="flex items-center gap-2">
-                <Bold className="w-4 h-4" />
-                {language === 'zh' ? '粗体' : 'Bold'}
-              </ContextMenuItem>
-              <ContextMenuItem onClick={() => onFormat('italic')} className="flex items-center gap-2">
-                <Italic className="w-4 h-4" />
-                {language === 'zh' ? '斜体' : 'Italic'}
-              </ContextMenuItem>
-              <ContextMenuItem onClick={() => onFormat('code')} className="flex items-center gap-2">
-                <Code className="w-4 h-4" />
-                {language === 'zh' ? '行内代码' : 'Inline Code'}
-              </ContextMenuItem>
-              <ContextMenuItem onClick={() => onFormat('link')} className="flex items-center gap-2">
-                <Link2 className="w-4 h-4" />
-                {language === 'zh' ? '链接' : 'Link'}
-              </ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuItem onClick={() => onFormat('ul')} className="flex items-center gap-2">
-                <List className="w-4 h-4" />
-                {language === 'zh' ? '无序列表' : 'Unordered List'}
-              </ContextMenuItem>
-              <ContextMenuItem onClick={() => onFormat('ol')} className="flex items-center gap-2">
-                <ListOrdered className="w-4 h-4" />
-                {language === 'zh' ? '有序列表' : 'Ordered List'}
-              </ContextMenuItem>
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-        </ContextMenuContent>
-      </ContextMenu>
+            </div>
+          }
+          disabled={!hasSelection}
+        >
+          <Item onClick={() => onFormat('bold')}>
+            <div className="flex items-center gap-2">
+              <Bold className="w-4 h-4" />
+              {language === 'zh' ? '粗体' : 'Bold'}
+            </div>
+          </Item>
+          <Item onClick={() => onFormat('italic')}>
+            <div className="flex items-center gap-2">
+              <Italic className="w-4 h-4" />
+              {language === 'zh' ? '斜体' : 'Italic'}
+            </div>
+          </Item>
+          <Item onClick={() => onFormat('code')}>
+            <div className="flex items-center gap-2">
+              <Code className="w-4 h-4" />
+              {language === 'zh' ? '行内代码' : 'Inline Code'}
+            </div>
+          </Item>
+          <Item onClick={() => onFormat('link')}>
+            <div className="flex items-center gap-2">
+              <Link2 className="w-4 h-4" />
+              {language === 'zh' ? '链接' : 'Link'}
+            </div>
+          </Item>
+          <Separator />
+          <Item onClick={() => onFormat('ul')}>
+            <div className="flex items-center gap-2">
+              <List className="w-4 h-4" />
+              {language === 'zh' ? '无序列表' : 'Unordered List'}
+            </div>
+          </Item>
+          <Item onClick={() => onFormat('ol')}>
+            <div className="flex items-center gap-2">
+              <ListOrdered className="w-4 h-4" />
+              {language === 'zh' ? '有序列表' : 'Ordered List'}
+            </div>
+          </Item>
+        </Submenu>
+      </Menu>
 
       {/* AI 改写预览对话框 */}
       <AIRewriteDialog
@@ -211,4 +228,3 @@ export function EditorContextMenu({
     </>
   );
 }
-
