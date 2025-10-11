@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Menu,
   Item,
@@ -64,14 +64,14 @@ export function AIRewriteMenu({
   };
 
   return (
-    <>
+    <div>
       <div onContextMenu={handleContextMenu}>
         {children}
       </div>
 
       <Menu id={MENU_ID} className="context-menu">
         {canUseAI ? (
-          <>
+          <React.Fragment key="ai-items">
             <Item onClick={() => openRewriteDialog('rewrite')}>
               <div className="flex items-center gap-2">
                 <Wand2 className="w-4 h-4" />
@@ -96,7 +96,7 @@ export function AIRewriteMenu({
                 {t.aiTranslate}
               </div>
             </Item>
-          </>
+          </React.Fragment>
         ) : (
           <Item disabled>
             {!enabled 
@@ -122,6 +122,6 @@ export function AIRewriteMenu({
         openaiModel={openaiModel}
         openaiApiEndpoint={openaiApiEndpoint}
       />
-    </>
+    </div>
   );
 }

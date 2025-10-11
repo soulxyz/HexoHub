@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Menu,
   Item,
@@ -78,7 +78,7 @@ export function EditorContextMenu({
   };
 
   return (
-    <>
+    <div>
       <div onContextMenu={handleContextMenu}>
         {children}
       </div>
@@ -86,7 +86,7 @@ export function EditorContextMenu({
       <Menu id={MENU_ID} className="context-menu">
         {/* AI功能区 */}
         {enableAI && (
-          <>
+          <React.Fragment key="ai-tools">
             <Submenu
               label={
                 <div className="flex items-center gap-2">
@@ -96,7 +96,7 @@ export function EditorContextMenu({
               }
             >
               {canUseAI ? (
-                <>
+                <React.Fragment key="ai-submenu-items">
                   <Item onClick={() => openRewriteDialog('rewrite')}>
                     <div className="flex items-center gap-2">
                       <Wand2 className="w-4 h-4" />
@@ -121,7 +121,7 @@ export function EditorContextMenu({
                       {t.aiTranslate}
                     </div>
                   </Item>
-                </>
+                </React.Fragment>
               ) : (
                 <Item disabled>
                   {!apiKey
@@ -131,7 +131,7 @@ export function EditorContextMenu({
               )}
             </Submenu>
             <Separator />
-          </>
+          </React.Fragment>
         )}
 
         {/* 编辑功能区 */}
@@ -225,6 +225,6 @@ export function EditorContextMenu({
         openaiModel={openaiModel}
         openaiApiEndpoint={openaiApiEndpoint}
       />
-    </>
+    </div>
   );
 }
