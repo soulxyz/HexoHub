@@ -198,6 +198,73 @@
     opacity: 1 !important;
   }
 
+  /* 按钮悬停和点击效果 */
+  [data-slot="button"] {
+    transition: all 0.2s ease-in-out;
+    transform: translateZ(0);
+  }
+
+  /* 按钮悬停效果 - 添加轻微放大和阴影 */
+  [data-slot="button"]:not(:disabled):hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  /* 按钮点击效果 - 添加按下效果 */
+  [data-slot="button"]:not(:disabled):active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    transition: all 0.1s ease;
+  }
+
+  /* 为不同类型的按钮添加特定效果 */
+  [data-slot="button"][variant="default"]:not(:disabled):hover {
+    box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.25);
+  }
+
+  [data-slot="button"][variant="destructive"]:not(:disabled):hover {
+    box-shadow: 0 4px 12px rgba(var(--color-destructive-rgb), 0.25);
+  }
+
+  [data-slot="button"][variant="outline"]:not(:disabled):hover {
+    border-color: var(--color-accent);
+  }
+
+  [data-slot="button"][variant="secondary"]:not(:disabled):hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  /* 暗色模式下的效果 */
+  .dark [data-slot="button"]:not(:disabled):hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .dark [data-slot="button"][variant="default"]:not(:disabled):hover {
+    box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+  }
+
+  .dark [data-slot="button"][variant="destructive"]:not(:disabled):hover {
+    box-shadow: 0 4px 12px rgba(var(--color-destructive-rgb), 0.3);
+  }
+
+  /* 为小按钮减小效果强度 */
+  [data-slot="button"][size="sm"]:not(:disabled):hover {
+    transform: translateY(-0.5px) scale(1.01);
+  }
+
+  [data-slot="button"][size="sm"]:not(:disabled):active {
+    transform: translateY(0.5px) scale(0.99);
+  }
+
+  /* 为图标按钮调整效果 */
+  [data-slot="button"][size="icon"]:not(:disabled):hover {
+    transform: scale(1.1);
+  }
+
+  [data-slot="button"][size="icon"]:not(:disabled):active {
+    transform: scale(0.95);
+  }
+
   /* 自定义标题栏拖拽区域样式 */
   .drag-region {
     -webkit-app-region: drag;
