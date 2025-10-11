@@ -7,7 +7,10 @@
 [![GitHub Forks](https://img.shields.io/github/forks/forever218/Hexohub)](https://github.com/forever218/Hexohub/network/members)
 [![GitHub Issues](https://img.shields.io/github/issues/forever218/Hexohub)](https://github.com/forever218/Hexohub/issues)
 [![GitHub License](https://img.shields.io/github/license/forever218/Hexohub)](https://github.com/forever218/Hexohub)
-[![GitHub all releases](https://img.shields.io/github/downloads/forever218/Hexohub/total)](https://github.com/forever218/Hexohub/releases)
+[![GitHub all releases](https://img.shields.io/github/downloads/forever218/Hexohub/total)](https://github.com/forever218/Hexohub/releases)  
+
+一个Hexo博客管理桌面应用程序，提供图形化界面来替代传统的命令行操作  
+> 告别繁琐的传统命令行方式（我已经厌倦了hexo xxxx🫠），以更优雅的方式管理您的hexo博客。
 
 <div align="center">
   <img 
@@ -26,8 +29,7 @@
 </div>
 
 
-一个基于 Electron + Next.js 构建的Hexo博客管理桌面应用程序，提供图形化界面来替代传统的命令行操作  
-> 告别繁琐的传统命令行方式（我已经厌倦了hexo xxxx🫠），以更优雅的方式管理您的hexo博客。
+
 
 
 ## 文章管理
@@ -36,7 +38,7 @@
 
 ## 图片拖入
 这或许是本应用程序的一大亮点，当您开启了hexo的资源文件夹后（[这是什么？](https://hexo.io/zh-cn/docs/asset-folders)），您就可以使用`{% asset_img example.jpg %}`标签，将本地的图片在博客中进行引用。  
-但是，频繁的输入`{% asset_img example.jpg %}`显然是不尽如人意的（特别是当图片文件名很复杂的时候），所以在本应用程序中，您只需要将图片放入与文章同名的资源文件夹下（例如`\blog\source\_posts\测试文章`），然后将图片拖入编辑窗口，就能自动填入`{% asset_img example.jpg %}`标签，省去了输入文件名的烦恼    
+但是，频繁的输入`{% asset_img example.jpg %}`显然是不尽如人意的（特别是当图片文件名很复杂的时候），所以在本应用程序中，您只需要将图片拖入编辑窗口，就能自动将图片复制到hexo资源文件夹下，并填入`{% asset_img example.jpg %}`标签，省去了输入文件名和操作文件的烦恼    
 
 <div align="center">
   <img 
@@ -68,6 +70,9 @@
 **高级设置**：URL 配置、永久链接格式  
 **YAML 编辑**：支持直接编辑原始配置文件  
 **导入/导出**：配置文件的备份和恢复，更加方便您主题的迁移
+
+## AI加持
+在本应用程序中，多个地方集成了AI功能，包括：AI灵感、AI分析（分析您的博客历程）、AI写作（重写、改写、拓展）等，享受AI带来的便捷和高效！
 
 #  快速开始  
 ## 使用
