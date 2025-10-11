@@ -61,3 +61,33 @@ Thumbs.db
 logs
 *.log
 .npmrc
+
+# Build artifacts and temporary files
+*.tmp
+*.temp
+*~
+
+# Image cache and temporary images (but keep source icons)
+/public/temp-*
+/src/assets/temp-*
+**/cache/**.png
+**/cache/**.jpg
+**/cache/**.gif
+**/temp/**.png
+**/temp/**.jpg
+**/temp/**.gif
+
+# Generated screenshots or exports (example patterns)
+screenshot-*.png
+export-*.png
+test-*.png
+
+# Tauri auto-generated icons (keep only essential ones)
+
+
+# Keep only essential project icons
+!src-tauri/icons/icon.ico
+!src-tauri/icons/icon.icns
+!src-tauri/icons/icon.png
+!public/icon.*
+!src/assets/images/**

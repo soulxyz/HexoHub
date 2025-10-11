@@ -9,6 +9,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Download, ExternalLink, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getTexts } from '@/utils/i18n';
+import { isDesktopApp, getDesktopEnvironment, isTauri } from '@/lib/desktop-api';
+import { openExternalLink } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import rehypeRaw from 'rehype-raw';
 
 interface GitHubRelease {
   id: number;
@@ -38,6 +46,7 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
   const [lastChecked, setLastChecked] = useState<string | null>(null);
+  const [platform, setPlatform] = useState<string>('browser');
   const { toast } = useToast();
   // 获取当前语言的文本
   const t = getTexts(language);
@@ -45,6 +54,10 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
   // 从localStorage加载上次检查时间和自动更新设置
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // 获取当前平台
+      const env = getDesktopEnvironment();
+      setPlatform(env);
+      
       const savedLastChecked = localStorage.getItem('last-update-check');
       if (savedLastChecked) {
         setLastChecked(savedLastChecked);
@@ -64,7 +77,20 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
   const checkForUpdates = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
+      // 在 Tauri 环境下使用 Tauri HTTP 插件，在浏览器环境使用原生 fetch
+      let response;
+      if (isTauri()) {
+        const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+        response = await tauriFetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        });
+      } else {
+        response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
+      }
+      
       if (!response.ok) {
         throw new Error(t.checkUpdateFailed);
       }
@@ -204,7 +230,14 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
         
         <div className="flex items-center justify-between">
           <span>{t.currentVersion}</span>
-          <Badge variant="outline">{currentVersion}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{currentVersion}</Badge>
+            {platform !== 'browser' && (
+              <Badge variant="secondary" className="capitalize">
+                {platform}
+              </Badge>
+            )}
+          </div>
         </div>
 
         {lastChecked && (
@@ -240,12 +273,93 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
 
             <div className="space-y-2">
               <h4 className="font-medium">{t.updateContent}</h4>
-              <div className="text-sm bg-muted p-3 rounded-md max-h-40 overflow-y-auto">
-                {latestRelease.body.split('\n').map((line, index) => (
-                  <p key={index} className="mb-1 last:mb-0">
-                    {line}
-                  </p>
-                ))}
+              <div className="text-sm bg-muted/50 p-4 rounded-lg max-h-96 overflow-y-auto">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkBreaks]}
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    code({ node, inline, className, children, ...props }: any) {
+                      const match = /language-(\w+)/.exec(className || '');
+                      return !inline && match ? (
+                        <SyntaxHighlighter
+                          style={tomorrow}
+                          language={match[1]}
+                          PreTag="div"
+                          className="!rounded-md !text-xs !my-3 !bg-background/80"
+                          {...props}
+                        >
+                          {String(children).replace(/\n$/, '')}
+                        </SyntaxHighlighter>
+                      ) : (
+                        <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-xs font-mono font-semibold" {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                    h1({ children }: any) {
+                      return <h1 className="text-lg font-bold mt-4 mb-2 text-foreground border-b pb-2">{children}</h1>;
+                    },
+                    h2({ children }: any) {
+                      return <h2 className="text-base font-bold mt-3 mb-2 text-foreground">{children}</h2>;
+                    },
+                    h3({ children }: any) {
+                      return <h3 className="text-sm font-semibold mt-2 mb-1 text-foreground">{children}</h3>;
+                    },
+                    p({ children }: any) {
+                      return <p className="mb-2 leading-relaxed text-foreground/90">{children}</p>;
+                    },
+                    ul({ children }: any) {
+                      return <ul className="mb-2 ml-5 list-disc space-y-1.5 marker:text-primary">{children}</ul>;
+                    },
+                    ol({ children }: any) {
+                      return <ol className="mb-2 ml-5 list-decimal space-y-1.5 marker:text-primary marker:font-semibold">{children}</ol>;
+                    },
+                    li({ children }: any) {
+                      return <li className="leading-relaxed text-foreground/90 pl-1">{children}</li>;
+                    },
+                    blockquote({ children }: any) {
+                      return (
+                        <blockquote className="border-l-3 border-primary/50 bg-primary/5 pl-4 py-2 my-3 italic text-foreground/80">
+                          {children}
+                        </blockquote>
+                      );
+                    },
+                    a({ children, href }: any) {
+                      return (
+                        <a 
+                          href={href} 
+                          className="text-primary font-semibold hover:text-primary/80 underline decoration-2 underline-offset-2 transition-colors"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {children}
+                        </a>
+                      );
+                    },
+                    img({ src, alt }: any) {
+                      return (
+                        <div className="my-4">
+                          <img 
+                            src={src} 
+                            alt={alt} 
+                            className="max-w-full h-auto rounded-lg border border-border shadow-md"
+                          />
+                        </div>
+                      );
+                    },
+                    strong({ children }: any) {
+                      return <strong className="font-bold text-foreground">{children}</strong>;
+                    },
+                    em({ children }: any) {
+                      return <em className="italic text-foreground/90">{children}</em>;
+                    },
+                    hr() {
+                      return <hr className="my-4 border-border" />;
+                    },
+                  }}
+                >
+                  {latestRelease.body}
+                </ReactMarkdown>
               </div>
             </div>
 
@@ -278,12 +392,9 @@ export function UpdateChecker({ currentVersion, repoOwner, repoName, autoCheckUp
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.preventDefault();
-                  if (typeof window !== 'undefined' && window.require) {
-                    const { shell } = window.require('electron');
-                    shell.openExternal(latestRelease.html_url);
-                  }
+                  await openExternalLink(latestRelease.html_url);
                 }}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />

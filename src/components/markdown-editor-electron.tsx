@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -6,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { getTexts, Language } from '@/utils/i18n';
 import { isDesktopApp } from '@/lib/desktop-api';
+import { copyFileInElectron, writeFileFromBufferInElectron, ensureDirectoryExistsInElectron } from '@/lib/electron-image-api';
 import { EditorContextMenu } from '@/components/editor-context-menu';
 import { writeClipboardText, readClipboardText } from '@/lib/clipboard';
 import {
@@ -45,7 +45,7 @@ interface MarkdownEditorProps {
   openaiApiEndpoint?: string;
 }
 
-export function MarkdownEditor({ 
+export function MarkdownEditorElectron({ 
   value, 
   onChange, 
   onSave, 
@@ -89,137 +89,25 @@ export function MarkdownEditor({
             /post_asset_folder:\s*false/i,
             'post_asset_folder: true'
           );
-          
+
           await ipcRenderer.invoke('write-file', configPath, newContent);
-          
+
           alert(
             `${t.assetFolderEnabledSuccess}\n\n${t.assetFolderEnabledNextSteps}`
           );
-          
+
           return true;
         }
-        
+
         return false;
       }
-      
+
       return true;
     } catch (error) {
       console.error('[MarkdownEditor] 检查配置失败:', error);
       return true; // 检查失败时继续操作
     }
   };
-
-  // 使用 Tauri 的拖放事件监听器（可以获取文件绝对路径）
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-
-    const setupTauriDragDrop = async () => {
-      // 检测 Tauri 环境
-      if (typeof window === 'undefined' || typeof (window as any).__TAURI_INTERNALS__ === 'undefined') {
-        console.log('[MarkdownEditor] 不是 Tauri 环境，使用 HTML5 拖放');
-        return;
-      }
-
-      if (!hexoPath || !selectedPost) {
-        console.log('[MarkdownEditor] 缺少 hexoPath 或 selectedPost');
-        return;
-      }
-
-      try {
-        console.log('[MarkdownEditor] 设置 Tauri 拖放监听器...');
-        const { getCurrentWebview } = await import('@tauri-apps/api/webview');
-        const webview = getCurrentWebview();
-
-        unlisten = await webview.onDragDropEvent(async (event) => {
-          const { payload } = event;
-          console.log('[MarkdownEditor] Tauri 拖放事件:', payload);
-
-          if (payload.type === 'over') {
-            // 检查鼠标位置是否在编辑器区域内
-            const { x, y } = payload.position;
-            if (dropAreaRef.current) {
-              const { left, right, top, bottom } = dropAreaRef.current.getBoundingClientRect();
-              const inBoundsX = x >= left && x <= right;
-              const inBoundsY = y >= top && y <= bottom;
-              
-              if (inBoundsX && inBoundsY) {
-                setIsDragOver(true);
-              }
-            }
-          } else if (payload.type === 'drop' && isDragOver) {
-            setIsDragOver(false);
-            
-            const filePaths = payload.paths || [];
-            console.log('[MarkdownEditor] 拖放的文件路径:', filePaths);
-            
-            // 过滤出图片文件
-            const imageFiles = filePaths.filter(filePath => 
-              /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(filePath)
-            );
-            
-            console.log('[MarkdownEditor] 过滤后的图片文件:', imageFiles);
-            
-            if (imageFiles.length > 0) {
-              // 检查并提示启用 post_asset_folder
-              const canProceed = await checkAndEnableAssetFolder();
-              if (!canProceed) {
-                console.log('[MarkdownEditor] 用户取消启用 post_asset_folder');
-                return;
-              }
-
-              const postNameWithoutExt = selectedPost.name.replace(/\.(md|markdown)$/i, '');
-              const assetFolderPath = `${hexoPath}/source/_posts/${postNameWithoutExt}`;
-              
-              console.log('[MarkdownEditor] 资源文件夹路径:', assetFolderPath);
-              
-              // 使用 Tauri 的 invoke 调用后端 copy_file 命令
-              const { invoke } = await import('@tauri-apps/api/core');
-              
-              for (let index = 0; index < imageFiles.length; index++) {
-                const filePath = imageFiles[index];
-                const fileName = filePath.split(/[\\/]/).pop() || filePath;
-                const destinationPath = `${assetFolderPath}/${fileName}`;
-                
-                try {
-                  console.log(`[MarkdownEditor] 复制文件: ${filePath} -> ${destinationPath}`);
-                  await invoke('copy_file', { 
-                    sourcePath: filePath, 
-                    destinationPath: destinationPath 
-                  });
-                  console.log(`[MarkdownEditor] 文件已复制到: ${destinationPath}`);
-                  
-                  // 插入标签
-                  setTimeout(() => {
-                    insertImageAtCursor(fileName);
-                  }, index * 50);
-                  
-                } catch (error) {
-                  console.error('[MarkdownEditor] 复制文件失败:', error);
-                  alert(`复制文件失败: ${error}`);
-                }
-              }
-            }
-          } else {
-            // leave, cancel 或其他情况
-            setIsDragOver(false);
-          }
-        });
-
-        console.log('[MarkdownEditor] Tauri 拖放监听器设置完成');
-      } catch (error) {
-        console.error('[MarkdownEditor] 设置 Tauri 拖放监听器失败:', error);
-      }
-    };
-
-    setupTauriDragDrop();
-
-    return () => {
-      if (unlisten) {
-        console.log('[MarkdownEditor] 清理 Tauri 拖放监听器');
-        unlisten();
-      }
-    };
-  }, [hexoPath, selectedPost, isDragOver, language]);
 
   const insertTextAtCursor = (insertText: string, selectionStart?: number, selectionEnd?: number) => {
     const textarea = textareaRef.current;
@@ -304,46 +192,27 @@ ${selectedText}
   const handleHeading3 = () => insertTextAtCursor('\n### ');
   const handleHorizontalRule = () => insertTextAtCursor('\n---\n');
 
-useEffect(() => {
-  const lines = value.split('\n');
-  setLineNumbers(lines.map((_, index) => (index + 1).toString()));
-}, [value]);
+  useEffect(() => {
+    const lines = value.split('\n');
+    setLineNumbers(lines.map((_, index) => (index + 1).toString()));
+  }, [value]);
 
-  // 全选功能
-  const handleSelectAll = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    
-    // 使用 setTimeout 确保在菜单关闭后执行
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(0, value.length);
-    }, 0);
-  };
-
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    // Ctrl+S 或 Cmd+S 保存
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      e.preventDefault();
-      if (onSave) {
-        onSave();
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+S 或 Cmd+S 保存
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (onSave) {
+          onSave();
+        }
       }
-    }
-    
-    // Ctrl+A 或 Cmd+A 全选
-    if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
-      e.preventDefault();
-      handleSelectAll();
-    }
-  };
+    };
 
-  window.addEventListener('keydown', handleKeyDown);
-  return () => {
-    window.removeEventListener('keydown', handleKeyDown);
-  };
-}, [onSave, handleSelectAll]);
-
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onSave]);
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(e.target.value);
@@ -392,7 +261,6 @@ useEffect(() => {
     try {
       // 使用统一的剪贴板工具（自动选择最优 API）
       await writeClipboardText(selectedText);
-      
       // 恢复焦点
       const textarea = textareaRef.current;
       if (textarea) {
@@ -415,18 +283,15 @@ useEffect(() => {
       await writeClipboardText(selectedText);
       
       // 删除选中的文本
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newValue = value.substring(0, start) + value.substring(end);
+      onChange(newValue);
+      
+      // 设置光标位置
       setTimeout(() => {
+        textarea.setSelectionRange(start, start);
         textarea.focus();
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-        const newText = text.substring(0, start) + text.substring(end);
-        onChange(newText);
-        
-        // 设置光标位置
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = start;
-        }, 0);
       }, 0);
     } catch (error) {
       console.error('Failed to cut:', error);
@@ -436,33 +301,32 @@ useEffect(() => {
   // 粘贴功能
   const handlePaste = async () => {
     try {
+      // 使用统一的剪贴板工具读取内容
+      const text = await readClipboardText();
       const textarea = textareaRef.current;
       if (!textarea) return;
       
-      // 使用统一的剪贴板工具读取内容
-      const clipboardText = await readClipboardText();
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newValue = value.substring(0, start) + text + value.substring(end);
+      onChange(newValue);
       
-      // 使用 setTimeout 确保在菜单关闭后执行
       setTimeout(() => {
-        // 恢复焦点到 textarea
+        const newPos = start + text.length;
+        textarea.setSelectionRange(newPos, newPos);
         textarea.focus();
-        
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-        
-        // 在当前光标位置插入剪贴板内容
-        const newText = text.substring(0, start) + clipboardText + text.substring(end);
-        onChange(newText);
-        
-        // 设置光标位置到插入内容之后
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = start + clipboardText.length;
-        }, 0);
       }, 0);
     } catch (error) {
       console.error('Failed to paste:', error);
     }
+  };
+
+  // 全选功能
+  const handleSelectAll = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.focus();
+    textarea.setSelectionRange(0, value.length);
   };
 
   // Markdown 格式化功能
@@ -515,14 +379,10 @@ useEffect(() => {
     }, 0);
   };
 
-  // 检测是否为 Tauri 环境
-  const isTauriEnv = typeof window !== 'undefined' && typeof (window as any).__TAURI_INTERNALS__ !== 'undefined';
+  // 检测是否为 Electron 环境
+  const isElectronEnv = typeof window !== 'undefined' && 'require' in window;
 
   const handleDragEnter = (e: React.DragEvent) => {
-    // 在 Tauri 环境中，不处理 HTML5 拖放事件
-    if (isTauriEnv) {
-      return;
-    }
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
@@ -530,19 +390,11 @@ useEffect(() => {
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    // 在 Tauri 环境中，不处理 HTML5 拖放事件
-    if (isTauriEnv) {
-      return;
-    }
     e.preventDefault();
     e.stopPropagation();
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // 在 Tauri 环境中，不处理 HTML5 拖放事件
-    if (isTauriEnv) {
-      return;
-    }
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
@@ -568,12 +420,6 @@ useEffect(() => {
   };
 
   const handleDrop = async (e: React.DragEvent) => {
-    // 在 Tauri 环境中，由 Tauri 的 onDragDropEvent 处理
-    if (isTauriEnv) {
-      console.log('[MarkdownEditor] Tauri 环境，忽略 HTML5 drop 事件');
-      return;
-    }
-
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
@@ -585,8 +431,8 @@ useEffect(() => {
 
     const files = Array.from(e.dataTransfer.files);
     console.log('[MarkdownEditor] 拖入的文件:', files.map(f => ({ name: f.name, path: (f as any).path })));
-    
-    const imageFiles = files.filter(file => 
+
+    const imageFiles = files.filter(file =>
       /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(file.name)
     );
 
@@ -604,27 +450,57 @@ useEffect(() => {
 
         const postNameWithoutExt = selectedPost.name.replace(/\.(md|markdown)$/i, '');
         const assetFolderPath = `${hexoPath}/source/_posts/${postNameWithoutExt}`;
-        
+
         console.log('[MarkdownEditor] 资源文件夹路径:', assetFolderPath);
-        
+
+        // 确保资源文件夹存在
+        try {
+          await ensureDirectoryExistsInElectron(assetFolderPath);
+          console.log('[MarkdownEditor] 资源文件夹已确保存在');
+        } catch (error) {
+          console.error('[MarkdownEditor] 创建资源文件夹失败:', error);
+        }
+
         for (let index = 0; index < imageFiles.length; index++) {
           const file = imageFiles[index];
-          const filePath = (file as any).path;
-          
+
+          // 在 Electron 中，尝试获取文件路径
+          let filePath = (file as any).path;
+
+          // 如果无法直接获取路径，尝试通过其他方式获取
+          if (!filePath) {
+            try {
+              // 尝试通过 HTML5 File API 获取文件内容并写入
+              const fileContent = await file.arrayBuffer();
+              const destinationPath = `${assetFolderPath}/${file.name}`;
+
+              await writeFileFromBufferInElectron(destinationPath, new Uint8Array(fileContent));
+              console.log(`[MarkdownEditor] 文件已写入到: ${destinationPath}`);
+
+              // 插入标签
+              setTimeout(() => {
+                insertImageAtCursor(file.name);
+              }, index * 50);
+
+              continue; // 跳过下面的处理
+            } catch (error) {
+              console.error('[MarkdownEditor] 通过文件内容写入失败:', error);
+            }
+          }
+
+          // 如果有文件路径，直接复制
           if (filePath) {
             try {
-              const { getIpcRenderer } = await import('@/lib/desktop-api');
-              const ipcRenderer = await getIpcRenderer();
               const destinationPath = `${assetFolderPath}/${file.name}`;
-              
-              await ipcRenderer.invoke('copy-file', filePath, destinationPath);
+
+              await copyFileInElectron(filePath, destinationPath);
               console.log(`[MarkdownEditor] 文件已复制到: ${destinationPath}`);
             } catch (error) {
               console.error('[MarkdownEditor] 复制文件失败:', error);
               alert(`复制文件失败: ${error}`);
             }
           }
-          
+
           // 插入标签
           setTimeout(() => {
             insertImageAtCursor(file.name);
@@ -646,7 +522,7 @@ useEffect(() => {
       <div className="border-b p-2 bg-background">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 text-sm text-foreground">
-            <span>Markdown编辑器</span>
+            <span>Markdown编辑器 (Electron)</span>
           </div>
         </div>
       </div>

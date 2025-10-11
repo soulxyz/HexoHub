@@ -1,6 +1,6 @@
 # HexoHub
 
-[中文文档](https://github.com/forever218/HexoHub/blob/main/README.md)  |  [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)  
+[中文文档](https://github.com/forever218/HexoHub/blob/main/README.md)  |  [English](https://github.com/forever218/HexoHub/blob/main/docs/README.en.md)  |  [Tauri Development Guide](https://github.com/forever218/HexoHub/blob/main/docs/TAURI_DEVELOPMENT.md)  
 
 [![GitHub Stars](https://img.shields.io/github/stars/forever218/Hexohub)](https://github.com/forever218/Hexohub/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/forever218/Hexohub)](https://github.com/forever218/Hexohub/network/members)
@@ -91,11 +91,13 @@ npm install -g cnpm --registry=http://registry.npm.taobao.org
 
 Then you can replace `npm` with `cnpm`
 
+### Electron Version Development
+
 1. **Clone this repository**
    ```bash
    git clone https://github.com/forever218/HexoHub.git
    ```
- 
+
 2. **Install dependencies**
    ```bash
    npm install
@@ -113,6 +115,32 @@ Then you can replace `npm` with `cnpm`
    ```
 
 > **Note**: This application is packaged with `electron-builder`, not `electron-forge`. When modifying related configuration files, please note to use the `electron-builder` configuration file format. [electron-builder](https://www.electron.build/)
+
+### Tauri Version Development
+
+The project now supports using Tauri as a desktop application framework, with smaller size and better performance.
+
+1. **Switch to Tauri branch**
+   ```bash
+   git checkout tauri
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Run in development mode**
+   ```bash
+   npm run tauri:dev
+   ```
+
+4. **Build production version**
+   ```bash
+   npm run tauri:build
+   ```
+
+> **Note**: The Tauri version requires installing the Rust toolchain. It will be automatically downloaded on first run. For detailed development guide, please refer to [Tauri Development Guide](./TAURI_DEVELOPMENT.md).
 
 ## Linux Compatibility & Troubleshooting
 The AppImage ships with an embedded Electron runtime. On some Arch / Manjaro / Wayland or Mesa driver setups you may see repeated console lines like:
@@ -147,8 +175,10 @@ If disabling GPU fully resolves the issue, open an Issue—we may add smarter au
 - **React** - User interface library
 - **TypeScript** - Type-safe JavaScript  
 - **Tailwind CSS** - CSS framework  
-- **Electron** - Cross-platform desktop application framework
-- **electron-builder** - Application packaging tool
+- **Electron** - Cross-platform desktop application framework (main branch)
+- **Tauri** - Lightweight desktop application framework (tauri branch)
+- **Rust** - Systems programming language (Tauri backend)
+- **electron-builder** - Electron application packaging tool
 - **NSIS** - Windows installer creation tool
 - **remark-gfm** - GitHub Flavored Markdown extension
 - [Hexo](https://hexo.io/) - Static blog generator

@@ -1,6 +1,51 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const isDev = process.env.NODE_ENV === 'development';
+
+// 获取应用版本号
+ipcMain.handle('get-app-version', async () => {
+  try {
+    const packageJsonPath = path.join(__dirname, '..', 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    return packageJson.version;
+  } catch (error) {
+    console.error('Failed to read version from package.json:', error);
+    return app.getVersion(); // fallback 到 electron 的版本
+  }
+});
+
+// 图片处理相关的 IPC 处理程序
+// 注册从缓冲区写入文件的 IPC 处理程序
+ipcMain.handle('write-file-from-buffer', async (event, destinationPath, buffer) => {
+  try {
+    // 确保目标目录存在
+    const destinationDir = path.dirname(destinationPath);
+    if (!fs.existsSync(destinationDir)) {
+      fs.mkdirSync(destinationDir, { recursive: true });
+    }
+    
+    // 写入文件
+    fs.writeFileSync(destinationPath, Buffer.from(buffer));
+    return { success: true };
+  } catch (error) {
+    console.error('写入文件失败:', error);
+    throw error;
+  }
+});
+
+// 注册确保目录存在的 IPC 处理程序
+ipcMain.handle('ensure-directory-exists', async (event, dirPath) => {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('创建目录失败:', error);
+    throw error;
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Linux VSync / GPU 兼容性处理
@@ -93,7 +138,7 @@ const WindowsCompat = {
     return {
       ...options,
       shell: true,
-      windowsHide: false,
+      windowsHide: true, // 隐藏命令行窗口
       encoding: 'utf8',
       env: { ...process.env, ...options.env, FORCE_COLOR: '0' }
     };
@@ -106,7 +151,8 @@ const WindowsCompat = {
     if (!WindowsCompat.isWindows()) {
       return command;
     }
-    const escaped = command.replace(/"/g, '`"');
+    // 使用更安全的转义方式，避免影响标题内容
+    const escaped = command.replace(/"/g, '""');
     return `powershell -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; ${escaped}"`;
   }
 };
@@ -245,6 +291,7 @@ ipcMain.handle('read-file', async (event, filePath) => {
   }
 });
 
+
 ipcMain.handle('write-file', async (event, filePath, content) => {
   const fs = require('fs').promises;
   try {
@@ -311,7 +358,7 @@ ipcMain.handle('execute-command', async (event, command) => {
     
     // 获取执行选项（PowerShell 使用 utf8，CMD 使用 buffer）
     const execOptions = WindowsCompat.getExecOptions({
-      windowsHide: false
+      windowsHide: true // 隐藏命令行窗口
     });
     
     const result = await execPromise(wrappedCommand, execOptions);
@@ -358,7 +405,7 @@ ipcMain.handle('execute-hexo-command', async (event, command, workingDir) => {
     // 获取执行选项（PowerShell 使用 utf8，CMD 使用 buffer）
     const execOptions = WindowsCompat.getExecOptions({
       cwd: workingDir,
-      windowsHide: false
+      windowsHide: true // 隐藏命令行窗口
     });
     
     const result = await execPromise(wrappedCommand, execOptions);
@@ -630,6 +677,28 @@ ipcMain.handle('select-file', async () => {
   }
 
   return filePaths[0];
+});
+
+// 复制文件
+ipcMain.handle('copy-file', async (event, sourcePath, destinationPath) => {
+  try {
+    const path = require('path');
+    const destinationDir = path.dirname(destinationPath);
+    
+    // 确保目标目录存在
+    if (!fs.existsSync(destinationDir)) {
+      fs.mkdirSync(destinationDir, { recursive: true });
+    }
+    
+    // 复制文件
+    fs.copyFileSync(sourcePath, destinationPath);
+    console.log(`文件已复制: ${sourcePath} -> ${destinationPath}`);
+    
+    return destinationPath;
+  } catch (error) {
+    console.error('复制文件失败:', error);
+    throw error;
+  }
 });
 
 // 应用退出时清理所有子进程

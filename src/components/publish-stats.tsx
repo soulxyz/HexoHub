@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Calendar } from 'lucide-react';
+import { isDesktopApp, getIpcRenderer } from '@/lib/desktop-api';
 
 interface Post {
   name: string;
@@ -48,9 +49,9 @@ export function PublishStats({ posts, language, onStatsDataChange }: PublishStat
       setIsLoading(true);
 
       try {
-        // 如果在Electron环境中，读取文件内容获取日期
-        if (typeof window !== 'undefined' && window.require) {
-          const { ipcRenderer } = window.require('electron');
+        // 如果在桌面应用环境中，读取文件内容获取日期
+        if (isDesktopApp()) {
+          const ipcRenderer = await getIpcRenderer();
 
           // 按月份统计文章数量
           const monthCounts: Record<string, number> = {};

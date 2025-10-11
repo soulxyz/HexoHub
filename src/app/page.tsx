@@ -47,7 +47,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { Language, getTexts } from '@/utils/i18n';
-import { MarkdownEditor } from '@/components/markdown-editor';
+import { MarkdownEditorWrapper } from '@/components/markdown-editor-wrapper';
 import { MarkdownPreview } from '@/components/markdown-preview';
 import { PostList } from '@/components/post-list';
 import { HexoConfig } from '@/components/hexo-config';
@@ -57,10 +57,14 @@ import { PublishStats } from '@/components/publish-stats';
 import { PanelSettings } from '@/components/panel-settings';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { ToastAction } from '@/components/ui/toast';
 import { CreateHexoDialog } from '@/components/create-hexo-dialog';
 import { CustomTitlebar } from '@/components/custom-titlebar';
 import { AIInspirationDialog } from '@/components/ai-inspiration-dialog';
 import { AIAnalysisDialog } from '@/components/ai-analysis-dialog';
+import { getIpcRenderer, isDesktopApp, isTauri } from '@/lib/desktop-api';
+import { commandOperations } from '@/lib/tauri-api';
+import { normalizePath, normalizePathInternal } from '@/lib/utils';
 
 interface Post {
   name: string;
@@ -130,9 +134,17 @@ export default function Home() {
 
   // AI设置相关状态
   const [enableAI, setEnableAI] = useState<boolean>(false); // 是否启用AI
+  const [enableEditorAI, setEnableEditorAI] = useState<boolean>(false); // 是否启用编辑器AI增强
+  const [aiProvider, setAIProvider] = useState<'deepseek' | 'openai' | 'siliconflow'>('deepseek'); // AI提供商
   const [apiKey, setApiKey] = useState<string>(''); // API密钥
   const [prompt, setPrompt] = useState<string>('你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段'); // 提示词
   const [analysisPrompt, setAnalysisPrompt] = useState<string>('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段'); // 分析提示词
+  const [aiRewritePrompt, setAiRewritePrompt] = useState<string>('请直接重写以下文本，使其更清晰流畅，保持原意。只输出改写后的文本，不要添加任何解释或说明'); // AI重写提示词
+  const [aiImprovePrompt, setAiImprovePrompt] = useState<string>('请直接改进以下文本，使其更专业、生动。只输出改进后的文本，不要添加任何解释或说明'); // AI改进提示词
+  const [aiExpandPrompt, setAiExpandPrompt] = useState<string>('请扩展以下文本，适当添加细节。只输出扩展后的文本，不要添加解释或标注'); // AI扩展提示词
+  const [aiTranslatePrompt, setAiTranslatePrompt] = useState<string>('请直接将以下文本翻译成英文。只输出翻译结果，不要添加任何解释或说明'); // AI翻译提示词
+  const [openaiModel, setOpenaiModel] = useState<string>('gpt-3.5-turbo'); // OpenAI模型
+  const [openaiApiEndpoint, setOpenaiApiEndpoint] = useState<string>('https://api.openai.com/v1'); // OpenAI API端点
   const [showInspirationDialog, setShowInspirationDialog] = useState<boolean>(false); // 是否显示灵感对话框
   const [showAnalysisDialog, setShowAnalysisDialog] = useState<boolean>(false); // 是否显示分析对话框
   // 预览模式相关状态
@@ -145,8 +157,13 @@ export default function Home() {
   // 初始化 toast hook
   const { toast } = useToast();
 
-  // 检查是否在Electron环境中
-  const isElectron = typeof window !== 'undefined' && window.require;
+  // 检查是否在桌面应用环境中（Electron 或 Tauri）
+  const [isElectron, setIsElectron] = useState(false);
+  
+  useEffect(() => {
+    // 在客户端检测桌面应用环境
+    setIsElectron(isDesktopApp());
+  }, []);
 
   // 处理每页显示文章数量变化
   const handlePostsPerPageChange = (value: number) => {
@@ -217,15 +234,57 @@ export default function Home() {
 
   // 当backgroundImage变化时更新背景
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (backgroundImage) {
-        document.documentElement.style.setProperty('--bg-image', `url(${backgroundImage})`);
-        console.log('设置背景图片:', backgroundImage);
-      } else {
-        document.documentElement.style.setProperty('--bg-image', 'none');
-        console.log('清除背景图片');
+    const updateBackgroundImage = async () => {
+      if (typeof window !== 'undefined') {
+        if (backgroundImage) {
+          // 检测是否是本地文件路径（Windows或Unix路径）
+          const isLocalPath = /^([a-zA-Z]:[\\/]|\/|\.\.?\/)/.test(backgroundImage) && 
+                             !backgroundImage.startsWith('data:') &&
+                             !backgroundImage.startsWith('http://') &&
+                             !backgroundImage.startsWith('https://') &&
+                             !backgroundImage.startsWith('asset://');
+          
+          if (isLocalPath && isDesktopApp()) {
+            try {
+              // 使用统一的环境检测函数
+              const { isTauri } = await import('@/lib/desktop-api');
+              const isTauriEnv = isTauri();
+              
+              console.log('环境检测结果:', {
+                isTauri: isTauriEnv,
+                backgroundImage
+              });
+              
+              if (isTauriEnv) {
+                // Tauri 环境使用 convertFileSrc（推荐方式，无需 base64 编码）
+                const { convertFileSrc } = await import('@tauri-apps/api/core');
+                const assetUrl = convertFileSrc(backgroundImage);
+                document.documentElement.style.setProperty('--bg-image', `url(${assetUrl})`);
+                console.log('设置背景图片 (Tauri asset URL):', assetUrl);
+              } else {
+                // Electron 环境使用 file:// 协议
+                const normalizedPath = backgroundImage.replace(/\\/g, '/');
+                const fileUrl = normalizedPath.startsWith('/') ? `file://${normalizedPath}` : `file:///${normalizedPath}`;
+                document.documentElement.style.setProperty('--bg-image', `url(${fileUrl})`);
+                console.log('设置背景图片 (Electron file://):', fileUrl);
+              }
+            } catch (error) {
+              console.error('读取本地背景图片失败:', error);
+              document.documentElement.style.setProperty('--bg-image', 'none');
+            }
+          } else {
+            // URL或已经是base64格式，直接使用
+            document.documentElement.style.setProperty('--bg-image', `url(${backgroundImage})`);
+            console.log('设置背景图片:', backgroundImage);
+          }
+        } else {
+          document.documentElement.style.setProperty('--bg-image', 'none');
+          console.log('清除背景图片');
+        }
       }
-    }
+    };
+    
+    updateBackgroundImage();
   }, [backgroundImage]);
 
   // 当backgroundOpacity变化时更新背景透明度
@@ -350,6 +409,16 @@ export default function Home() {
           setEnableAI(savedEnableAI === 'true');
         }
 
+        const savedEnableEditorAI = localStorage.getItem('enable-editor-ai');
+        if (savedEnableEditorAI !== null) {
+          setEnableEditorAI(savedEnableEditorAI === 'true');
+        }
+
+        const savedAIProvider = localStorage.getItem('ai-provider');
+        if (savedAIProvider === 'deepseek' || savedAIProvider === 'openai' || savedAIProvider === 'siliconflow') {
+          setAIProvider(savedAIProvider);
+        }
+
         const savedApiKey = localStorage.getItem('api-key');
         if (savedApiKey !== null) {
           setApiKey(savedApiKey);
@@ -371,6 +440,36 @@ export default function Home() {
           setAnalysisPrompt('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段');
         }
 
+        const savedAiRewritePrompt = localStorage.getItem('ai-rewrite-prompt');
+        if (savedAiRewritePrompt !== null) {
+          setAiRewritePrompt(savedAiRewritePrompt);
+        }
+
+        const savedAiImprovePrompt = localStorage.getItem('ai-improve-prompt');
+        if (savedAiImprovePrompt !== null) {
+          setAiImprovePrompt(savedAiImprovePrompt);
+        }
+
+        const savedAiExpandPrompt = localStorage.getItem('ai-expand-prompt');
+        if (savedAiExpandPrompt !== null) {
+          setAiExpandPrompt(savedAiExpandPrompt);
+        }
+
+        const savedAiTranslatePrompt = localStorage.getItem('ai-translate-prompt');
+        if (savedAiTranslatePrompt !== null) {
+          setAiTranslatePrompt(savedAiTranslatePrompt);
+        }
+
+        const savedOpenaiModel = localStorage.getItem('openai-model');
+        if (savedOpenaiModel !== null) {
+          setOpenaiModel(savedOpenaiModel);
+        }
+
+        const savedOpenaiApiEndpoint = localStorage.getItem('openai-api-endpoint');
+        if (savedOpenaiApiEndpoint !== null) {
+          setOpenaiApiEndpoint(savedOpenaiApiEndpoint);
+        }
+
         // 加载预览模式设置
         const savedPreviewMode = localStorage.getItem('preview-mode');
         if (savedPreviewMode === 'static' || savedPreviewMode === 'server') {
@@ -383,8 +482,11 @@ export default function Home() {
         // 加载项目路径
         const savedPath = localStorage.getItem('hexo-project-path');
         if (savedPath && isElectron) {
-          setHexoPath(savedPath);
-          await validateHexoProject(savedPath);
+          const normalizedPath = normalizePath(savedPath);
+          setHexoPath(normalizedPath);
+          // 同时更新 localStorage 中的路径
+          localStorage.setItem('hexo-project-path', normalizedPath);
+          await validateHexoProject(normalizedPath);
         }
       }
       
@@ -458,7 +560,7 @@ export default function Home() {
     }
     
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const result = await ipcRenderer.invoke('check-for-updates');
       
       if (result.success) {
@@ -514,21 +616,25 @@ export default function Home() {
   // 选择Hexo项目目录
   const selectHexoDirectory = async () => {
     if (!isElectron) {
-      alert(t.onlyAvailableInDesktop);
+      toast({
+        title: t.onlyAvailableInDesktop,
+        variant: "destructive",
+      });
       return;
     }
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const selectedPath = await ipcRenderer.invoke('select-directory');
 
       if (selectedPath) {
-        setHexoPath(selectedPath);
-        // 保存路径到localStorage
+        const normalizedPath = normalizePath(selectedPath);
+        setHexoPath(normalizedPath);
+        // 保存规范化后的路径到localStorage
         if (typeof window !== 'undefined') {
-          localStorage.setItem('hexo-project-path', selectedPath);
+          localStorage.setItem('hexo-project-path', normalizedPath);
         }
-        await validateHexoProject(selectedPath);
+        await validateHexoProject(normalizedPath);
       }
     } catch (error) {
       console.error('选择目录失败:', error);
@@ -541,7 +647,7 @@ export default function Home() {
     if (!isElectron) return;
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const result = await ipcRenderer.invoke('validate-hexo-project', path, language);
 
       setIsValidHexoProject(result.valid);
@@ -565,7 +671,7 @@ export default function Home() {
     const allTagsList: string[] = []; // 收集所有标签（包括重复的）用于标签云
     
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       
       for (const post of posts) {
         try {
@@ -620,7 +726,7 @@ export default function Home() {
     
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const filtered: Post[] = [];
       
       for (const post of posts) {
@@ -698,12 +804,35 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const files = await ipcRenderer.invoke('list-files', path + '/source/_posts');
 
-      const markdownFiles = files.filter((file: Post) =>
-        !file.isDirectory && (file.name.endsWith('.md') || file.name.endsWith('.markdown'))
-      );
+      const markdownFiles = files
+        .filter((file: any) =>
+          !file.isDirectory && (file.name.endsWith('.md') || file.name.endsWith('.markdown'))
+        )
+        .map((file: any) => {
+          // 兼容 Electron 和 Tauri 两种格式
+          // Electron: modifiedTime 是 Date 对象
+          // Tauri: modifiedTime 是时间戳字符串
+          let modifiedTime: Date;
+          
+          if (file.modifiedTime instanceof Date) {
+            // Electron 格式：直接使用 Date 对象
+            modifiedTime = file.modifiedTime;
+          } else if (typeof file.modifiedTime === 'string') {
+            // Tauri 格式：从时间戳字符串转换
+            modifiedTime = new Date(parseInt(file.modifiedTime, 10));
+          } else {
+            // 备用方案
+            modifiedTime = new Date(0);
+          }
+          
+          return {
+            ...file,
+            modifiedTime
+          };
+        });
 
       setPosts(markdownFiles);
       setFilteredPosts(markdownFiles);
@@ -712,7 +841,7 @@ export default function Home() {
       await extractTagsAndCategories(markdownFiles);
     } catch (error) {
       console.error('加载文章失败:', error);
-      setValidationMessage('加载文章失败: ' + error.message);
+      setValidationMessage('加载文章失败: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsLoading(false);
     }
@@ -736,7 +865,7 @@ export default function Home() {
   }) => {
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
 
       // 构建Hexo new命令
       let command = `new "${postData.title}"`;
@@ -772,8 +901,8 @@ export default function Home() {
       } else {
         // 显示失败通知
         toast({
-          title: '失败',
-          description: '文章创建失败',
+          title: t.failed,
+          description: t.createArticleFailedMsg,
           variant: 'error',
         });
       }
@@ -790,8 +919,8 @@ export default function Home() {
       
       // 显示错误通知
       toast({
-        title: '失败',
-        description: '文章创建失败',
+        title: t.failed,
+        description: t.createArticleFailedMsg,
         variant: 'error',
       });
     } finally {
@@ -808,7 +937,7 @@ export default function Home() {
     excerpt?: string;
   }) => {
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const postsDir = hexoPath + '/source/_posts';
       const fileName = postData.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '-') + '.md';
       const filePath = `${postsDir}/${fileName}`;
@@ -866,7 +995,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const content = await ipcRenderer.invoke('read-file', post.path);
       setPostContent(content);
     } catch (error) {
@@ -892,7 +1021,7 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       await ipcRenderer.invoke('write-file', selectedPost.path, postContent);
 
       const saveResult = {
@@ -928,8 +1057,8 @@ export default function Home() {
       
       // 显示错误通知
       toast({
-        title: '失败',
-        description: '文章保存失败',
+        title: t.failed,
+        description: t.saveArticleFailedMsg,
         variant: 'error',
       });
     } finally {
@@ -947,7 +1076,7 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       await ipcRenderer.invoke('delete-file', selectedPost.path);
 
       const deleteResult = {
@@ -982,7 +1111,7 @@ export default function Home() {
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '文章删除失败',
         variant: 'error',
       });
@@ -999,7 +1128,7 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
 
       // 逐个删除文章
       for (const post of postsToDelete) {
@@ -1042,7 +1171,7 @@ export default function Home() {
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '批量删除文章失败',
         variant: 'error',
       });
@@ -1057,7 +1186,7 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       let successCount = 0;
 
       // 逐个更新文章
@@ -1138,7 +1267,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       let successCount = 0;
 
       // 逐个更新文章
@@ -1219,7 +1348,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       await ipcRenderer.invoke('delete-file', postToDelete.path);
 
       const deleteSingleResult = {
@@ -1258,7 +1387,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '删除文章失败',
         variant: 'error',
       });
@@ -1273,7 +1402,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       
       // 读取现有文件内容
       let content = await ipcRenderer.invoke('read-file', postToUpdate.path);
@@ -1342,7 +1471,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
     setIsLoading(true);
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       
       // 读取现有文件内容
       let content = await ipcRenderer.invoke('read-file', postToUpdate.path);
@@ -1426,7 +1555,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     });
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
       const result = await ipcRenderer.invoke('execute-hexo-command', command, hexoPath);
 
       // 添加到日志
@@ -1451,13 +1580,48 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 <Button 
                   variant="link" 
                   className="p-0 h-auto text-blue-600 hover:text-blue-800"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault();
-                    if (typeof window !== 'undefined' && window.require) {
-                      const { shell } = window.require('electron');
-                      const path = require('path');
-                      const publicPath = path.join(hexoPath, 'public');
-                      shell.openPath(publicPath);
+                    
+                    // 显示加载提示
+                    const loadingToast = toast({
+                      title: language === 'zh' ? '正在打开...' : 'Opening...',
+                      description: language === 'zh' ? '正在打开文件夹' : 'Opening folder',
+                      duration: 2000,
+                    });
+                    
+                    try {
+                      if (typeof window !== 'undefined' && ('require' in window || '__TAURI__' in window || '__TAURI_INTERNALS__' in window)) {
+                        // 使用 normalizePathInternal 拼接路径，避免混合分隔符
+                        const publicPath = normalizePathInternal(`${hexoPath}/public`);
+                        console.log('[Open Folder] Attempting to open:', publicPath);
+                        console.log('[Open Folder] Desktop environment:', isDesktopApp());
+                        const ipcRenderer = await getIpcRenderer();
+                        await ipcRenderer.invoke('open-url', publicPath);
+                        console.log('[Open Folder] Successfully opened');
+                        
+                        // 成功提示
+                        toast({
+                          title: t.success,
+                          description: language === 'zh' ? '文件夹已打开' : 'Folder opened',
+                          variant: 'success',
+                          duration: 1500,
+                        });
+                      } else {
+                        console.log('[Open Folder] Not in desktop environment');
+                        toast({
+                          title: t.error,
+                          description: language === 'zh' ? '仅在桌面应用中可用' : 'Only available in desktop app',
+                          variant: 'error',
+                        });
+                      }
+                    } catch (error) {
+                      console.error('[Open Folder] Failed:', error);
+                      toast({
+                        title: t.error,
+                        description: language === 'zh' ? `打开文件夹失败: ${error}` : `Failed to open folder: ${error}`,
+                        variant: 'error',
+                      });
                     }
                   }}
                 >
@@ -1483,10 +1647,133 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         else if (command === 'generate') message = t.generate + t.error;
         else if (command === 'deploy') message = t.deploy + t.error;
         
+        // 提取详细错误信息
+        let detailError = '';
+        let fixCommand = ''; // 用于存储修复命令
+        if (result.stderr) {
+          // 尝试提取关键错误信息
+          const stderr = result.stderr;
+          
+          // 检查是否是 git safe.directory 错误
+          if (stderr.includes('dubious ownership') || stderr.includes('safe.directory')) {
+            const match = stderr.match(/git config --global --add safe\.directory (.+)/);
+            if (match) {
+              detailError = `${t.gitSecurityError}：${t.gitSecurityErrorTrustDir}\n${t.gitSecurityErrorSuggest}：${match[0]}`;
+              fixCommand = match[0]; // 保存修复命令
+            } else {
+              detailError = `${t.gitSecurityError}：${t.gitSecurityErrorOwnership}`;
+            }
+          } 
+          // 检查是否是 git 认证错误
+          else if (stderr.includes('Permission denied') || stderr.includes('authentication failed')) {
+            detailError = t.gitAuthError;
+          }
+          // 检查是否是网络错误
+          else if (stderr.includes('Could not resolve host') || stderr.includes('network')) {
+            detailError = t.networkError;
+          }
+          // 其他错误，提取 FATAL 或 fatal 后的内容
+          else if (stderr.includes('FATAL') || stderr.includes('fatal:')) {
+            const fatalMatch = stderr.match(/fatal:\s*(.+?)(?:\n|$)/i);
+            if (fatalMatch) {
+              detailError = fatalMatch[1].trim();
+            }
+          }
+          
+          // 如果没有提取到特定错误，显示 stderr 的前 200 个字符
+          if (!detailError && stderr.trim()) {
+            // 移除 ANSI 颜色代码
+            const cleanStderr = stderr.replace(/\u001b\[[0-9;]*m/g, '');
+            detailError = cleanStderr.substring(0, 200).trim();
+            if (cleanStderr.length > 200) detailError += '...';
+          }
+        }
+        
+        // 如果有详细错误，显示在描述中
+        const errorMessage = detailError ? `${message}\n\n${detailError}` : message;
+        
         toast({
-          title: '失败',
-          description: message,
+          title: t.failed,
+          description: (
+            <div className="max-w-md">
+              <div className="font-medium mb-2">{message}</div>
+              {detailError && (
+                <div className="text-xs text-gray-600 dark:text-gray-400 mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded whitespace-pre-wrap font-mono">
+                  {detailError}
+                </div>
+              )}
+              <div className="flex items-center gap-3 mt-2">
+                {fixCommand && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7 px-3"
+                    onClick={async () => {
+                      try {
+                        toast({
+                          title: t.fixing,
+                          description: fixCommand,
+                          variant: 'default',
+                        });
+                        
+                        const ipcRenderer = await getIpcRenderer();
+                        const fixResult = await ipcRenderer.invoke('execute-command', fixCommand);
+                        
+                        // 添加到日志
+                        const fixLog = {
+                          ...fixResult,
+                          timestamp: new Date().toLocaleString(),
+                          command: `${t.autoFix}: ${fixCommand}`
+                        };
+                        setCommandLogs(prev => [...prev, fixLog]);
+                        
+                        if (fixResult.success) {
+                          toast({
+                            title: t.fixSuccess,
+                            description: t.fixSuccessRetry,
+                            variant: 'success',
+                          });
+                        } else {
+                          toast({
+                            title: t.fixFailed,
+                            description: fixResult.error || fixResult.stderr,
+                            variant: 'error',
+                          });
+                        }
+                      } catch (error) {
+                        // 添加错误日志
+                        const fixErrorLog = {
+                          success: false,
+                          error: error instanceof Error ? error.message : String(error),
+                          timestamp: new Date().toLocaleString(),
+                          command: `${t.autoFix}: ${fixCommand}`
+                        };
+                        setCommandLogs(prev => [...prev, fixErrorLog]);
+                        
+                        toast({
+                          title: t.fixFailed,
+                          description: error instanceof Error ? error.message : String(error),
+                          variant: 'error',
+                        });
+                      }
+                    }}
+                  >
+                    {t.tryFix}
+                  </Button>
+                )}
+                <div 
+                  className="text-xs text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
+                  onClick={() => {
+                    setMainView('logs');
+                  }}
+                >
+                  {t.viewLogsDetail}
+                </div>
+              </div>
+            </div>
+          ),
           variant: 'error',
+          duration: 10000, // 错误提示显示 10 秒，给用户足够时间阅读
         });
       }
     } catch (error) {
@@ -1502,7 +1789,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '执行命令失败',
         variant: 'error',
       });
@@ -1512,6 +1799,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
   };
 
   // 启动Hexo服务器
+  // 注意：Tauri 后端已经通过监听 Hexo 输出判断启动状态
+  // 后端会在检测到 "Hexo is running at" 等标志后才返回成功
   const startHexoServer = async () => {
     if (!isElectron || !hexoPath || isServerRunning) return;
 
@@ -1525,15 +1814,19 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     });
 
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
+      
+      // Tauri 后端会等待服务器就绪后才返回
+      // 这个调用可能需要几秒到十几秒（取决于 Hexo 启动速度）
       const result = await ipcRenderer.invoke('start-hexo-server', hexoPath);
 
       if (result.success) {
-        setIsServerRunning(true);
         setServerProcess(result.process);
+        setIsServerRunning(true);
+        
         const serverStartResult = {
           success: true,
-          stdout: 'Hexo服务器已启动，访问 http://localhost:4000 预览网站',
+          stdout: result.stdout || 'Hexo服务器已启动，访问 http://localhost:4000 预览网站',
           timestamp: new Date().toLocaleString(),
           command: 'start server'
         };
@@ -1551,17 +1844,69 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         if (previewMode !== 'server') {
           setTimeout(() => {
             ipcRenderer.invoke('open-url', 'http://localhost:4000');
-          }, 2000);
+          }, 1000);
         }
       } else {
         setCommandResult(result);
         
-        // 显示错误通知
-        toast({
-          title: '失败',
-          description: 'Hexo服务器启动失败',
-          variant: 'error',
-        });
+        // 检查是否是端口占用错误
+        const isPortConflict = result.error && (
+          result.error.includes('端口 4000 已被占用') ||
+          result.error.includes('Port 4000 has been used') ||
+          result.error.includes('EADDRINUSE')
+        );
+        
+        if (isPortConflict) {
+          // 端口占用错误 - 显示带修复按钮的提示
+          toast({
+            title: t.failed,
+            description: result.error || '端口 4000 已被占用',
+            variant: 'error',
+            action: (
+              <ToastAction 
+                altText="立即修复" 
+                onClick={async () => {
+                  try {
+                    setIsLoading(true);
+                    const ipcRenderer = await getIpcRenderer();
+                    const fixResult = await ipcRenderer.invoke('fix-port-conflict', 4000);
+                    
+                    if (fixResult.success) {
+                      toast({
+                        title: '✅ 修复成功',
+                        description: fixResult.stdout || '端口已释放，请重新启动服务器',
+                        variant: 'success',
+                      });
+                    } else {
+                      toast({
+                        title: '修复失败',
+                        description: fixResult.error || '无法自动修复端口占用',
+                        variant: 'error',
+                      });
+                    }
+                  } catch (error) {
+                    toast({
+                      title: '修复失败',
+                      description: error instanceof Error ? error.message : '发生错误',
+                      variant: 'error',
+                    });
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              >
+                立即修复
+              </ToastAction>
+            ),
+          });
+        } else {
+          // 其他错误 - 普通提示
+          toast({
+            title: t.failed,
+            description: result.error || 'Hexo服务器启动失败',
+            variant: 'error',
+          });
+        }
       }
     } catch (error) {
       console.error('启动服务器失败:', error);
@@ -1572,7 +1917,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '启动服务器失败',
         variant: 'error',
       });
@@ -1605,11 +1950,15 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     });
     
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = await getIpcRenderer();
+      
+      // Tauri 环境使用 -C（大写）指定工作目录，Electron 保持原样，能跑就不改了
+      const gitCParam = isTauri() ? '-C' : '-c';
       
       // 配置Git用户信息
-      // 使用git -C参数在指定目录下执行git命令
-      const configNameResult = await ipcRenderer.invoke('execute-command', `git -c "${hexoPath}" config user.name "${pushUsername}"`);
+      // Tauri: 使用 git -C 参数在指定目录下执行 git 命令（大写 C）
+      // Electron: 保持原有的 -c 参数
+      const configNameResult = await ipcRenderer.invoke('execute-command', `git ${gitCParam} "${hexoPath}" config user.name "${pushUsername}"`);
       const configNameLog = {
         ...configNameResult,
         timestamp: new Date().toLocaleString(),
@@ -1622,7 +1971,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         throw new Error(`配置Git用户名失败: ${configNameResult.stderr || configNameResult.error || '未知错误'}`);
       }
       
-      const configEmailResult = await ipcRenderer.invoke('execute-command', `git -c "${hexoPath}" config user.email "${pushEmail}"`);
+      const configEmailResult = await ipcRenderer.invoke('execute-command', `git ${gitCParam} "${hexoPath}" config user.email "${pushEmail}"`);
       const configEmailLog = {
         ...configEmailResult,
         timestamp: new Date().toLocaleString(),
@@ -1637,7 +1986,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 添加远程仓库
       const remoteName = 'origin';
-      const addRemoteResult = await ipcRenderer.invoke('execute-command', `git -c "${hexoPath}" remote set-url ${remoteName} ${pushRepoUrl}`);
+      const addRemoteResult = await ipcRenderer.invoke('execute-command', `git ${gitCParam} "${hexoPath}" remote set-url ${remoteName} ${pushRepoUrl}`);
       const addRemoteLog = {
         ...addRemoteResult,
         timestamp: new Date().toLocaleString(),
@@ -1652,7 +2001,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       }
       
       // 添加所有文件到暂存区
-      const addResult = await ipcRenderer.invoke('execute-command', `git -c "${hexoPath}" add .`);
+      const addResult = await ipcRenderer.invoke('execute-command', `git ${gitCParam} "${hexoPath}" add .`);
       const addLog = {
         ...addResult,
         timestamp: new Date().toLocaleString(),
@@ -1666,7 +2015,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       }
       
       // 提交更改
-      const commitResult = await ipcRenderer.invoke('execute-command', `git -c "${hexoPath}" commit -m "Update Hexo site"`);
+      const commitResult = await ipcRenderer.invoke('execute-command', `git ${gitCParam} "${hexoPath}" commit -m "Update Hexo site"`);
       const commitLog = {
         ...commitResult,
         timestamp: new Date().toLocaleString(),
@@ -1681,7 +2030,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       }
       
       // 推送到远程仓库
-      const pushResult = await ipcRenderer.invoke('execute-command', `git -c "${hexoPath}" push -u ${remoteName} ${pushBranch}`);
+      const pushResult = await ipcRenderer.invoke('execute-command', `git ${gitCParam} "${hexoPath}" push -u ${remoteName} ${pushBranch}`);
       const pushLog = {
         ...pushResult,
         timestamp: new Date().toLocaleString(),
@@ -1722,7 +2071,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: t.pushFailed,
         variant: 'error',
       });
@@ -1745,15 +2094,24 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
     });
 
     try {
-      const { ipcRenderer } = window.require('electron');
-      const result = await ipcRenderer.invoke('stop-hexo-server');
+      let result;
+      
+      // 判断是否在 Tauri 环境，使用对应的 API
+      if (isTauri()) {
+        // Tauri 环境：使用公共的 commandOperations
+        result = await commandOperations.stopHexoServer();
+      } else {
+        // Electron 环境：使用 IPC
+        const ipcRenderer = await getIpcRenderer();
+        result = await ipcRenderer.invoke('stop-hexo-server');
+      }
 
       if (result.success) {
         setIsServerRunning(false);
         setServerProcess(null);
         const serverStopResult = {
           success: true,
-          stdout: 'Hexo服务器已停止',
+          stdout: result.stdout || 'Hexo服务器已停止',
           timestamp: new Date().toLocaleString(),
           command: 'stop server'
         };
@@ -1771,8 +2129,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         
         // 显示失败通知
         toast({
-          title: '失败',
-          description: 'Hexo服务器停止失败',
+          title: t.failed,
+          description: result.error || 'Hexo服务器停止失败',
           variant: 'error',
         });
       }
@@ -1789,7 +2147,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       
       // 显示错误通知
       toast({
-        title: '失败',
+        title: t.failed,
         description: '停止服务器失败',
         variant: 'error',
       });
@@ -1862,7 +2220,7 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
       <CustomTitlebar />
       
       {/* 顶部导航栏 - 添加顶部边距以避免被固定标题栏遮挡 */}
-      <header className="border-b bg-card mt-8">
+      <header className="border-b bg-card mt-10">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-bold">Hexo Hub</h1>
@@ -1992,7 +2350,8 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
 
       <div className="flex h-[calc(100vh-73px)]">
         {/* 侧边栏 */}
-        <aside className="w-80 border-r bg-background flex flex-col">
+        {/* 左侧栏内容过多时，设置 overflow-y-auto，会在侧边栏内部滚动，而不会影响整个页面的大小 */}
+        <aside className="w-80 border-r bg-background flex flex-col overflow-y-auto">
           {/* 项目选择 */}
           <Card className="m-4">
             <CardHeader className="pb-3">
@@ -2032,11 +2391,12 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
               <div className="flex space-x-2 mt-2">
                 <CreateHexoDialog
                   onCreateSuccess={async (path) => {
-                    setHexoPath(path);
+                    const normalizedPath = normalizePath(path);
+                    setHexoPath(normalizedPath);
                     if (typeof window !== 'undefined') {
-                      localStorage.setItem('hexo-project-path', path);
+                      localStorage.setItem('hexo-project-path', normalizedPath);
                     }
-                    await validateHexoProject(path);
+                    await validateHexoProject(normalizedPath);
                   }}
                   language={language}
                 >
@@ -2230,12 +2590,20 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                 // AI设置
                 enableAI={enableAI}
                 onEnableAIChange={setEnableAI}
+                enableEditorAI={enableEditorAI}
+                onEnableEditorAIChange={setEnableEditorAI}
+                aiProvider={aiProvider}
+                onAIProviderChange={setAIProvider}
                 apiKey={apiKey}
                 onApiKeyChange={setApiKey}
                 prompt={prompt}
                 onPromptChange={setPrompt}
                 analysisPrompt={analysisPrompt}
                 onAnalysisPromptChange={setAnalysisPrompt}
+                openaiModel={openaiModel}
+                onOpenaiModelChange={setOpenaiModel}
+                openaiApiEndpoint={openaiApiEndpoint}
+                onOpenaiApiEndpointChange={setOpenaiApiEndpoint}
                 previewMode={previewMode}
                 onPreviewModeChange={setPreviewMode}
                 iframeUrlMode={iframeUrlMode}
@@ -2268,12 +2636,38 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
                             {log.success ? (
                               <div>
                                 <div className="font-semibold">{t.commandExecutedSuccess}</div>
-                                {log.stdout && <div className="mt-1">{log.stdout}</div>}
+                                {log.stdout && (
+                                  <div className="mt-1 max-h-48 overflow-y-auto bg-white dark:bg-gray-900 p-2 rounded border font-mono text-xs whitespace-pre-wrap">
+                                    {log.stdout}
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <div>
                                 <div className="font-semibold">{t.commandExecutedFailed}</div>
-                                {log.error && <div className="mt-1">{log.error}</div>}
+                                {log.error && (
+                                  <div className="mt-1 text-red-800 dark:text-red-200 font-medium">
+                                    {log.error}
+                                  </div>
+                                )}
+                                {log.stderr && (
+                                  <div className="mt-2">
+                                    <div className="text-xs text-gray-700 dark:text-gray-300 mb-1">错误详情：</div>
+                                    <div className="max-h-48 overflow-y-auto bg-red-100 dark:bg-red-900/20 p-2 rounded border border-red-300 dark:border-red-700 font-mono text-xs whitespace-pre-wrap">
+                                      {/* 移除 ANSI 颜色代码 */}
+                                      {log.stderr.replace(/\u001b\[[0-9;]*m/g, '')}
+                                    </div>
+                                  </div>
+                                )}
+                                {log.stdout && (
+                                  <div className="mt-2">
+                                    <div className="text-xs text-gray-700 dark:text-gray-300 mb-1">标准输出：</div>
+                                    <div className="max-h-48 overflow-y-auto bg-gray-100 dark:bg-gray-800 p-2 rounded border font-mono text-xs whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+                                      {/* 移除 ANSI 颜色代码 */}
+                                      {log.stdout.replace(/\u001b\[[0-9;]*m/g, '')}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -2661,12 +3055,19 @@ ${selectedText}
                     <>
                       {activeTab === 'editor' && (
                         <div className="h-full overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
-                          <MarkdownEditor
+                          <MarkdownEditorWrapper
                             value={postContent}
                             onChange={setPostContent}
                             onSave={savePost}
                             isLoading={isLoading}
                             language={language}
+                            hexoPath={hexoPath}
+                            selectedPost={selectedPost}
+                            enableAI={enableEditorAI}
+                            aiProvider={aiProvider}
+                            apiKey={apiKey}
+                            openaiModel={openaiModel}
+                            openaiApiEndpoint={openaiApiEndpoint}
                           />
                         </div>
                       )}
@@ -2691,12 +3092,19 @@ ${selectedText}
                     <div className="h-full flex flex-col md:flex-row overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
                       <div className="w-full md:w-1/2 h-1/2 md:h-full border-r overflow-hidden">
                         <div className="h-full overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
-                          <MarkdownEditor
+                          <MarkdownEditorWrapper
                             value={postContent}
                             onChange={setPostContent}
                             onSave={savePost}
                             isLoading={isLoading}
                             language={language}
+                            hexoPath={hexoPath}
+                            selectedPost={selectedPost}
+                            enableAI={enableEditorAI}
+                            aiProvider={aiProvider}
+                            apiKey={apiKey}
+                            openaiModel={openaiModel}
+                            openaiApiEndpoint={openaiApiEndpoint}
                           />
                         </div>
                       </div>
@@ -2816,20 +3224,26 @@ ${selectedText}
       <AIInspirationDialog
         open={showInspirationDialog}
         onOpenChange={setShowInspirationDialog}
+        aiProvider={aiProvider}
         apiKey={apiKey}
         prompt={prompt}
         language={language}
+        openaiModel={openaiModel}
+        openaiApiEndpoint={openaiApiEndpoint}
       />
 
       {/* AI分析对话框 */}
       <AIAnalysisDialog
         open={showAnalysisDialog}
         onOpenChange={setShowAnalysisDialog}
+        aiProvider={aiProvider}
         apiKey={apiKey}
         analysisPrompt={analysisPrompt}
         language={language}
         tagsData={allTagsForCloud}
         publishStatsData={publishStatsData}
+        openaiModel={openaiModel}
+        openaiApiEndpoint={openaiApiEndpoint}
       />
       
     </div>

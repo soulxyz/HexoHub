@@ -26,6 +26,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* 在 Electron 环境中加载图片处理脚本 */}
+        <script 
+          type="text/javascript" 
+          src="/electron-image-handler.js"
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && !('require' in window)) {
+                // 非Electron环境，移除此脚本标签
+                document.currentScript.remove();
+              }
+            `
+          }}
+        />
+      </head>
       <body className="font-sans antialiased bg-background text-foreground">
         <ThemeProvider
           attribute="class"

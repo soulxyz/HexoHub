@@ -14,6 +14,7 @@ export interface I18nTexts {
   select: string;
   error: string;
   success: string;
+  failed: string;
   cleanCacheSuccess: string;
   generateStaticFilesSuccess: string;
   deploySuccess: string;
@@ -58,6 +59,10 @@ export interface I18nTexts {
   supportMarkdownSyntax: string;
   saving: string;
   dragImageHint: string;
+  assetFolderDisabledWarning: string;
+  assetFolderDisabledConfirm: string;
+  assetFolderEnabledSuccess: string;
+  assetFolderEnabledNextSteps: string;
 
   // 占位符文本
   editorPlaceholder: string;
@@ -97,6 +102,30 @@ export interface I18nTexts {
   commandExecuteFailed: string;
   startingServer: string;
   stoppingServer: string;
+  starting: string;
+  stopping: string;
+  
+  // 错误提示
+  gitSecurityError: string;
+  gitSecurityErrorTrustDir: string;
+  gitSecurityErrorSuggest: string;
+  gitSecurityErrorOwnership: string;
+  gitAuthError: string;
+  networkError: string;
+  createArticleFailedMsg: string;
+  saveArticleFailedMsg: string;
+  deleteArticleFailedMsg: string;
+  batchDeleteArticlesFailedMsg: string;
+  executeCommandFailedMsg: string;
+  hexoServerStartFailedMsg: string;
+  startServerFailedMsg: string;
+  stopServerFailedMsg: string;
+  autoFix: string;
+  tryFix: string;
+  fixing: string;
+  fixSuccess: string;
+  fixFailed: string;
+  fixSuccessRetry: string;
 
   // 状态
   serverRunning: string;
@@ -153,10 +182,10 @@ export interface I18nTexts {
   backgroundSettings: string;
   backgroundImageUrl: string;
   selectImage: string;
-  clear: string;
   backgroundImageDescription: string;
   backgroundOpacity: string;
   backgroundOpacityDescription: string;
+  readFileError: string;
   saveSettings: string;
   about: string;
   versionInfo: string;
@@ -214,6 +243,7 @@ export interface I18nTexts {
   clearLogs: string;
   commandExecutedSuccess: string;
   commandExecutedFailed: string;
+  viewLogsDetail: string;
 
   // 对话框
   confirmDelete: string;
@@ -249,6 +279,9 @@ export interface I18nTexts {
   // AI设置
   enableAI: string;
   enableAIDescription: string;
+  enableEditorAI: string;
+  enableEditorAIDescription: string;
+  aboutAILink: string;
   aiProvider: string;
   aiProviderDescription: string;
   apiKey: string;
@@ -257,6 +290,24 @@ export interface I18nTexts {
   promptPlaceholder: string;
   analysisPrompt: string;
   analysisPromptPlaceholder: string;
+  openaiModel: string;
+  openaiModelPlaceholder: string;
+  openaiApiEndpoint: string;
+  openaiApiEndpointPlaceholder: string;
+  siliconflow: string;
+  siliconflowTooltip: string;
+  siliconflowModel: string;
+  siliconflowModelPlaceholder: string;
+  loadModels: string;
+  loadingModels: string;
+  modelsLoaded: string;
+  modelsLoadFailed: string;
+  loadModelsDescription: string;
+  testConnection: string;
+  testing: string;
+  testSuccess: string;
+  testFailed: string;
+  apiConnectionTest: string;
   
   // 预览模式设置
   previewMode: string;
@@ -270,6 +321,24 @@ export interface I18nTexts {
   aiInspirationDescription: string;
   articleAnalysis: string;
   startAnalysis: string;
+  
+  // AI 编辑器右键菜单
+  aiRewrite: string;
+  aiImprove: string;
+  aiExpand: string;
+  aiTranslate: string;
+  aiFeatureNotEnabled: string;
+  pleaseConfigureApiKey: string;
+  pleaseSelectText: string;
+  rewriteTextError: string;
+  aiRewritePrompt: string;
+  aiImprovePrompt: string;
+  aiExpandPrompt: string;
+  aiTranslatePrompt: string;
+  aiRewritePromptPlaceholder: string;
+  aiImprovePromptPlaceholder: string;
+  aiExpandPromptPlaceholder: string;
+  aiTranslatePromptPlaceholder: string;
 
   // 创建Hexo项目
   createHexoProject: string;
@@ -284,12 +353,9 @@ export interface I18nTexts {
   installDeployPluginDescription: string;
   installationProgress: string;
   commandOutput: string;
-  cancel: string;
   close: string;
-  creating: string;
   createProject: string;
   hexoAlreadyInstalled: string;
-  hexoNotInstalled: string;
   installNpmAndGitFirst: string;
   settingTaobaoMirror: string;
   taobaoMirrorSetSuccess: string;
@@ -307,8 +373,6 @@ export interface I18nTexts {
   missingDependency: string;
   pleaseInstallNpm: string;
   pleaseInstallGit: string;
-  selectDirectoryFailed: string;
-  unknownError: string;
   checkingNpm: string;
   npmInstalled: string;
   npmNotInstalled: string;
@@ -317,6 +381,7 @@ export interface I18nTexts {
   gitNotInstalled: string;
   checkingHexo: string;
   hexoInstalled: string;
+  hexoCheckNotInstalled: string;
   hexoNotInstalled: string;
   environmentCheckFailed: string;
 }
@@ -335,6 +400,7 @@ export const i18nTexts: Record<Language, I18nTexts> = {
     select: '选择',
     error: '错误',
     success: '成功',
+    failed: '失败',
     cleanCacheSuccess: '清理缓存成功',
     generateStaticFilesSuccess: '生成静态文件成功',
     deploySuccess: '部署成功',
@@ -379,6 +445,10 @@ export const i18nTexts: Record<Language, I18nTexts> = {
     supportMarkdownSyntax: '支持标准 Markdown 语法',
     saving: '保存中...',
     dragImageHint: '拖放图片文件到此处插入 Hexo 图片标签',
+    assetFolderDisabledWarning: '检测到您的 Hexo 配置中 post_asset_folder 为 false，图片可能无法正常显示。',
+    assetFolderDisabledConfirm: '是否自动启用资源文件夹功能？\n（会修改 _config.yml 中的 post_asset_folder 为 true）',
+    assetFolderEnabledSuccess: '已成功启用资源文件夹功能！',
+    assetFolderEnabledNextSteps: '建议点击界面上的【清理】和【生成】按钮使更改生效。',
 
     // 占位符文本
     editorPlaceholder: `# 标题
@@ -453,6 +523,30 @@ console.log('Hello, Hexo!');
     commandExecuteFailed: '命令执行失败',
     startingServer: '正在启动Hexo服务器...',
     stoppingServer: '正在停止Hexo服务器...',
+    starting: '启动中',
+    stopping: '停止中',
+    
+    // 错误提示
+    gitSecurityError: 'Git 安全错误',
+    gitSecurityErrorTrustDir: '需要添加信任目录',
+    gitSecurityErrorSuggest: '建议执行',
+    gitSecurityErrorOwnership: '检测到可疑的目录所有权',
+    gitAuthError: 'Git 认证失败：请检查仓库访问权限',
+    networkError: '网络错误：无法连接到远程仓库',
+    createArticleFailedMsg: '文章创建失败',
+    saveArticleFailedMsg: '文章保存失败',
+    deleteArticleFailedMsg: '文章删除失败',
+    batchDeleteArticlesFailedMsg: '批量删除文章失败',
+    executeCommandFailedMsg: '执行命令失败',
+    hexoServerStartFailedMsg: 'Hexo服务器启动失败',
+    startServerFailedMsg: '启动服务器失败',
+    stopServerFailedMsg: '停止服务器失败',
+    autoFix: '自动修复',
+    tryFix: '尝试修复',
+    fixing: '修复中...',
+    fixSuccess: '修复成功',
+    fixFailed: '修复失败',
+    fixSuccessRetry: '问题已修复，请重试之前的操作',
 
     // 状态
     serverRunning: '服务器运行中',
@@ -509,10 +603,10 @@ console.log('Hello, Hexo!');
     backgroundSettings: '背景设置',
     backgroundImageUrl: '背景图片URL',
     selectImage: '选择图片',
-    clear: '清除',
     backgroundImageDescription: '输入图片URL或从本地选择图片作为背景',
     backgroundOpacity: '背景透明度',
     backgroundOpacityDescription: '调整背景透明度，0为完全透明，1为完全不透明',
+    readFileError: '读取文件失败，请确保文件路径正确且文件可访问',
     saveSettings: '保存设置',
     about: '关于',
     versionInfo: '版本信息',
@@ -570,6 +664,7 @@ console.log('Hello, Hexo!');
     clearLogs: '清空日志',
     commandExecutedSuccess: '✓ 命令执行成功',
     commandExecutedFailed: '✗ 命令执行失败',
+    viewLogsDetail: '查看日志了解详情',
 
     // 对话框
     confirmDelete: '确认删除',
@@ -605,15 +700,35 @@ console.log('Hello, Hexo!');
     // AI设置
     enableAI: '启用AI',
     enableAIDescription: '启用后获得AI支持',
+    enableEditorAI: '编辑器AI增强',
+    enableEditorAIDescription: '启用后可在编辑器中使用右键AI改写功能',
     aboutAILink: '[关于]',
     aiProvider: 'AI提供商',
-    aiProviderDescription: '目前仅支持DeepSeek',
+    aiProviderDescription: '选择您要使用的AI服务提供商',
     apiKey: 'API密钥',
     apiKeyPlaceholder: '请输入您的API密钥',
     prompt: '灵感提示词',
     promptPlaceholder: '请输入灵感提示词',
     analysisPrompt: '分析提示词',
     analysisPromptPlaceholder: '请输入分析提示词',
+    openaiModel: 'OpenAI模型',
+    openaiModelPlaceholder: '例如：gpt-3.5-turbo 或 gpt-4',
+    openaiApiEndpoint: 'API端点',
+    openaiApiEndpointPlaceholder: '默认：https://api.openai.com/v1',
+    siliconflow: '硅基流动',
+    siliconflowTooltip: '硅基流动是一个高性价比的 AI 推理平台，提供 Qwen、GLM、DeepSeek 等多种开源大模型服务。支持按需付费，性能稳定可靠。点击跳转至硅基流动官网了解更多',
+    siliconflowModel: '模型',
+    siliconflowModelPlaceholder: '例如：Qwen/Qwen2.5-7B-Instruct',
+    loadModels: '加载模型列表',
+    loadingModels: '加载中...',
+    modelsLoaded: '成功加载',
+    modelsLoadFailed: '加载模型列表失败',
+    loadModelsDescription: '填写API密钥后点击"加载模型列表"自动获取最新模型',
+    testConnection: '测试连接',
+    testing: '测试中...',
+    testSuccess: '连接测试成功！',
+    testFailed: '连接测试失败',
+    apiConnectionTest: 'API连接测试',
     inspiration: '灵感',
     generatingInspiration: '生成灵感中...',
     getInspiration: '来点灵感',
@@ -621,6 +736,24 @@ console.log('Hello, Hexo!');
     aiInspirationDescription: 'AI生成的博客灵感内容',
     articleAnalysis: '文章分析',
     startAnalysis: '开始分析',
+    
+    // AI 编辑器右键菜单
+    aiRewrite: 'AI 重写',
+    aiImprove: 'AI 改进',
+    aiExpand: 'AI 扩展',
+    aiTranslate: 'AI 翻译',
+    aiFeatureNotEnabled: 'AI 功能未启用',
+    pleaseConfigureApiKey: '请先配置 API Key',
+    pleaseSelectText: '请先选择文本',
+    rewriteTextError: '重写文本时出现错误，请检查API密钥是否正确。',
+    aiRewritePrompt: 'AI重写提示词',
+    aiImprovePrompt: 'AI改进提示词',
+    aiExpandPrompt: 'AI扩展提示词',
+    aiTranslatePrompt: 'AI翻译提示词',
+    aiRewritePromptPlaceholder: '请直接重写以下文本，使其更清晰流畅，保持原意。只输出改写后的文本，不要添加任何解释或说明',
+    aiImprovePromptPlaceholder: '请直接改进以下文本，使其更专业、生动。只输出改进后的文本，不要添加任何解释或说明',
+    aiExpandPromptPlaceholder: '请扩展以下文本，适当添加细节。只输出扩展后的文本，不要添加解释或标注',
+    aiTranslatePromptPlaceholder: '请直接将以下文本翻译成英文。只输出翻译结果，不要添加任何解释或说明',
     
     // 预览模式设置
     previewMode: '预览模式',
@@ -641,9 +774,7 @@ console.log('Hello, Hexo!');
     installDeployPluginDescription: '安装部署插件 (hexo-deployer-git)',
     installationProgress: '安装进度',
     commandOutput: '命令输出将显示在这里...',
-    cancel: '取消',
     close: '关闭',
-    creating: '创建中...',
     createProject: '创建项目',
     hexoAlreadyInstalled: 'Hexo 已安装 (版本: {version})，将跳过 Hexo 安装步骤',
     hexoNotInstalled: 'Hexo 未安装，将自动安装 Hexo',
@@ -664,8 +795,6 @@ console.log('Hello, Hexo!');
     missingDependency: '缺少依赖',
     pleaseInstallNpm: '请先安装 npm',
     pleaseInstallGit: '请先安装 git',
-    selectDirectoryFailed: '选择目录失败',
-    unknownError: '未知错误',
     checkingNpm: '检查 npm...',
     npmInstalled: 'npm 已安装: {version}',
     npmNotInstalled: 'npm 未安装: {error}',
@@ -674,7 +803,7 @@ console.log('Hello, Hexo!');
     gitNotInstalled: 'git 未安装: {error}',
     checkingHexo: '检查 hexo...',
     hexoInstalled: 'hexo 已安装: {version}',
-    hexoNotInstalled: 'hexo 未安装: {error}',
+    hexoCheckNotInstalled: 'hexo 未安装: {error}',
     environmentCheckFailed: '检查环境失败: {error}',
   },
 
@@ -691,6 +820,7 @@ console.log('Hello, Hexo!');
     select: 'Select',
     error: 'Error',
     success: 'Success',
+    failed: 'Failed',
     cleanCacheSuccess: 'Cache cleaned successfully',
     generateStaticFilesSuccess: 'Static files generated successfully',
     deploySuccess: 'Deployed successfully',
@@ -735,6 +865,10 @@ console.log('Hello, Hexo!');
     supportMarkdownSyntax: 'Standard Markdown syntax supported',
     saving: 'Saving...',
     dragImageHint: 'Drop image files here to insert Hexo image tags',
+    assetFolderDisabledWarning: 'Detected that post_asset_folder is set to false in your Hexo config. Images may not display correctly.',
+    assetFolderDisabledConfirm: 'Would you like to enable the asset folder feature automatically?\n(This will change post_asset_folder to true in _config.yml)',
+    assetFolderEnabledSuccess: 'Asset folder feature enabled successfully!',
+    assetFolderEnabledNextSteps: 'Please click the [Clean] and [Generate] buttons on the interface to apply changes.',
 
     // 占位符文本
     editorPlaceholder: `# Title
@@ -809,6 +943,30 @@ console.log('Hello, Hexo!');
     commandExecuteFailed: 'Command execution failed',
     startingServer: 'Starting Hexo server...',
     stoppingServer: 'Stopping Hexo server...',
+    starting: 'Starting',
+    stopping: 'Stopping',
+    
+    // 错误提示
+    gitSecurityError: 'Git Security Error',
+    gitSecurityErrorTrustDir: 'Need to add trusted directory',
+    gitSecurityErrorSuggest: 'Suggested command',
+    gitSecurityErrorOwnership: 'Detected suspicious directory ownership',
+    gitAuthError: 'Git authentication failed: Please check repository access permissions',
+    networkError: 'Network error: Unable to connect to remote repository',
+    createArticleFailedMsg: 'Failed to create article',
+    saveArticleFailedMsg: 'Failed to save article',
+    deleteArticleFailedMsg: 'Failed to delete article',
+    batchDeleteArticlesFailedMsg: 'Failed to batch delete articles',
+    executeCommandFailedMsg: 'Failed to execute command',
+    hexoServerStartFailedMsg: 'Failed to start Hexo server',
+    startServerFailedMsg: 'Failed to start server',
+    stopServerFailedMsg: 'Failed to stop server',
+    autoFix: 'Auto Fix',
+    tryFix: 'Try Fix',
+    fixing: 'Fixing...',
+    fixSuccess: 'Fix successful',
+    fixFailed: 'Fix failed',
+    fixSuccessRetry: 'Issue fixed, please retry the previous operation',
 
     // 状态
     serverRunning: 'Server Running',
@@ -865,10 +1023,10 @@ console.log('Hello, Hexo!');
     backgroundSettings: 'Background Settings',
     backgroundImageUrl: 'Background Image URL',
     selectImage: 'Select Image',
-    clear: 'Clear',
     backgroundImageDescription: 'Enter image URL or select an image from local as background',
     backgroundOpacity: 'Background Opacity',
     backgroundOpacityDescription: 'Adjust background opacity, 0 is completely transparent, 1 is completely opaque',
+    readFileError: 'Failed to read file, please ensure the file path is correct and accessible',
     saveSettings: 'Save Settings',
     about: 'About',
     versionInfo: 'Version Info',
@@ -926,6 +1084,7 @@ console.log('Hello, Hexo!');
     clearLogs: 'Clear Logs',
     commandExecutedSuccess: '✓ Command executed successfully',
     commandExecutedFailed: '✗ Command execution failed',
+    viewLogsDetail: 'View logs for details',
 
     // 对话框
     confirmDelete: 'Confirm Delete',
@@ -961,15 +1120,35 @@ console.log('Hello, Hexo!');
     // AI设置
     enableAI: 'Enable AI',
     enableAIDescription: 'Enable to get AI support',
+    enableEditorAI: 'Editor AI Enhancement',
+    enableEditorAIDescription: 'Enable AI rewrite features in editor context menu',
     aboutAILink: '[About]',
     aiProvider: 'AI Provider',
-    aiProviderDescription: 'Currently only supports DeepSeek',
+    aiProviderDescription: 'Choose your AI service provider',
     apiKey: 'API Key',
     apiKeyPlaceholder: 'Please enter your API key',
     prompt: 'Inspiration Prompt',
     promptPlaceholder: 'Please enter an inspiration prompt',
     analysisPrompt: 'Analysis Prompt',
     analysisPromptPlaceholder: 'Please enter an analysis prompt',
+    openaiModel: 'OpenAI Model',
+    openaiModelPlaceholder: 'e.g. gpt-3.5-turbo or gpt-4',
+    openaiApiEndpoint: 'API Endpoint',
+    openaiApiEndpointPlaceholder: 'Default: https://api.openai.com/v1',
+    siliconflow: 'SiliconFlow',
+    siliconflowTooltip: 'SiliconFlow is a cost-effective AI inference platform offering various open-source LLM services including Qwen, GLM, DeepSeek, etc. Pay-as-you-go pricing with stable and reliable performance. Click to learn more.',
+    siliconflowModel: 'Model',
+    siliconflowModelPlaceholder: 'e.g. Qwen/Qwen2.5-7B-Instruct',
+    loadModels: 'Load Models',
+    loadingModels: 'Loading...',
+    modelsLoaded: 'Successfully loaded',
+    modelsLoadFailed: 'Failed to load model list',
+    loadModelsDescription: 'Click "Load Models" after entering API key to get the latest models',
+    testConnection: 'Test Connection',
+    testing: 'Testing...',
+    testSuccess: 'Connection test successful!',
+    testFailed: 'Connection test failed',
+    apiConnectionTest: 'API Connection Test',
     inspiration: 'Inspiration',
     generatingInspiration: 'Generating inspiration...',
     getInspiration: 'Get Inspiration',
@@ -977,6 +1156,24 @@ console.log('Hello, Hexo!');
     aiInspirationDescription: 'Blog inspiration content generated by AI',
     articleAnalysis: 'Article Analysis',
     startAnalysis: 'Start Analysis',
+    
+    // AI 编辑器右键菜单
+    aiRewrite: 'AI Rewrite',
+    aiImprove: 'AI Improve',
+    aiExpand: 'AI Expand',
+    aiTranslate: 'AI Translate',
+    aiFeatureNotEnabled: 'AI feature not enabled',
+    pleaseConfigureApiKey: 'Please configure API Key first',
+    pleaseSelectText: 'Please select text first',
+    rewriteTextError: 'An error occurred while rewriting text, please check if the API key is correct.',
+    aiRewritePrompt: 'AI Rewrite Prompt',
+    aiImprovePrompt: 'AI Improve Prompt',
+    aiExpandPrompt: 'AI Expand Prompt',
+    aiTranslatePrompt: 'AI Translate Prompt',
+    aiRewritePromptPlaceholder: 'Rewrite the following text to make it clearer and more fluent, while maintaining the original meaning. Only output the rewritten text, no explanations',
+    aiImprovePromptPlaceholder: 'Improve the following text to make it more professional and engaging. Only output the improved text, no explanations',
+    aiExpandPromptPlaceholder: 'Expand the following text with appropriate details. Only output the expanded text, no explanations or annotations',
+    aiTranslatePromptPlaceholder: 'Translate the following text to Chinese. Only output the translation, no explanations',
     
     // 预览模式设置
     previewMode: 'Preview Mode',
@@ -997,9 +1194,7 @@ console.log('Hello, Hexo!');
     installDeployPluginDescription: 'Install deploy plugin (hexo-deployer-git)',
     installationProgress: 'Installation Progress',
     commandOutput: 'Command output will be displayed here...',
-    cancel: 'Cancel',
     close: 'Close',
-    creating: 'Creating...',
     createProject: 'Create Project',
     hexoAlreadyInstalled: 'Hexo is already installed (version: {version}), will skip Hexo installation',
     hexoNotInstalled: 'Hexo is not installed, will install Hexo automatically',
@@ -1020,8 +1215,6 @@ console.log('Hello, Hexo!');
     missingDependency: 'Missing Dependency',
     pleaseInstallNpm: 'Please install npm first',
     pleaseInstallGit: 'Please install git first',
-    selectDirectoryFailed: 'Failed to select directory',
-    unknownError: 'Unknown error',
     checkingNpm: 'Checking npm...',
     npmInstalled: 'npm installed: {version}',
     npmNotInstalled: 'npm not installed: {error}',
@@ -1030,7 +1223,7 @@ console.log('Hello, Hexo!');
     gitNotInstalled: 'git not installed: {error}',
     checkingHexo: 'Checking hexo...',
     hexoInstalled: 'hexo installed: {version}',
-    hexoNotInstalled: 'hexo not installed: {error}',
+    hexoCheckNotInstalled: 'hexo not installed: {error}',
     environmentCheckFailed: 'Environment check failed: {error}',
   }
 };

@@ -7,10 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Settings, Save } from 'lucide-react';
+import { Settings, Save, Loader2, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UpdateChecker } from '@/components/update-checker';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { getTexts } from '@/utils/i18n';
+import { isDesktopApp, getIpcRenderer, isTauri } from '@/lib/desktop-api';
+import { openExternalLink, getAppVersion } from '@/lib/utils';
 
 interface PanelSettingsProps {
   postsPerPage: number;
@@ -43,12 +46,28 @@ interface PanelSettingsProps {
   // AI设置
   enableAI?: boolean;
   onEnableAIChange?: (value: boolean) => void;
+  enableEditorAI?: boolean;
+  onEnableEditorAIChange?: (value: boolean) => void;
+  aiProvider?: 'deepseek' | 'openai' | 'siliconflow';
+  onAIProviderChange?: (value: 'deepseek' | 'openai' | 'siliconflow') => void;
   apiKey?: string;
   onApiKeyChange?: (value: string) => void;
   prompt?: string;
   onPromptChange?: (value: string) => void;
   analysisPrompt?: string;
   onAnalysisPromptChange?: (value: string) => void;
+  aiRewritePrompt?: string;
+  onAiRewritePromptChange?: (value: string) => void;
+  aiImprovePrompt?: string;
+  onAiImprovePromptChange?: (value: string) => void;
+  aiExpandPrompt?: string;
+  onAiExpandPromptChange?: (value: string) => void;
+  aiTranslatePrompt?: string;
+  onAiTranslatePromptChange?: (value: string) => void;
+  openaiModel?: string;
+  onOpenaiModelChange?: (value: string) => void;
+  openaiApiEndpoint?: string;
+  onOpenaiApiEndpointChange?: (value: string) => void;
   // 预览模式设置
   previewMode?: 'static' | 'server';
   onPreviewModeChange?: (value: 'static' | 'server') => void;
@@ -57,9 +76,9 @@ interface PanelSettingsProps {
   onIframeUrlModeChange?: (value: 'hexo' | 'root') => void;
 }
 
-export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange, previewMode = 'static', onPreviewModeChange, iframeUrlMode = 'hexo', onIframeUrlModeChange }: PanelSettingsProps) {
-  // 当前应用版本，从package.json中获取
-  const currentVersion = '2.6.0';
+export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInterval, onAutoSaveIntervalChange, updateAvailable, onUpdateCheck, updateCheckInProgress, autoCheckUpdates = true, onAutoCheckUpdatesChange, editorMode, onEditorModeChange, backgroundImage = '', onBackgroundImageChange, backgroundOpacity = 1, onBackgroundOpacityChange, language, enablePush = false, onEnablePushChange, pushRepoUrl = '', onPushRepoUrlChange, pushBranch = 'main', onPushBranchChange, pushUsername = '', onPushUsernameChange, pushEmail = '', onPushEmailChange, enableAI = false, onEnableAIChange, enableEditorAI = false, onEnableEditorAIChange, aiProvider = 'deepseek', onAIProviderChange, apiKey = '', onApiKeyChange, prompt = '你是一个灵感提示机器人，我是一个独立博客的博主，我想写一篇博客，请你给我一个可写内容的灵感，不要超过200字，不要分段', onPromptChange, analysisPrompt = '你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段', onAnalysisPromptChange, aiRewritePrompt = '请直接重写以下文本，使其更清晰流畅，保持原意。只输出改写后的文本，不要添加任何解释或说明', onAiRewritePromptChange, aiImprovePrompt = '请直接改进以下文本，使其更专业、生动。只输出改进后的文本，不要添加任何解释或说明', onAiImprovePromptChange, aiExpandPrompt = '请扩展以下文本，适当添加细节。只输出扩展后的文本，不要添加解释或标注', onAiExpandPromptChange, aiTranslatePrompt = '请直接将以下文本翻译成英文。只输出翻译结果，不要添加任何解释或说明', onAiTranslatePromptChange, openaiModel = 'gpt-3.5-turbo', onOpenaiModelChange, openaiApiEndpoint = 'https://api.openai.com/v1', onOpenaiApiEndpointChange, previewMode = 'static', onPreviewModeChange, iframeUrlMode = 'hexo', onIframeUrlModeChange }: PanelSettingsProps) {
+  // 当前应用版本，从package.json动态获取
+  const [currentVersion, setCurrentVersion] = useState<string>('Unknown');
   // 获取当前语言的文本
   const t = getTexts(language);
   const [tempPostsPerPage, setTempPostsPerPage] = useState<number>(postsPerPage);
@@ -76,13 +95,29 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
   const [tempPushEmail, setTempPushEmail] = useState<string>(pushEmail);
   // AI设置相关状态
   const [tempEnableAI, setTempEnableAI] = useState<boolean>(enableAI);
+  const [tempEnableEditorAI, setTempEnableEditorAI] = useState<boolean>(enableEditorAI);
+  const [tempAIProvider, setTempAIProvider] = useState<'deepseek' | 'openai' | 'siliconflow'>(aiProvider);
   const [tempApiKey, setTempApiKey] = useState<string>(apiKey);
   const [tempPrompt, setTempPrompt] = useState<string>(prompt);
   const [tempAnalysisPrompt, setTempAnalysisPrompt] = useState<string>('你是一个文章分析机器人，以下是我的博客数据{content}，请你分析并给出鼓励性的话语，不要超过200字，不要分段');
+  const [tempOpenaiModel, setTempOpenaiModel] = useState<string>(openaiModel);
+  const [tempOpenaiApiEndpoint, setTempOpenaiApiEndpoint] = useState<string>(openaiApiEndpoint);
+  // 硅基流动模型列表
+  const [siliconflowModels, setSiliconflowModels] = useState<string[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState<boolean>(false);
   // 预览模式相关状态
   const [tempPreviewMode, setTempPreviewMode] = useState<'static' | 'server'>(previewMode);
   const [tempIframeUrlMode, setTempIframeUrlMode] = useState<'hexo' | 'root'>(iframeUrlMode);
+  // API测试相关状态
+  const [isTesting, setIsTesting] = useState<boolean>(false);
   const { toast } = useToast();
+
+  // 获取应用版本号
+  useEffect(() => {
+    getAppVersion().then(version => {
+      setCurrentVersion(version);
+    });
+  }, []);
 
   // 当传入的postsPerPage变化时，更新临时值
   useEffect(() => {
@@ -144,6 +179,11 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     setTempEnableAI(enableAI);
   }, [enableAI]);
 
+  // 当传入的aiProvider变化时，更新临时值
+  useEffect(() => {
+    setTempAIProvider(aiProvider);
+  }, [aiProvider]);
+
   // 当传入的apiKey变化时，更新临时值
   useEffect(() => {
     setTempApiKey(apiKey);
@@ -161,10 +201,182 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     }
   }, [analysisPrompt]);
 
+  // 当传入的openaiModel变化时，更新临时值
+  useEffect(() => {
+    setTempOpenaiModel(openaiModel);
+  }, [openaiModel]);
+
+  // 当传入的openaiApiEndpoint变化时，更新临时值
+  useEffect(() => {
+    setTempOpenaiApiEndpoint(openaiApiEndpoint);
+  }, [openaiApiEndpoint]);
+
   // 当传入的previewMode变化时，更新临时值
   useEffect(() => {
     setTempPreviewMode(previewMode);
   }, [previewMode]);
+
+  // 加载硅基流动模型列表
+  const loadSiliconFlowModels = async (apiKeyToUse?: string) => {
+    const keyToUse = apiKeyToUse || tempApiKey;
+    if (!keyToUse) {
+      toast({
+        title: t.error,
+        description: language === 'zh' ? '请先输入API密钥' : 'Please enter API key first',
+        variant: 'error',
+      });
+      return;
+    }
+
+    setIsLoadingModels(true);
+    try {
+      const apiUrl = 'https://api.siliconflow.cn/v1/models?type=text&sub_type=chat';
+      
+      let response;
+      if (isTauri()) {
+        const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+        response = await tauriFetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${keyToUse}`
+          }
+        });
+      } else {
+        response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${keyToUse}`
+          }
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.data && Array.isArray(data.data)) {
+        const modelIds = data.data.map((model: any) => model.id);
+        setSiliconflowModels(modelIds);
+        
+        // 如果还没有选择模型，默认选择第一个
+        if (!tempOpenaiModel && modelIds.length > 0) {
+          setTempOpenaiModel(modelIds[0]);
+        }
+        
+        toast({
+          title: t.success,
+          description: `${t.modelsLoaded} ${modelIds.length} ${language === 'zh' ? '个模型' : 'models'}`,
+          variant: 'success',
+        });
+      }
+    } catch (error: any) {
+      console.error('Failed to load SiliconFlow models:', error);
+      toast({
+        title: t.error,
+        description: error.message || t.modelsLoadFailed,
+        variant: 'error',
+      });
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  // 测试API连接
+  const testAPIConnection = async () => {
+    if (!tempApiKey) {
+      toast({
+        title: t.error,
+        description: language === 'zh' ? '请先输入API密钥' : 'Please enter API key first',
+        variant: 'error',
+      });
+      return;
+    }
+
+    setIsTesting(true);
+    try {
+      // 根据提供商选择API端点和模型
+      let apiUrl: string;
+      let model: string;
+      
+      if (tempAIProvider === 'deepseek') {
+        apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+        model = 'deepseek-chat';
+      } else if (tempAIProvider === 'siliconflow') {
+        apiUrl = 'https://api.siliconflow.cn/v1/chat/completions';
+        model = tempOpenaiModel || 'Qwen/Qwen2.5-7B-Instruct';
+      } else {
+        apiUrl = `${tempOpenaiApiEndpoint || 'https://api.openai.com/v1'}/chat/completions`;
+        model = tempOpenaiModel || 'gpt-3.5-turbo';
+      }
+
+      // 调用AI API测试连接
+      let response;
+      if (isTauri()) {
+        const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+        response = await tauriFetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tempApiKey}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: 'user',
+                content: 'Hello'
+              }
+            ],
+            max_tokens: 5
+          })
+        });
+      } else {
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tempApiKey}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: 'user',
+                content: 'Hello'
+              }
+            ],
+            max_tokens: 5
+          })
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.choices && data.choices.length > 0) {
+        toast({
+          title: t.success,
+          description: t.testSuccess,
+          variant: 'success',
+        });
+      } else {
+        throw new Error('Invalid API response');
+      }
+    } catch (error: any) {
+      console.error('API connection test failed:', error);
+      toast({
+        title: t.testFailed,
+        description: error.message || (language === 'zh' ? '请检查API密钥和配置是否正确' : 'Please check if API key and configuration are correct'),
+        variant: 'error',
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   // 保存设置
   const saveSettings = () => {
@@ -177,7 +389,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
       return;
     }
 
-    if (tempAutoSaveInterval === "" || tempAutoSaveInterval < 1 || tempAutoSaveInterval > 60) {
+    if (tempAutoSaveInterval < 1 || tempAutoSaveInterval > 60) {
       toast({
         title: t.error,
         description: t.autoSaveIntervalRangeError,
@@ -187,7 +399,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     }
 
     onPostsPerPageChange(tempPostsPerPage);
-    onAutoSaveIntervalChange(tempAutoSaveInterval === "" ? 3 : tempAutoSaveInterval);
+    onAutoSaveIntervalChange(tempAutoSaveInterval);
     onEditorModeChange(tempEditorMode);
     if (onBackgroundImageChange) onBackgroundImageChange(tempBackgroundImage);
     if (onBackgroundOpacityChange) onBackgroundOpacityChange(tempBackgroundOpacity);
@@ -199,9 +411,13 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     if (onPushEmailChange) onPushEmailChange(tempPushEmail);
     // 保存AI设置
     if (onEnableAIChange) onEnableAIChange(tempEnableAI);
+    if (onEnableEditorAIChange) onEnableEditorAIChange(tempEnableEditorAI);
+    if (onAIProviderChange) onAIProviderChange(tempAIProvider);
     if (onApiKeyChange) onApiKeyChange(tempApiKey);
     if (onPromptChange) onPromptChange(tempPrompt);
     if (onAnalysisPromptChange) onAnalysisPromptChange(tempAnalysisPrompt);
+    if (onOpenaiModelChange) onOpenaiModelChange(tempOpenaiModel);
+    if (onOpenaiApiEndpointChange) onOpenaiApiEndpointChange(tempOpenaiApiEndpoint);
     // 保存预览模式设置
     if (onPreviewModeChange) onPreviewModeChange(tempPreviewMode);
     // 保存iframe地址获取方式设置
@@ -210,9 +426,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
     // 保存到localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('posts-per-page', tempPostsPerPage.toString());
-      if (tempAutoSaveInterval !== "") {
-        localStorage.setItem('auto-save-interval', tempAutoSaveInterval.toString());
-      }
+      localStorage.setItem('auto-save-interval', tempAutoSaveInterval.toString());
       localStorage.setItem('editor-mode', tempEditorMode);
       localStorage.setItem('background-image', tempBackgroundImage);
       localStorage.setItem('background-opacity', tempBackgroundOpacity.toString());
@@ -224,9 +438,13 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
       localStorage.setItem('push-email', tempPushEmail);
       // 保存AI设置
       localStorage.setItem('enable-ai', tempEnableAI.toString());
+      localStorage.setItem('enable-editor-ai', tempEnableEditorAI.toString());
+      localStorage.setItem('ai-provider', tempAIProvider);
       localStorage.setItem('api-key', tempApiKey);
       localStorage.setItem('prompt', tempPrompt);
       localStorage.setItem('analysis-prompt', tempAnalysisPrompt);
+      localStorage.setItem('openai-model', tempOpenaiModel);
+      localStorage.setItem('openai-api-endpoint', tempOpenaiApiEndpoint);
       // 保存预览模式设置
       localStorage.setItem('preview-mode', tempPreviewMode);
       // 保存iframe地址获取方式设置
@@ -275,7 +493,7 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                 min="1"
                 max="60"
                 value={tempAutoSaveInterval}
-                onChange={(e) => setTempAutoSaveInterval(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => setTempAutoSaveInterval(e.target.value === "" ? 3 : Number(e.target.value))}
                 className="w-32"
               />
               <p className="text-sm text-muted-foreground">
@@ -402,15 +620,14 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        if (typeof window !== 'undefined' && window.require) {
-                          const { ipcRenderer } = window.require('electron');
+                      onClick={async () => {
+                        if (isDesktopApp()) {
+                          const ipcRenderer = await getIpcRenderer();
                           ipcRenderer.invoke('select-file').then((filePath: string) => {
                             if (filePath) {
-                              // 将本地文件路径转换为file://协议格式
-                              const normalizedPath = filePath.replace(/\\/g, '/');
-                              const fileUrl = `file:///${normalizedPath}`;
-                              setTempBackgroundImage(fileUrl);
+                              // 直接保存文件路径，不转换为base64
+                              // 转换会在实际使用时自动进行
+                              setTempBackgroundImage(filePath);
                             }
                           });
                         } else {
@@ -574,14 +791,9 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
               </p>
               <a
                 href="#"
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.preventDefault();
-                  if (typeof window !== 'undefined' && window.require) {
-                    const { shell } = window.require('electron');
-                    shell.openExternal('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD');
-                  } else {
-                    window.open('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD', '_blank');
-                  }
+                  await openExternalLink('https://2am.top/2025/09/13/Hexohub%E5%BC%80%E5%8F%91%E6%97%A5%E5%BF%972/#AI%E5%8A%9F%E8%83%BD');
                 }}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -591,17 +803,88 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
               </a>
             </div>
 
+            {/* 编辑器AI增强 */}
+            <div className="flex items-center space-x-2 mt-4">
+              <input
+                type="checkbox"
+                id="enableEditorAI"
+                checked={tempEnableEditorAI}
+                onChange={(e) => setTempEnableEditorAI(e.target.checked)}
+                className="w-4 h-4"
+                disabled={!tempEnableAI}
+              />
+              <Label htmlFor="enableEditorAI" className={!tempEnableAI ? 'text-muted-foreground' : ''}>
+                {t.enableEditorAI}
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {t.enableEditorAIDescription}
+            </p>
+
             {tempEnableAI && (
               <div className="mt-4 space-y-4 pl-6 border-l-2 border-gray-200">
                 <div className="space-y-2">
                   <Label htmlFor="aiProvider">{t.aiProvider}</Label>
-                  <Input
-                    id="aiProvider"
-                    type="text"
-                    value="DeepSeek"
-                    disabled
-                    className="w-full"
-                  />
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="deepseek"
+                        name="aiProvider"
+                        value="deepseek"
+                        checked={tempAIProvider === 'deepseek'}
+                        onChange={() => setTempAIProvider('deepseek')}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="deepseek">DeepSeek</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="openai"
+                        name="aiProvider"
+                        value="openai"
+                        checked={tempAIProvider === 'openai'}
+                        onChange={() => setTempAIProvider('openai')}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="openai">OpenAI</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="siliconflow"
+                        name="aiProvider"
+                        value="siliconflow"
+                        checked={tempAIProvider === 'siliconflow'}
+                        onChange={() => setTempAIProvider('siliconflow')}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="siliconflow" className="flex items-center gap-1">
+                        {t.siliconflow}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a
+                              href="#"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                await openExternalLink('https://siliconflow.cn');
+                              }}
+                              className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                            >
+                              <HelpCircle className="w-3.5 h-3.5" />
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent 
+                            className="w-[280px] !bg-slate-900 !text-white !border-slate-700 !px-3 !py-2.5 [&_svg]:!bg-slate-900 [&_svg]:!fill-slate-900"
+                            sideOffset={5}
+                          >
+                            <p className="text-xs leading-relaxed text-justify">{t.siliconflowTooltip}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </Label>
+                    </div>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {t.aiProviderDescription}
                   </p>
@@ -609,15 +892,123 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
 
                 <div className="space-y-2">
                   <Label htmlFor="apiKey">{t.apiKey}</Label>
-                  <Input
-                    id="apiKey"
-                    type="password"
-                    value={tempApiKey}
-                    onChange={(e) => setTempApiKey(e.target.value)}
-                    placeholder={t.apiKeyPlaceholder}
-                    className="w-full"
-                  />
+                  <div className="flex space-x-2">
+                    <Input
+                      id="apiKey"
+                      type="password"
+                      value={tempApiKey}
+                      onChange={(e) => setTempApiKey(e.target.value)}
+                      placeholder={t.apiKeyPlaceholder}
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={testAPIConnection}
+                      disabled={isTesting || !tempApiKey}
+                    >
+                      {isTesting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          {t.testing}
+                        </>
+                      ) : (
+                        t.testConnection
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {language === 'zh' 
+                      ? '点击"测试连接"按钮验证API配置是否正确'
+                      : 'Click "Test Connection" button to verify API configuration'
+                    }
+                  </p>
                 </div>
+
+                {tempAIProvider === 'siliconflow' && (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="siliconflowModel">{t.siliconflowModel}</Label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => loadSiliconFlowModels()}
+                          disabled={isLoadingModels || !tempApiKey}
+                        >
+                          {isLoadingModels ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              {t.loadingModels}
+                            </>
+                          ) : (
+                            t.loadModels
+                          )}
+                        </Button>
+                      </div>
+                      {siliconflowModels.length > 0 ? (
+                        <select
+                          id="siliconflowModel"
+                          value={tempOpenaiModel}
+                          onChange={(e) => setTempOpenaiModel(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          {siliconflowModels.map((model) => (
+                            <option key={model} value={model}>
+                              {model}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          id="siliconflowModel"
+                          type="text"
+                          value={tempOpenaiModel}
+                          onChange={(e) => setTempOpenaiModel(e.target.value)}
+                          placeholder={t.siliconflowModelPlaceholder}
+                          className="w-full"
+                        />
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {t.loadModelsDescription}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {tempAIProvider === 'openai' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="openaiModel">{t.openaiModel}</Label>
+                      <Input
+                        id="openaiModel"
+                        type="text"
+                        value={tempOpenaiModel}
+                        onChange={(e) => setTempOpenaiModel(e.target.value)}
+                        placeholder={t.openaiModelPlaceholder}
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="openaiApiEndpoint">{t.openaiApiEndpoint}</Label>
+                      <Input
+                        id="openaiApiEndpoint"
+                        type="text"
+                        value={tempOpenaiApiEndpoint}
+                        onChange={(e) => setTempOpenaiApiEndpoint(e.target.value)}
+                        placeholder={t.openaiApiEndpointPlaceholder}
+                        className="w-full"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'zh' 
+                          ? '支持OpenAI兼容的API端点，留空使用默认值'
+                          : 'Supports OpenAI-compatible API endpoints, leave blank to use default'
+                        }
+                      </p>
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="prompt">{t.prompt}</Label>
@@ -668,9 +1059,6 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
         currentVersion={currentVersion}
         repoOwner="forever218"
         repoName="HexoHub"
-        updateAvailable={updateAvailable}
-        onCheckUpdates={onUpdateCheck}
-        isLoading={updateCheckInProgress}
         autoCheckUpdates={autoCheckUpdates}
         onAutoCheckUpdatesChange={onAutoCheckUpdatesChange}
         language={language}
@@ -694,12 +1082,9 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
             <Label>{t.projectAddress}</Label>
             <a 
               href="#"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.preventDefault();
-                if (typeof window !== 'undefined' && window.require) {
-                  const { shell } = window.require('electron');
-                  shell.openExternal('https://github.com/forever218/HexoHub');
-                }
+                await openExternalLink('https://github.com/forever218/HexoHub');
               }} 
               target="_blank" 
               rel="noopener noreferrer"
@@ -713,12 +1098,9 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
             <Label>{t.contactMe}</Label>
             <a 
               href="#"
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.preventDefault();
-                if (typeof window !== 'undefined' && window.require) {
-                  const { shell } = window.require('electron');
-                  shell.openExternal('https://github.com/forever218');
-                }
+                await openExternalLink('https://github.com/forever218');
               }} 
               target="_blank" 
               rel="noopener noreferrer"

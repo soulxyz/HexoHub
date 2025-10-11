@@ -8,16 +8,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2, Lightbulb, X } from 'lucide-react';
 import { getTexts } from '@/utils/i18n';
+import { isTauri } from '@/lib/desktop-api';
 
 interface AIInspirationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  aiProvider: 'deepseek' | 'openai' | 'siliconflow';
   apiKey: string;
   prompt: string;
   language: 'zh' | 'en';
+  openaiModel?: string;
+  openaiApiEndpoint?: string;
 }
 
-export function AIInspirationDialog({ open, onOpenChange, apiKey, prompt, language }: AIInspirationDialogProps) {
+export function AIInspirationDialog({ open, onOpenChange, aiProvider, apiKey, prompt, language, openaiModel = 'gpt-3.5-turbo', openaiApiEndpoint = 'https://api.openai.com/v1' }: AIInspirationDialogProps) {
   const [inspiration, setInspiration] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [displayedText, setDisplayedText] = useState<string>('');
@@ -35,25 +39,63 @@ export function AIInspirationDialog({ open, onOpenChange, apiKey, prompt, langua
     setIsTyping(false);
 
     try {
-      // 调用DeepSeek API
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 500
-        })
-      });
+      // 根据提供商选择API端点和模型
+      let apiUrl: string;
+      let model: string;
+      
+      if (aiProvider === 'deepseek') {
+        apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+        model = 'deepseek-chat';
+      } else if (aiProvider === 'siliconflow') {
+        apiUrl = 'https://api.siliconflow.cn/v1/chat/completions';
+        model = openaiModel || 'Qwen/Qwen2.5-7B-Instruct';
+      } else {
+        apiUrl = `${openaiApiEndpoint}/chat/completions`;
+        model = openaiModel || 'gpt-3.5-turbo';
+      }
+
+      // 调用AI API - 在 Tauri 环境下使用 Tauri HTTP 插件
+      let response;
+      if (isTauri()) {
+        const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+        response = await tauriFetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 500
+          })
+        });
+      } else {
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 500
+          })
+        });
+      }
 
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);
