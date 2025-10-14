@@ -874,46 +874,60 @@ pub fn run() {
         
         window.on_window_event(move |event| {
           if let tauri::WindowEvent::CloseRequested { .. } = event {
-            println!("检测到窗口关闭请求，开始清理 Hexo 服务器...");
+            println!("检测到窗口关闭请求，开始异步清理 Hexo 服务器...");
             
-            // 获取 HexoServer 状态并清理进程
+            // 获取 HexoServer 状态并异步清理进程
             if let Some(server_state) = app_handle.try_state::<HexoServer>() {
               if let Ok(mut server) = server_state.0.try_lock() {
                 if let Some(child) = server.take() {
                   let pid = child.id();
-                  println!("清理 Hexo 服务器进程 PID: {}", pid);
+                  println!("异步清理 Hexo 服务器进程 PID: {}", pid);
                   
-                  #[cfg(target_os = "windows")]
-                  {
-                    // Windows: 使用 taskkill 杀死整个进程树（同步方式）
-                    let _ = Command::new("taskkill")
-                      .args(&["/pid", &pid.to_string(), "/T", "/F"])
-                      .output();
+                  // 在后台线程中异步清理，不阻塞关闭流程
+                  std::thread::spawn(move || {
+                    println!("开始后台清理进程 PID: {}", pid);
                     
-                    // 额外清理 4000 端口
-                    let _ = Command::new("cmd")
-                      .args(&["/C", "for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :4000 ^| findstr LISTENING') do @taskkill /F /PID %a"])
-                      .output();
+                    #[cfg(target_os = "windows")]
+                    {
+                      // Windows: 先尝试优雅终止
+                      let graceful_result = Command::new("taskkill")
+                        .args(&["/pid", &pid.to_string(), "/T"])
+                        .output();
+                      
+                      // 给进程一点时间优雅关闭
+                      std::thread::sleep(std::time::Duration::from_millis(500));
+                      
+                      // 如果优雅终止失败，强制终止
+                      if graceful_result.is_err() {
+                        let _ = Command::new("taskkill")
+                          .args(&["/pid", &pid.to_string(), "/T", "/F"])
+                          .output();
+                      }
+                      
+                      // 额外清理 4000 端口（异步，不等待结果）
+                      let _ = Command::new("cmd")
+                        .args(&["/C", "for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :4000 ^| findstr LISTENING') do @taskkill /F /PID %a"])
+                        .spawn();
+                      
+                      println!("Hexo 服务器进程已提交清理任务");
+                    }
                     
-                    println!("Hexo 服务器进程已清理完成");
-                  }
-                  
-                  #[cfg(not(target_os = "windows"))]
-                  {
-                    // Linux/Mac: 直接 kill 进程
-                    // 先尝试 SIGTERM（优雅终止）
-                    let _ = Command::new("kill")
-                      .arg(pid.to_string())
-                      .output();
-                    
-                    // 等待一下，然后使用 SIGKILL 强制终止
-                    std::thread::sleep(std::time::Duration::from_millis(500));
-                    let _ = Command::new("kill")
-                      .args(&["-9", &pid.to_string()])
-                      .output();
-                    
-                    println!("Hexo 服务器进程已终止");
-                  }
+                    #[cfg(not(target_os = "windows"))]
+                    {
+                      // Linux/Mac: 先尝试 SIGTERM（优雅终止）
+                      let _ = Command::new("kill")
+                        .args(&["-TERM", &pid.to_string()])
+                        .output();
+                      
+                      // 等待一下，然后使用 SIGKILL 强制终止
+                      std::thread::sleep(std::time::Duration::from_millis(500));
+                      let _ = Command::new("kill")
+                        .args(&["-9", &pid.to_string()])
+                        .output();
+                      
+                      println!("Hexo 服务器进程已终止");
+                    }
+                  });
                 }
               }
             }
