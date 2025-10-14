@@ -27,6 +27,7 @@ import {
 interface Post {
   name: string;
   path: string;
+  modifiedTime?: Date;
 }
 
 interface MarkdownEditorProps {
@@ -37,6 +38,7 @@ interface MarkdownEditorProps {
   language?: 'zh' | 'en';
   hexoPath?: string;
   selectedPost?: Post | null;
+  posts?: Post[];
   // AI 配置
   enableAI?: boolean;
   aiProvider?: 'deepseek' | 'openai' | 'siliconflow';
@@ -53,6 +55,7 @@ export function MarkdownEditorElectron({
   language = 'zh', 
   hexoPath, 
   selectedPost,
+  posts,
   enableAI = false,
   aiProvider = 'deepseek',
   apiKey = '',
@@ -561,6 +564,9 @@ ${selectedText}
             openaiModel={openaiModel}
             openaiApiEndpoint={openaiApiEndpoint}
             enableAI={enableAI}
+            posts={posts || []}
+            hexoPath={hexoPath}
+            currentContent={value}
           >
             <Textarea
               ref={textareaRef}

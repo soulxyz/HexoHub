@@ -5,6 +5,7 @@ import { MarkdownEditorElectron } from './markdown-editor-electron';
 interface Post {
   name: string;
   path: string;
+  modifiedTime?: Date;
 }
 
 interface MarkdownEditorWrapperProps {
@@ -15,6 +16,7 @@ interface MarkdownEditorWrapperProps {
   language?: 'zh' | 'en';
   hexoPath?: string;
   selectedPost?: Post | null;
+  posts?: Post[];
   // AI 配置
   enableAI?: boolean;
   aiProvider?: 'deepseek' | 'openai' | 'siliconflow';

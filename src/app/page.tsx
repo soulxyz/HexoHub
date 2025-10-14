@@ -3063,6 +3063,7 @@ ${selectedText}
                             language={language}
                             hexoPath={hexoPath}
                             selectedPost={selectedPost}
+                            posts={posts}
                             enableAI={enableEditorAI}
                             aiProvider={aiProvider}
                             apiKey={apiKey}
@@ -3100,6 +3101,7 @@ ${selectedText}
                             language={language}
                             hexoPath={hexoPath}
                             selectedPost={selectedPost}
+                            posts={posts}
                             enableAI={enableEditorAI}
                             aiProvider={aiProvider}
                             apiKey={apiKey}

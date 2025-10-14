@@ -7,9 +7,16 @@ import {
   useContextMenu,
 } from 'react-contexify';
 import 'react-contexify/dist/ReactContexify.css';
-import { Wand2, Languages, FileText, Sparkles } from 'lucide-react';
+import { Wand2, Languages, FileText, Sparkles, BookOpen } from 'lucide-react';
 import { getTexts } from '@/utils/i18n';
 import { AIRewriteDialog } from '@/components/ai-rewrite-dialog';
+import { AIDeepImitationDialog } from '@/components/ai-deep-imitation-dialog';
+
+interface Post {
+  name: string;
+  path: string;
+  modifiedTime: Date;
+}
 
 interface AIRewriteMenuProps {
   children: React.ReactNode;
@@ -21,6 +28,9 @@ interface AIRewriteMenuProps {
   openaiModel?: string;
   openaiApiEndpoint?: string;
   enabled?: boolean;
+  posts?: Post[];
+  hexoPath?: string;
+  currentContent?: string;
 }
 
 const MENU_ID = 'ai-rewrite-menu';
@@ -34,10 +44,14 @@ export function AIRewriteMenu({
   language,
   openaiModel = 'gpt-3.5-turbo',
   openaiApiEndpoint = 'https://api.openai.com/v1',
-  enabled = true
+  enabled = true,
+  posts = [],
+  hexoPath = '',
+  currentContent = ''
 }: AIRewriteMenuProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rewriteType, setRewriteType] = useState<'rewrite' | 'improve' | 'translate' | 'expand' | null>(null);
+  const [deepImitationDialogOpen, setDeepImitationDialogOpen] = useState(false);
   const t = getTexts(language);
   const { show } = useContextMenu({ id: MENU_ID });
 
@@ -96,6 +110,12 @@ export function AIRewriteMenu({
                 {t.aiTranslate}
               </div>
             </Item>
+            <Item onClick={() => setDeepImitationDialogOpen(true)}>
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                {language === 'zh' ? '深度模仿' : 'Deep Imitation'}
+              </div>
+            </Item>
           </React.Fragment>
         ) : (
           <Item disabled>
@@ -115,6 +135,21 @@ export function AIRewriteMenu({
         onOpenChange={setDialogOpen}
         selectedText={selectedText}
         rewriteType={rewriteType}
+        onAccept={onRewrite}
+        aiProvider={aiProvider}
+        apiKey={apiKey}
+        language={language}
+        openaiModel={openaiModel}
+        openaiApiEndpoint={openaiApiEndpoint}
+      />
+      
+      {/* AI 深度模仿对话框 */}
+      <AIDeepImitationDialog
+        open={deepImitationDialogOpen}
+        onOpenChange={setDeepImitationDialogOpen}
+        currentContent={currentContent}
+        hexoPath={hexoPath}
+        allPosts={posts}
         onAccept={onRewrite}
         aiProvider={aiProvider}
         apiKey={apiKey}
