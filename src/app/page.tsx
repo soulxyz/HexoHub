@@ -497,6 +497,25 @@ export default function Home() {
     loadSavedSettings();
   }, [isElectron]);
 
+  // 页面加载完成后显示窗口（仅 Tauri 环境）
+  useEffect(() => {
+    const showWindow = async () => {
+      if (isTauri()) {
+        try {
+          const { windowControls } = await import('@/lib/tauri-api');
+          // 等待一小段时间确保页面渲染完成
+          setTimeout(async () => {
+            await windowControls.show();
+          }, 100);
+        } catch (error) {
+          console.error('Failed to show window:', error);
+        }
+      }
+    };
+    
+    showWindow();
+  }, []);
+
   // 监听筛选条件变化
   useEffect(() => {
     applyFilter();

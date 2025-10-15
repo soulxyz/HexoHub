@@ -39,6 +39,14 @@ export const windowControls = {
       await appWindow.close();
     }
   },
+  
+  show: async () => {
+    if (isTauriEnvironment()) {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const appWindow = getCurrentWindow();
+      await appWindow.show();
+    }
+  },
 };
 
 // 文件操作
