@@ -702,26 +702,81 @@ export default function Home() {
           if (frontMatterMatch) {
             const frontMatter = frontMatterMatch[1];
             
-            // 提取标签
-            const tagsMatch = frontMatter.match(/^tags:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
-            if (tagsMatch) {
-              const tags = tagsMatch[1].split('\n')
-                .map(line => line.trim().replace(/^\-\s*/, ''))
-                .filter(tag => tag);
-              tags.forEach(tag => {
-                tagsSet.add(tag);
-                allTagsList.push(tag); // 添加到所有标签列表
-              });
-            }
+            // 提取标签 - 支持多种 Hexo 格式
+            const parseTags = (text: string): string[] => {
+              const tagsMatch = text.match(/^tags:\s*(.+)$/m);
+              if (!tagsMatch) return [];
+              
+              const tagsValue = tagsMatch[1].trim();
+              
+              // 格式1: 行内数组 [tag1, tag2, tag3]
+              if (tagsValue.startsWith('[') && tagsValue.includes(']')) {
+                return tagsValue
+                  .replace(/^\[|\]$/g, '')
+                  .split(',')
+                  .map(tag => tag.trim())
+                  .filter(tag => tag);
+              }
+              
+              // 格式2: 单个标签在同一行
+              if (tagsValue && !tagsValue.startsWith('\n')) {
+                return [tagsValue];
+              }
+              
+              // 格式3: 多行列表格式
+              // 匹配 tags: 后面所有以 - 开头的行
+              const multilineMatch = text.match(/^tags:\s*\n((?:\s*-\s*.+\n?)+)/m);
+              if (multilineMatch) {
+                return multilineMatch[1]
+                  .split('\n')
+                  .map(line => line.trim().replace(/^-\s*/, ''))
+                  .filter(tag => tag);
+              }
+              
+              return [];
+            };
             
-            // 提取分类
-            const categoriesMatch = frontMatter.match(/^categories:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
-            if (categoriesMatch) {
-              const categories = categoriesMatch[1].split('\n')
-                .map(line => line.trim().replace(/^\-\s*/, ''))
-                .filter(cat => cat);
-              categories.forEach(category => categoriesSet.add(category));
-            }
+            const tags = parseTags(frontMatter);
+            tags.forEach(tag => {
+              tagsSet.add(tag);
+              allTagsList.push(tag);
+            });
+            
+            // 提取分类 - 支持多种 Hexo 格式
+            const parseCategories = (text: string): string[] => {
+              const categoriesMatch = text.match(/^categories:\s*(.+)$/m);
+              if (!categoriesMatch) return [];
+              
+              const categoriesValue = categoriesMatch[1].trim();
+              
+              // 格式1: 行内数组 [cat1, cat2, cat3]
+              if (categoriesValue.startsWith('[') && categoriesValue.includes(']')) {
+                return categoriesValue
+                  .replace(/^\[|\]$/g, '')
+                  .split(',')
+                  .map(cat => cat.trim())
+                  .filter(cat => cat);
+              }
+              
+              // 格式2: 单个分类在同一行
+              if (categoriesValue && !categoriesValue.startsWith('\n')) {
+                return [categoriesValue];
+              }
+              
+              // 格式3: 多行列表格式
+              const multilineMatch = text.match(/^categories:\s*\n((?:\s*-\s*.+\n?)+)/m);
+              if (multilineMatch) {
+                return multilineMatch[1]
+                  .split('\n')
+                  .map(line => line.trim().replace(/^-\s*/, ''))
+                  .filter(cat => cat);
+              }
+              
+              return [];
+            };
+            
+            const categories = parseCategories(frontMatter);
+            categories.forEach(category => categoriesSet.add(category));
           }
         } catch (error) {
           console.error(`读取文章 ${post.name} 失败:`, error);
