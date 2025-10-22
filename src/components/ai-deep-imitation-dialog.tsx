@@ -362,20 +362,6 @@ Please maintain a writing style similar to the reference articles, but the conte
               </ScrollArea>
             </div>
 
-            <Button
-              onClick={performGeneration}
-              disabled={isGenerating || !title || !content || selectedPosts.length === 0}
-              className="w-full"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {language === 'zh' ? '生成中...' : 'Generating...'}
-                </>
-              ) : (
-                language === 'zh' ? '生成文章' : 'Generate Article'
-              )}
-            </Button>
           </div>
 
           {/* 右侧：生成结果 */}
@@ -434,20 +420,35 @@ Please maintain a writing style similar to the reference articles, but the conte
           </div>
         </div>
 
-        <DialogFooter className="gap-2 mt-4 pt-4 border-t">
+        <div className="flex justify-between items-center gap-2 mt-4 pt-4 border-t px-6">
           <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={performGeneration}
+            disabled={isGenerating || !title || !content || selectedPosts.length === 0}
           >
-            {t.cancel}
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                {language === 'zh' ? '生成中...' : 'Generating...'}
+              </>
+            ) : (
+              language === 'zh' ? '生成文章' : 'Generate Article'
+            )}
           </Button>
-          <Button
-            onClick={handleAccept}
-            disabled={isGenerating || !generatedContent}
-          >
-            {language === 'zh' ? '接受生成结果' : 'Accept Generated Result'}
-          </Button>
-        </DialogFooter>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              {t.cancel}
+            </Button>
+            <Button
+              onClick={handleAccept}
+              disabled={isGenerating || !generatedContent}
+            >
+              {language === 'zh' ? '接受生成结果' : 'Accept Generated Result'}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
