@@ -497,6 +497,25 @@ export default function Home() {
     loadSavedSettings();
   }, [isElectron]);
 
+  // 页面加载完成后显示窗口（仅 Tauri 环境）
+  useEffect(() => {
+    const showWindow = async () => {
+      if (isTauri()) {
+        try {
+          const { windowControls } = await import('@/lib/tauri-api');
+          // 等待一小段时间确保页面渲染完成
+          setTimeout(async () => {
+            await windowControls.show();
+          }, 100);
+        } catch (error) {
+          console.error('Failed to show window:', error);
+        }
+      }
+    };
+    
+    showWindow();
+  }, []);
+
   // 监听筛选条件变化
   useEffect(() => {
     applyFilter();
@@ -683,26 +702,135 @@ export default function Home() {
           if (frontMatterMatch) {
             const frontMatter = frontMatterMatch[1];
             
-            // 提取标签
-            const tagsMatch = frontMatter.match(/^tags:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
-            if (tagsMatch) {
-              const tags = tagsMatch[1].split('\n')
-                .map(line => line.trim().replace(/^\-\s*/, ''))
-                .filter(tag => tag);
-              tags.forEach(tag => {
-                tagsSet.add(tag);
-                allTagsList.push(tag); // 添加到所有标签列表
-              });
-            }
+            // 提取标签 - 支持多种 Hexo 格式
+            const parseTags = (text: string): string[] => {
+              // 1. 先把整个 frontmatter 按行分割成数组
+              // 例如：['title: 测试', 'date: 2025-10-07', 'tags:', '  - 测试1', '  - 测试2', ...]
+              const lines = text.split('\n');
+              const tags: string[] = [];  // 用来存储找到的标签
+              let inTagsSection = false;  // 标记：我们是否在 tags 区域内？
+              
+              // 2. 逐行遍历
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];           // 原始行（保留缩进）
+                const trimmedLine = line.trim(); // 去掉前后空格的行
+                
+                // === 第一步：找到 tags: 这一行 ===
+                if (trimmedLine.startsWith('tags:')) {
+                  const afterColon = trimmedLine.substring(5).trim();  // 取 "tags:" 后面的内容
+                  
+                  // 格式1: tags: [tag1, tag2, tag3] - 行内数组格式
+                  if (afterColon.startsWith('[')) {
+                    const arrayMatch = afterColon.match(/\[(.*?)\]/);
+                    if (arrayMatch) {
+                      return arrayMatch[1]
+                        .split(',')
+                        .map(tag => tag.trim())
+                        .filter(tag => tag);
+                    }
+                  }
+                  // 格式2: tags: single-tag - 单个标签在同一行
+                  else if (afterColon.length > 0) {
+                    return [afterColon];
+                  }
+                  // 格式3: tags: 后面是空的，说明标签在下面的行（多行列表格式）
+                  // 例如：
+                  // tags:
+                  //   - tag1
+                  //   - tag2
+                  else {
+                    inTagsSection = true;  // 设置标记：我们进入 tags 区域了！
+                    continue;              // 看下一行
+                  }
+                }
+                
+                // === 第二步：如果我们在 tags 区域内，开始收集标签 ===
+                if (inTagsSection) {
+                  // 退出条件：遇到一行不是以 - 开头，也不是缩进的行
+                  // 例如遇到 "categories:" 或其他字段就退出
+                  if (trimmedLine && !trimmedLine.startsWith('-') && !line.startsWith(' ') && !line.startsWith('\t')) {
+                    break;  // 退出循环，不再收集
+                  }
+                  
+                  // 收集标签：如果这行以 - 开头
+                  if (trimmedLine.startsWith('-')) {
+                    const tag = trimmedLine.substring(1).trim();  // 去掉 "-" 和空格，得到标签内容
+                    if (tag) tags.push(tag);  // 添加到结果数组
+                  }
+                }
+              }
+              
+              return tags;
+            };
             
-            // 提取分类
-            const categoriesMatch = frontMatter.match(/^categories:\s*([\s\S]*?)(?=\n\w|\n*$)/m);
-            if (categoriesMatch) {
-              const categories = categoriesMatch[1].split('\n')
-                .map(line => line.trim().replace(/^\-\s*/, ''))
-                .filter(cat => cat);
-              categories.forEach(category => categoriesSet.add(category));
-            }
+            const tags = parseTags(frontMatter);
+            tags.forEach(tag => {
+              tagsSet.add(tag);
+              allTagsList.push(tag);
+            });
+            
+            // 提取分类 - 支持多种 Hexo 格式（逻辑同 parseTags）
+            const parseCategories = (text: string): string[] => {
+              // 1. 先把整个 frontmatter 按行分割成数组
+              const lines = text.split('\n');
+              const categories: string[] = [];  // 用来存储找到的分类
+              let inCategoriesSection = false;  // 标记：我们是否在 categories 区域内？
+              
+              // 2. 逐行遍历
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];           // 原始行（保留缩进）
+                const trimmedLine = line.trim(); // 去掉前后空格的行
+                
+                // === 第一步：找到 categories: 这一行 ===
+                if (trimmedLine.startsWith('categories:')) {
+                  const afterColon = trimmedLine.substring(11).trim();  // 取 "categories:" 后面的内容
+                  
+                  // 格式1: categories: [cat1, cat2, cat3] - 行内数组格式
+                  if (afterColon.startsWith('[')) {
+                    const arrayMatch = afterColon.match(/\[(.*?)\]/);
+                    if (arrayMatch) {
+                      return arrayMatch[1]
+                        .split(',')
+                        .map(cat => cat.trim())
+                        .filter(cat => cat);
+                    }
+                  }
+                  // 格式2: categories: single-category - 单个分类在同一行
+                  else if (afterColon.length > 0) {
+                    return [afterColon];
+                  }
+                  // 格式3: categories: 后面是空的，说明分类在下面的行（多行列表格式）
+                  // 例如：
+                  // categories:
+                  //   - cat1
+                  //   - cat2
+                  else {
+                    inCategoriesSection = true;  // 设置标记：我们进入 categories 区域了！
+                    continue;                    // 跳过当前行，继续看下一行
+                  }
+                }
+                
+                // === 第二步：如果我们在 categories 区域内，开始收集分类 ===
+                if (inCategoriesSection) {
+                  // 退出条件：遇到一行不是以 - 开头，也不是缩进的行
+                  // 例如遇到其他字段就退出
+                  if (trimmedLine && !trimmedLine.startsWith('-') && !line.startsWith(' ') && !line.startsWith('\t')) {
+                    break;  // 退出循环，不再收集
+                  }
+                  
+                  // 收集分类：如果这行以 - 开头
+                  if (trimmedLine.startsWith('-')) {
+                    const cat = trimmedLine.substring(1).trim();  // 去掉 "-" 和空格，得到分类内容
+                    if (cat) categories.push(cat);  // 添加到结果数组
+                  }
+                }
+              }
+              
+              return categories;
+            };
+            
+            const categories = parseCategories(frontMatter);
+            categories.forEach(category => categoriesSet.add(category));
           }
         } catch (error) {
           console.error(`读取文章 ${post.name} 失败:`, error);
@@ -981,6 +1109,9 @@ export default function Home() {
 
         // 写回文件
         await ipcRenderer.invoke('write-file', filePath, newContent);
+        
+        // 重新提取标签和分类
+        await extractTagsAndCategories(posts);
       }
     } catch (error) {
       console.error('更新文章元数据失败:', error);
@@ -1044,6 +1175,9 @@ export default function Home() {
       if (previewMode === 'server' && editorMode === 'mode2') {
         setForcePreviewRefresh(true);
       }
+      
+      // 保存后重新提取标签和分类
+      await extractTagsAndCategories(posts);
     } catch (error) {
       console.error('保存文章失败:', error);
       const saveErrorResult = {
@@ -1246,6 +1380,9 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         const content = await ipcRenderer.invoke('read-file', selectedPost.path);
         setPostContent(content);
       }
+      
+      // 重新提取标签和分类
+      await extractTagsAndCategories(posts);
     } catch (error) {
       console.error('批量添加标签失败:', error);
       const batchTagErrorResult = {
@@ -1325,6 +1462,9 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
         const content = await ipcRenderer.invoke('read-file', selectedPost.path);
         setPostContent(content);
       }
+      
+      // 重新提取标签和分类
+      await extractTagsAndCategories(posts);
     } catch (error) {
       console.error('批量添加分类失败:', error);
       const batchCategoryErrorResult = {
@@ -1453,6 +1593,9 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           const content = await ipcRenderer.invoke('read-file', selectedPost.path);
           setPostContent(content);
         }
+        
+        // 重新提取标签和分类
+        await extractTagsAndCategories(posts);
       }
     } catch (error) {
       console.error('添加标签失败:', error);
@@ -1522,6 +1665,9 @@ const newContent = content.replace(/^---\n[\s\S]*?\n---/, `---\n${frontMatter}\n
           const content = await ipcRenderer.invoke('read-file', selectedPost.path);
           setPostContent(content);
         }
+        
+        // 重新提取标签和分类
+        await extractTagsAndCategories(posts);
       }
     } catch (error) {
       console.error('添加分类失败:', error);
@@ -3063,7 +3209,6 @@ ${selectedText}
                             language={language}
                             hexoPath={hexoPath}
                             selectedPost={selectedPost}
-                            posts={posts}
                             enableAI={enableEditorAI}
                             aiProvider={aiProvider}
                             apiKey={apiKey}
@@ -3101,7 +3246,6 @@ ${selectedText}
                             language={language}
                             hexoPath={hexoPath}
                             selectedPost={selectedPost}
-                            posts={posts}
                             enableAI={enableEditorAI}
                             aiProvider={aiProvider}
                             apiKey={apiKey}
