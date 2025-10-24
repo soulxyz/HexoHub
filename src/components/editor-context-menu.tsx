@@ -10,12 +10,19 @@ import {
 } from 'react-contexify';
 import 'react-contexify/dist/ReactContexify.css';
 import { 
-  Wand2, Languages, FileText, Sparkles,
+  Wand2, Languages, FileText, Sparkles, BookOpen,
   Copy, Scissors, Clipboard, SquareStack,
   Bold, Italic, Code, Link2, List, ListOrdered
 } from 'lucide-react';
 import { getTexts } from '@/utils/i18n';
 import { AIRewriteDialog } from '@/components/ai-rewrite-dialog';
+import { AIDeepImitationDialog } from '@/components/ai-deep-imitation-dialog';
+
+interface Post {
+  name: string;
+  path: string;
+  modifiedTime: Date;
+}
 
 interface EditorContextMenuProps {
   children: React.ReactNode;
@@ -32,6 +39,9 @@ interface EditorContextMenuProps {
   openaiModel?: string;
   openaiApiEndpoint?: string;
   enableAI?: boolean;
+  posts?: Post[];
+  hexoPath?: string;
+  currentContent?: string;
 }
 
 const MENU_ID = 'editor-context-menu';
@@ -50,15 +60,19 @@ export function EditorContextMenu({
   language,
   openaiModel = 'gpt-3.5-turbo',
   openaiApiEndpoint = 'https://api.openai.com/v1',
-  enableAI = false
+  enableAI = false,
+  posts = [],
+  hexoPath = '',
+  currentContent = ''
 }: EditorContextMenuProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rewriteType, setRewriteType] = useState<'rewrite' | 'improve' | 'translate' | 'expand' | null>(null);
+  const [deepImitationDialogOpen, setDeepImitationDialogOpen] = useState(false);
   const t = getTexts(language);
   const { show } = useContextMenu({ id: MENU_ID });
 
   const hasSelection = selectedText && selectedText.trim().length > 0;
-  const canUseAI = enableAI && apiKey && hasSelection;
+  const canUseAI = enableAI && apiKey;
 
   const openRewriteDialog = (type: 'rewrite' | 'improve' | 'translate' | 'expand') => {
     setRewriteType(type);
@@ -95,38 +109,50 @@ export function EditorContextMenu({
                 </div>
               }
             >
-              {canUseAI ? (
+              {enableAI && apiKey ? (
                 <React.Fragment key="ai-submenu-items">
-                  <Item onClick={() => openRewriteDialog('rewrite')}>
+                  {hasSelection ? (
+                    <>
+                      <Item onClick={() => openRewriteDialog('rewrite')}>
+                        <div className="flex items-center gap-2">
+                          <Wand2 className="w-4 h-4" />
+                          {t.aiRewrite}
+                        </div>
+                      </Item>
+                      <Item onClick={() => openRewriteDialog('improve')}>
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4" />
+                          {t.aiImprove}
+                        </div>
+                      </Item>
+                      <Item onClick={() => openRewriteDialog('expand')}>
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          {t.aiExpand}
+                        </div>
+                      </Item>
+                      <Item onClick={() => openRewriteDialog('translate')}>
+                        <div className="flex items-center gap-2">
+                          <Languages className="w-4 h-4" />
+                          {t.aiTranslate}
+                        </div>
+                      </Item>
+                    </>
+                  ) : (
+                    <Item disabled>
+                      {t.pleaseSelectText}
+                    </Item>
+                  )}
+                  <Item onClick={() => setDeepImitationDialogOpen(true)}>
                     <div className="flex items-center gap-2">
-                      <Wand2 className="w-4 h-4" />
-                      {t.aiRewrite}
-                    </div>
-                  </Item>
-                  <Item onClick={() => openRewriteDialog('improve')}>
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      {t.aiImprove}
-                    </div>
-                  </Item>
-                  <Item onClick={() => openRewriteDialog('expand')}>
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      {t.aiExpand}
-                    </div>
-                  </Item>
-                  <Item onClick={() => openRewriteDialog('translate')}>
-                    <div className="flex items-center gap-2">
-                      <Languages className="w-4 h-4" />
-                      {t.aiTranslate}
+                      <BookOpen className="w-4 h-4" />
+                      {language === 'zh' ? '深度模仿' : 'Deep Imitation'}
                     </div>
                   </Item>
                 </React.Fragment>
               ) : (
                 <Item disabled>
-                  {!apiKey
-                    ? t.pleaseConfigureApiKey
-                    : t.pleaseSelectText}
+                  {!apiKey ? t.pleaseConfigureApiKey : t.pleaseSelectText}
                 </Item>
               )}
             </Submenu>
@@ -218,6 +244,21 @@ export function EditorContextMenu({
         onOpenChange={setDialogOpen}
         selectedText={selectedText}
         rewriteType={rewriteType}
+        onAccept={onRewrite}
+        aiProvider={aiProvider}
+        apiKey={apiKey}
+        language={language}
+        openaiModel={openaiModel}
+        openaiApiEndpoint={openaiApiEndpoint}
+      />
+      
+      {/* AI 深度模仿对话框 */}
+      <AIDeepImitationDialog
+        open={deepImitationDialogOpen}
+        onOpenChange={setDeepImitationDialogOpen}
+        currentContent={currentContent}
+        hexoPath={hexoPath}
+        allPosts={posts}
         onAccept={onRewrite}
         aiProvider={aiProvider}
         apiKey={apiKey}

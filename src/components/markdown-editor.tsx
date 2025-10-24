@@ -37,6 +37,7 @@ interface MarkdownEditorProps {
   language?: 'zh' | 'en';
   hexoPath?: string;
   selectedPost?: Post | null;
+  posts?: Post[];
   // AI 配置
   enableAI?: boolean;
   aiProvider?: 'deepseek' | 'openai' | 'siliconflow';
@@ -53,6 +54,7 @@ export function MarkdownEditor({
   language = 'zh', 
   hexoPath, 
   selectedPost,
+  posts,
   enableAI = false,
   aiProvider = 'deepseek',
   apiKey = '',
@@ -685,6 +687,9 @@ useEffect(() => {
             openaiModel={openaiModel}
             openaiApiEndpoint={openaiApiEndpoint}
             enableAI={enableAI}
+            posts={posts || []}
+            hexoPath={hexoPath}
+            currentContent={value}
           >
             <Textarea
               ref={textareaRef}

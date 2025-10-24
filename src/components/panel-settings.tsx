@@ -81,6 +81,32 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
   const [currentVersion, setCurrentVersion] = useState<string>('Unknown');
   // 获取当前语言的文本
   const t = getTexts(language);
+  // 检查是否为暗色模式
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  
+  // 检查系统主题
+  useEffect(() => {
+    const checkDarkMode = () => {
+      if (typeof window !== 'undefined') {
+        const darkModePreference = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const htmlElement = document.documentElement;
+        setIsDarkMode(htmlElement.classList.contains('dark') || darkModePreference);
+      }
+    };
+    
+    checkDarkMode();
+    
+    // 监听主题变化
+    if (typeof window !== 'undefined') {
+      const observer = new MutationObserver(checkDarkMode);
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+      });
+      
+      return () => observer.disconnect();
+    }
+  }, []);
   const [tempPostsPerPage, setTempPostsPerPage] = useState<number>(postsPerPage);
   const [tempAutoSaveInterval, setTempAutoSaveInterval] = useState<number>(autoSaveInterval);
   const [tempEditorMode, setTempEditorMode] = useState<'mode1' | 'mode2'>(editorMode);
@@ -951,7 +977,9 @@ export function PanelSettings({ postsPerPage, onPostsPerPageChange, autoSaveInte
                           id="siliconflowModel"
                           value={tempOpenaiModel}
                           onChange={(e) => setTempOpenaiModel(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-black'
+                          }`}
                         >
                           {siliconflowModels.map((model) => (
                             <option key={model} value={model}>
