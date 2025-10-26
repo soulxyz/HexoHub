@@ -121,7 +121,7 @@ export function AIDeepImitationDialog({
       const { getIpcRenderer } = await import('@/lib/desktop-api');
       const ipcRenderer = await getIpcRenderer();
 
-      const referenceContents = [];
+      const referenceContents: string[] = [];
       for (const postPath of selectedPosts) {
         try {
           const postContent = await ipcRenderer.invoke('read-file', postPath);
@@ -321,7 +321,7 @@ Please maintain a writing style similar to the reference articles, but the conte
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={language === 'zh' ? '请输入文章的大致内容或要点' : 'Enter the general content or key points of the article'}
-                className="min-h-[150px] resize-none"
+                className="min-h-[150px] resize-none bg-gray-50 dark:bg-gray-900"
               />
             </div>
 
@@ -395,7 +395,11 @@ Please maintain a writing style similar to the reference articles, but the conte
               <Textarea
                 value={displayedContent}
                 readOnly
-                className="min-h-[450px] max-h-[550px] resize-none"
+                className={`min-h-[450px] max-h-[550px] resize-none transition-all duration-300 ${
+                  isGenerating 
+                    ? 'bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-400/50 dark:ring-blue-600/50' 
+                    : 'bg-gray-50 dark:bg-gray-900'
+                }`}
                 placeholder={
                   isGenerating
                     ? language === 'zh'
@@ -407,13 +411,11 @@ Please maintain a writing style similar to the reference articles, but the conte
                 }
               />
               {isGenerating && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800" style={{backgroundColor: "var(--background)", opacity: 1}}>
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span className="text-sm">
-                      {language === 'zh' ? '生成中...' : 'Generating...'}
-                    </span>
-                  </div>
+                <div className="absolute top-2 right-2 flex items-center gap-2 bg-blue-100/90 dark:bg-blue-900/90 px-3 py-1.5 rounded-md shadow-sm">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
+                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                    {language === 'zh' ? '生成中...' : 'Generating...'}
+                  </span>
                 </div>
               )}
             </div>

@@ -296,7 +296,11 @@ export function AIRewriteDialog({
               <Textarea
                 value={displayedText}
                 readOnly
-                className="min-h-[450px] max-h-[550px] resize-none"
+                className={`min-h-[450px] max-h-[550px] resize-none transition-all duration-300 ${
+                  isRewriting 
+                    ? 'bg-blue-50 dark:bg-blue-950/50 ring-2 ring-blue-400/50 dark:ring-blue-600/50' 
+                    : 'bg-gray-50 dark:bg-gray-900'
+                }`}
                 placeholder={
                   isRewriting
                     ? language === 'zh'
@@ -308,13 +312,11 @@ export function AIRewriteDialog({
                 }
               />
               {isRewriting && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800" style={{backgroundColor: "var(--background)", opacity: 1}}>
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span className="text-sm">
-                      {language === 'zh' ? '生成中...' : 'Generating...'}
-                    </span>
-                  </div>
+                <div className="absolute top-2 right-2 flex items-center gap-2 bg-blue-100/90 dark:bg-blue-900/90 px-3 py-1.5 rounded-md shadow-sm">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
+                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                    {language === 'zh' ? '生成中...' : 'Generating...'}
+                  </span>
                 </div>
               )}
             </div>
